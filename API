@@ -1,0 +1,151 @@
+** API Doc 1.0 **
+
+This is really rough.  Feel free to make it pretty and email changes
+to bryan.christ@gmail.com
+
+---------------
+Library Version
+---------------
+
+Current library version is stored as a const char* in LIBVTERM_VERSION
+
+----------
+Data Types
+----------
+
+There is currently only one data type implemented in the library.  It is an
+opaque data structure vterm_t.  As an opaque structure it's members are not
+directly accessible.  Manipulation of data type should be handled only by
+the exposed interfaces in this manual.
+
+------------------------
+Constructors/Destructors
+------------------------
+
+   vterm_t* vterm_create(guint width,guint height,guint flags);
+
+Creates an instance a vterm_t of the designated width and height.
+By default, the library emulates rxvt which is basically VT100 with color.
+The only flag supported at this time is VTERM_FLAG_VT100 which forces the
+emulator to basic VT100 mode (black and white).
+
+   void vterm_destroy(vterm_t *vterm);
+
+Destroy a vterm_t instance and clean up loose ends.
+
+------------------
+Process Management
+------------------
+
+   pid_t vterm_get_pid(vterm_t *vterm);
+
+Fetch the PID of the terminal.  Typically this is either the shell PID or
+the PID of the foreground application.
+
+   gint vterm_get_pty_fd(vterm_t *vterm);
+
+Fetch the file descriptor for the I/O pipe.  This is useful if you want to
+drive create an event driven terminal emulator using SIGIO.
+
+   ssize_t vterm_read_pipe(vterm_t *vterm);
+
+Read data from the terminal.  This is a non-blocking function which uses
+poll() and TIOCINQ/FIONREAD to peek for data on the pipe.  If there is
+data waiting in the pipe, it is read and processed by the offscreen buffer.
+On success it returns the number of bytes read from the pipe.  If there was
+no data read or it was interupted by a system call (EINTR) then 0 is returned.
+If a critical error occurred or the shell has exited -1 is returned.  This
+function should be called frequently (or upon arrival of SIGIO) to keep the
+pipe from filling up.
+
+   void vterm_write_pipe(vterm_t *vterm,guint32 keycode);
+
+Writes a keycode to the terminal.  Special keys such as the F(x) keys are
+translated into the escape sequences expected by the shell.  If you wish
+to write raw data to the receiving process, do not use this function.  Use
+the file descriptor with write().
+
+   const gchar* vterm_get_ttyname(vterm_t *vterm);
+
+Returns the name of the current terminal associated with the pipe.  The
+name is identical to what is returned by ttyname() with the expetion
+that the re-entrant ttyname_r() is called with fixed buffer size of 96 bytes.
+
+----------------
+WINDOW Functions
+----------------
+
+   void vterm_wnd_set(vterm_t *vterm,WINDOW *window);
+
+Sets the output canvas to the curses WINDOW designated.  Although libvterm
+will continue to process pipe data nothing will be visible until this is set.
+
+   WINDOW* vterm_wnd_get(vterm_t *vterm);
+
+Returns the active WINDOW* or NULL if there is no active window.
+
+   void vterm_wnd_update(vterm_t *vterm);
+
+This function renders the offscreen buffer to the curses WINDOW specified
+by vterm_wnd_set().  It is typically called when vterm_read_pipe() returns
+a postive value indicating that data was processed.  If there is no active
+window, this function silently fails.
+
+   int vterm_set_colors(vterm_t *vterm,short fg,short bg);
+
+Sets the default cell color to the specified foregreound (fg) and
+background (bg) colors.  Keep in mind that all cells are subject to the
+properties and behavior of the WINDOW as defined by wbkgdset().  See your
+curses manual for more information.
+
+   short vterm_get_colors(vterm_t *vterm);
+
+Returns the default color pair.  If you are unfamiliar with the concept of
+color pairs, please refer to your curses manual.
+
+   void vterm_erase(vterm_t *vterm);
+
+Erases the entire offscreen buffer by placing blanks in each cell.  All
+extended attributes are turned off (set to A_NORMAL) and the color scheme is
+set to that which was last designated by vterm_set_colors().
+
+   void vterm_erase_row(vterm_t *vterm,gint row);
+
+Erases a single row.
+
+   void vterm_erase_rows(vterm_t *vterm,gint start_row);
+
+Erases all the rows including and after start_row.
+
+   void vterm_erase_col(vterm_t *vterm,gint col);
+
+Erases a single column.
+
+   void vterm_erase_cols(vterm_t *vterm,gint start_col);
+
+Erases all the columns including and after start_col.
+
+   void vterm_scroll_up(vterm_t *vterm);
+
+This function moves all lines up by one so that the top row is discarded
+and a blank line is inserted at the bottom.
+
+   void vterm_scroll_down(vterm_t *vterm);
+
+This function moves all lines down by one so that the bottom row is discarded
+and a blank line is inserted at the top.
+
+   void vterm_resize(vterm_t *vterm,guint width,guint height);
+
+This function resizes the offscreen buffer.  It DOES NOT resize the associated
+curses WINDOW.  After all of the internal data structures are updated, the
+library issues SIGWINCH to the child PID to signal the terminal resize.  If
+the child process is written correctly it will respond accordingly.  When
+resize results in a shrink, the offscreen columns and rows will be truncated
+accordingly.  When resize results in expansion the new rows and colums are
+initialized with an erase operation.
+
+
+
+
+

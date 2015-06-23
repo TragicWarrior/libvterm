@@ -1,0 +1,58 @@
+0.99.10
+
+*  [Bryan Christ] fixed the backspace key for getline() and other tools
+    that modify terminal attributes.
+
+0.99.9
+
+*  [Bryan Christ] updated the code to support Xterm OSC sequences
+*  [Bryan Christ] major rework of the escape code sequence parser systems
+
+0.99.8
+
+*  [Bryan Christ] simplified permission assignment in Makefile
+*  [Bryan Christ] modified Makefile to comprehend host arch
+
+0.99.7
+
+*  [Bryan Christ] fixed functions keys
+
+0.99.6
+
+*  [Bryan Christ] execl() shell/bash with -l option
+
+0.99.5
+
+*  [Bryan Christ] Updates and changes to this CHANGELOG format
+*  [Bryan Christ] Bugfix for handling KEY_HOME, KEY_END,and KEY_IC
+
+0.99.4
+
+*  [Bryan Christ] Missing include signal.h added to vterm.c and
+    vterm_resize.c
+
+0.99.3
+
+*  [Bryan Christ] Added vterm_get_ttyname() function
+
+0.99.2
+
+*  [Bryan Christ] Properly handle system call interupt (EINTR) in
+   vterm_pipe_read()
+*  [Bryan Christ] Fixed ioctl call in vterm_pipe_read
+*  [Bryan Christ] Added vterm_resize()
+*  [Bryan Christ] Added missing symbol vterm_erase()
+*  [Bryan Christ] Added vterm_erase_cols() and vterm_erase_rows() to API
+*  [Bryan Christ] Fixed incorrect version string for LIBVTERM_VERSION
+*  [Bryan Christ] Created API documentation
+
+0.99.1
+
+*  [Bryan Christ] Added terminal resize function
+*  [Bryan Christ] Moved generic helper functions to vterm_misc.c
+
+0.99.0
+
+*  [Bryan Christ] Initial release of libvterm
+
+
