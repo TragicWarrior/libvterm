@@ -207,5 +207,24 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
    }
 }
 
+void
+vterm_get_size( vterm_t *vterm, int *width, int *height )
+{
+   if( vterm==NULL || width==NULL || height==NULL )
+      return;
+
+   *width = vterm->cols;
+   *height = vterm->rows;
+}
+
+vterm_cell_t**
+vterm_get_buffer( vterm_t *vterm )
+{
+   if( vterm==NULL )
+      return NULL;
+
+   return vterm->cells;
+}
+
 
 

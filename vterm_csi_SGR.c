@@ -126,27 +126,66 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
       if(param[i] >= 30 && param[i] <= 37)            // set fg color
       {
+         // printf("Set fg color (%d)\n", param[i]-30);
          vterm->fg=param[i]-30;
-         colors=find_color_pair(vterm->fg,vterm->bg);
-         if(colors==-1) colors=0;
+         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+             colors = FindColorPair( vterm->fg, vterm->bg );
+         else
+             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+         if(colors==-1)
+             colors=0;
+         // printf("Set fg to %d.  attr before was %04x\n", param[i]-30, vterm->curattr );
          vterm->curattr |= COLOR_PAIR(colors);
+         // printf("... attr now is %04x\n", vterm->curattr );
+         // int colIndex = ((vterm->curattr)&0xff00)>>8;
+         // int localFg, localBg;
+         // if( GetFGBGFromColorIndex( colIndex, &localFg, &localBg )==0 )
+         //   {
+         //   printf("This means color fg=%d, bg=%d\n", localFg, localBg );
+         //   }
+         // else
+         //   {
+         //   printf("This means color index %d which is undefined\n", colIndex );
+         //   }
          continue;
       }
 
       if(param[i] >= 40 && param[i] <= 47)            // set bg color
       {
+         // printf("Set bg color (%d)\n", param[i]-40);
          vterm->bg=param[i]-40;
-         colors=find_color_pair(vterm->fg,vterm->bg);
-         if(colors==-1) colors=0;
+         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+             colors = FindColorPair( vterm->fg, vterm->bg );
+         else
+             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+         if(colors==-1)
+             colors=0;
          vterm->curattr |= COLOR_PAIR(colors);
          continue;
       }
 
       if(param[i]==39)                                // reset fg color
       {
-         pair_content(vterm->colors,&default_fg,&default_bg);
-         vterm->fg=default_fg;
-         colors=find_color_pair(vterm->fg,vterm->bg);
+         // printf("Reset fg color\n");
+         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+         {
+             int fg, bg;
+             if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
+             {
+                 vterm->fg = fg;
+                 colors = FindColorPair( vterm->fg, vterm->bg );
+             }
+             else
+             {
+                 colors = -1;
+             }
+         }
+         else
+         {
+             pair_content(vterm->colors,&default_fg,&default_bg);
+             vterm->fg=default_fg;
+             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+         }
          if(colors==-1) colors=0;
          vterm->curattr |= COLOR_PAIR(colors);
          continue;
@@ -154,9 +193,26 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
       if(param[i]==49)                                // reset bg color
       {
-         pair_content(vterm->colors,&default_fg,&default_bg);
-         vterm->bg=default_bg;
-         colors=find_color_pair(vterm->fg,vterm->bg);
+         // printf("Reset bg color\n");
+         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+         {
+             int fg, bg;
+             if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
+             {
+                 vterm->bg = bg;
+                 colors = FindColorPair( vterm->fg, vterm->bg );
+             }
+             else
+             {
+                 colors = -1;
+             }
+         }
+         else
+         {
+             pair_content(vterm->colors,&default_fg,&default_bg);
+             vterm->bg=default_bg;
+             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+         }
          if(colors==-1) colors=0;
          vterm->curattr |= COLOR_PAIR(colors);
          continue;

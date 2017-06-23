@@ -83,9 +83,21 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
     }
 
     if(buffer == NULL)
+    {
         bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
+        if( bytes_written != sizeof(char) )
+        {
+            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+        }
+    }
     else
+    {
         bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
+        if( bytes_written != strlen(buffer) )
+        {
+            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+        }
+    }
 
    return;
 }
@@ -131,9 +143,21 @@ vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
     }
 
     if(buffer == NULL)
+    {
         bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
+        if( bytes_written != sizeof(char) )
+        {
+            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+        }
+    }
     else
+    {
         bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
+        if( bytes_written != strlen(buffer) )
+        {
+            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+        }
+    }
 
     return;
 }

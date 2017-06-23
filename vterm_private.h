@@ -42,8 +42,6 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #define IS_MODE_ESCAPED(x)      (x->state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->state & STATE_ALT_CHARSET)
 
-typedef struct _vterm_cell_s vterm_cell_t;
-
 struct _vterm_s
 {
     int	            rows,cols;              // terminal height & width
@@ -90,12 +88,6 @@ struct _vterm_s
 
     void            (*write)        (vterm_t*,uint32_t);
     int             (*esc_handler)  (vterm_t*);
-};
-
-struct _vterm_cell_s
-{
-    chtype          ch;                     // cell data
-    unsigned int    attr;                   // cell attributes
 };
 
 #define VTERM_CELL(vterm_ptr,x,y)           ((y * vterm_ptr->cols) + x)

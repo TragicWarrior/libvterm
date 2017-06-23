@@ -31,42 +31,56 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <curses.h>
 
 
-#define	LIBVTERM_VERSION		"0.99.8"
+#define	LIBVTERM_VERSION		"0.99.9"
 
 #define VTERM_FLAG_RXVT         0                       // default
 #define VTERM_FLAG_VT100        (1<<1)
+#define  VTERM_FLAG_NOPTY       (1<<2)  // skip all the fd and pty stuff - just render input args bytestream to a buffer
+#define  VTERM_FLAG_NOCURSES    (1<<3)  // skip the curses WINDOW stuff - return the char cell array if required
+
+// Need this to be public if we want to expose the buffer to callers.
+struct _vterm_cell_s
+{
+   chtype         ch;                           // cell data
+   int          attr;                         // cell attributes
+};
+
+typedef struct _vterm_cell_s vterm_cell_t;
 
 typedef struct _vterm_s         vterm_t;
 
-vterm_t*    vterm_create(uint16_t width,uint16_t height,unsigned int flags);
-void        vterm_destroy(vterm_t *vterm);
-pid_t       vterm_get_pid(vterm_t *vterm);
-int         vterm_get_pty_fd(vterm_t *vterm);
-const char* vterm_get_ttyname(vterm_t *vterm);
+vterm_t*       vterm_create(uint16_t width,uint16_t height,unsigned int flags);
+void           vterm_destroy(vterm_t *vterm);
+pid_t          vterm_get_pid(vterm_t *vterm);
+int            vterm_get_pty_fd(vterm_t *vterm);
+const char*    vterm_get_ttyname(vterm_t *vterm);
 
-ssize_t     vterm_read_pipe(vterm_t *vterm);
-void        vterm_write_pipe(vterm_t *vterm,uint32_t keycode);
+ssize_t        vterm_read_pipe(vterm_t *vterm);
+void           vterm_write_pipe(vterm_t *vterm,uint32_t keycode);
 
-void        vterm_wnd_set(vterm_t *vterm,WINDOW *window);
-WINDOW*     vterm_wnd_get(vterm_t *vterm);
-void        vterm_wnd_update(vterm_t *vterm);
+void           vterm_wnd_set(vterm_t *vterm,WINDOW *window);
+WINDOW*        vterm_wnd_get(vterm_t *vterm);
+void           vterm_wnd_update(vterm_t *vterm);
 
-int         vterm_set_colors(vterm_t *vterm,short fg,short bg);
-short       vterm_get_colors(vterm_t *vterm);
+int            vterm_set_colors(vterm_t *vterm,short fg,short bg);
+short          vterm_get_colors(vterm_t *vterm);
 
-void        vterm_erase(vterm_t *vterm);
-void        vterm_erase_row(vterm_t *vterm,int row);
-void        vterm_erase_rows(vterm_t *vterm,int start_row);
-void        vterm_erase_col(vterm_t *vterm,int col);
-void        vterm_erase_cols(vterm_t *vterm,int start_cols);
-void        vterm_scroll_up(vterm_t *vterm);
-void        vterm_scroll_down(vterm_t *vterm);
+void           vterm_erase(vterm_t *vterm);
+void           vterm_erase_row(vterm_t *vterm,int row);
+void           vterm_erase_rows(vterm_t *vterm,int start_row);
+void           vterm_erase_col(vterm_t *vterm,int col);
+void           vterm_erase_cols(vterm_t *vterm,int start_cols);
+void           vterm_scroll_up(vterm_t *vterm);
+void           vterm_scroll_down(vterm_t *vterm);
 
-void        vterm_resize(vterm_t *vterm,uint16_t width,uint16_t height);
+void           vterm_resize(vterm_t *vterm,uint16_t width,uint16_t height);
+
+void           vterm_render(vterm_t *, const char *data, int len);
+void           vterm_get_size(vterm_t *vterm, int *width, int *height);
+vterm_cell_t** vterm_get_buffer(vterm_t *vterm);
+
+int GetFGBGFromColorIndex( int index, int* fg, int* bg );
+int FindColorPair( int fg, int bg );
 
 #endif
-
-
-
-
 

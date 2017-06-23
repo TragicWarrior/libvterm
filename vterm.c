@@ -72,7 +72,19 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     vterm->ccol = 0;
 
     // default active colors
-    vterm->curattr = COLOR_PAIR(vterm->colors);
+    // uses ncurses macros even if we aren't using ncurses.
+    // it is just a bit mask/shift operation.
+    if(flags & VTERM_FLAG_NOCURSES)
+    {
+        int colorIndex = FindColorPair( COLOR_WHITE, COLOR_BLACK );
+        if( colorIndex<0 || colorIndex>255 )
+            colorIndex = 0;
+        vterm->curattr = (colorIndex & 0xff) << 8;
+    }
+    else
+    {
+        vterm->curattr = COLOR_PAIR( 0 );
+    }
 
     // initial scrolling area is the whole window
     vterm->scroll_min = 0;
@@ -84,48 +96,54 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     ws.ws_row = height;
     ws.ws_col = width;
 
-    child_pid = forkpty(&master_fd,NULL,NULL,&ws);
-    vterm->pty_fd = master_fd;
-
-    if(child_pid < 0)
-    {
-        vterm_destroy(vterm);
-        return NULL;
+    if(flags & VTERM_FLAG_NOPTY)
+    { // skip all the child process and fd stuff.
     }
-
-    if(child_pid == 0)
+    else
     {
-        signal(SIGINT,SIG_DFL);
-
-        // default is rxvt emulation
-        setenv("TERM","rxvt",1);
-
-        if(flags & VTERM_FLAG_VT100)
+        child_pid = forkpty(&master_fd,NULL,NULL,&ws);
+        vterm->pty_fd = master_fd;
+    
+        if(child_pid < 0)
         {
-            setenv("TERM","vt100",1);
+            vterm_destroy(vterm);
+            return NULL;
         }
-
-        user_profile = getpwuid(getuid());
-        if(user_profile == NULL) user_shell = "/bin/sh";
-        else if(user_profile->pw_shell == NULL) user_shell = "/bin/sh";
-        else user_shell = user_profile->pw_shell;
-
-        if(user_shell == NULL) user_shell="/bin/sh";
-
-        // start the shell
-        if(execl(user_shell,user_shell,"-l",NULL) == -1)
+    
+        if(child_pid == 0)
         {
-            exit(EXIT_FAILURE);
+            signal(SIGINT,SIG_DFL);
+    
+            // default is rxvt emulation
+            setenv("TERM","rxvt",1);
+    
+            if(flags & VTERM_FLAG_VT100)
+            {
+                setenv("TERM","vt100",1);
+            }
+    
+            user_profile = getpwuid(getuid());
+            if(user_profile == NULL) user_shell = "/bin/sh";
+            else if(user_profile->pw_shell == NULL) user_shell = "/bin/sh";
+            else user_shell = user_profile->pw_shell;
+    
+            if(user_shell == NULL) user_shell="/bin/sh";
+    
+            // start the shell
+            if(execl(user_shell,user_shell,"-l",NULL) == -1)
+            {
+                exit(EXIT_FAILURE);
+            }
+    
+            exit(EXIT_SUCCESS);
         }
-
-        exit(EXIT_SUCCESS);
-    }
-
-    vterm->child_pid = child_pid;
-
-    if(ttyname_r(master_fd,vterm->ttyname,sizeof(vterm->ttyname) - 1) != 0)
-    {
-        snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1,"vterm");
+    
+        vterm->child_pid = child_pid;
+    
+        if(ttyname_r(master_fd,vterm->ttyname,sizeof(vterm->ttyname) - 1) != 0)
+        {
+            snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1,"vterm");
+        }
     }
 
     if(flags & VTERM_FLAG_VT100) vterm->write = vterm_write_vt100;

@@ -1,4 +1,4 @@
-CFLAGS = -Wall -O2 -std=c99
+CFLAGS = -Wall -O2 -std=c99 -g
 DEFS = -D_REENTRANT -D_POSIX_C_SOURCE=200112L
 prefix = /usr
 includedir = ${prefix}/include

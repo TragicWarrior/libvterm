@@ -26,7 +26,11 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #include "vterm.h"
 
-short find_color_pair(short fg,short bg);
+short find_color_pair(vterm_t *vterm, short fg,short bg);
+
+// short local hacks equivalent to ncurses, in case we don't link to it.
+void InitColorSpace();
+void FreeColorSpace();
 
 #endif
 
