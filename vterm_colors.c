@@ -53,19 +53,40 @@ void InitColorSpace()
       }
     }
 
+//  for( i = 0; i < 8; i++ )
+//    {
+//    for( j = 0; j < 8; j++ )
+//      {
+//      if (i != 7 || j != 0)
+//        {
+//        n = j*8+7-i;
+//        if( n>=MAX_COLOR_PAIRS )
+//          {
+//          fprintf(stderr, "ERROR: cannot set color pair %d!\n", n);
+//          exit(1);
+//          }
+//        colorPalette[n].fg = i;
+//        colorPalette[n].bg = j;
+//        if( n+1>paletteSize )
+//          {
+//          paletteSize = n+1;
+//          }
+//        }
+//      }
+//    }
+
   for( i = 0; i < 8; i++ )
     {
     for( j = 0; j < 8; j++ )
       {
-      if (i != 7 || j != 0)
         {
-        n = j*8+7-i;
+        n = i*8+j;
         if( n>=MAX_COLOR_PAIRS )
           {
           fprintf(stderr, "ERROR: cannot set color pair %d!\n", n);
           exit(1);
           }
-        colorPalette[n].fg = i;
+        colorPalette[n].fg = 7-i;
         colorPalette[n].bg = j;
         if( n+1>paletteSize )
           {

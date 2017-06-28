@@ -4,13 +4,23 @@ reset
 cp ../libvterm.so .
 cp ../vterm.h .
 
+FIFO=/tmp/`logname`
+
+if [ -p "$FIFO" ] ; then
+  echo "FIFO exists"
+else
+  mkfifo $FIFO
+fi
+
+echo "Open another xterm of the same size and script -f $FIFO"
+echo "Press ctrl-D when done to see the final screen here."
+
 gcc -g\
-    -L/home/idan/src/libvterm/test\
-    -I/usr/include/glib-2.0\
-    -I/usr/lib/x86_64-linux-gnu/glib-2.0/include\
+    -L`pwd`\
+    -I`pwd`\
     -o test\
     test.c\
     -lvterm\
     -lncurses\
     -lutil\
-&& LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH ./test /tmp/idan
+&& LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH ./test $FIFO

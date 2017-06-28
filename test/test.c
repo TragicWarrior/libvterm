@@ -79,11 +79,9 @@ void ResetAttribute()
   fputs( CSI, stdout );
   fputs( "0m", stdout );
   fputs( CSI, stdout );
-  fputs( "37;40m", stdout );
-  // fputs( CSI, stdout );
-  // fprintf( stdout, "%dm", COLOR_WHITE+30 );
-  // fputs( CSI, stdout );
-  // fprintf( stdout, "%dm", COLOR_BLACK+40 );
+  fputs( "37m", stdout ); // white foreground
+  fputs( CSI, stdout );
+  fputs( "40m", stdout ); // black background
   }
 
 void ProcessAttribute( int attr )
@@ -143,26 +141,70 @@ void ProcessAttribute( int attr )
     }
   }
 
-int main( int argc, char** argv )
+void PrintTermBuffer( vterm_t* vt )
   {
   int h = -1;
   int w = -1;
+
+  vterm_get_size( vt, &w, &h );
+
+  vterm_cell_t** cells = vterm_get_buffer( vt );
+  if( cells!=NULL )
+    {
+    int i=0, j=0, c=-1, a=-1;
+    ResetAttribute();
+    for( i=0; i<h; ++i )
+      {
+      // vterm_cell_t* ptr=NULL;
+      vterm_cell_t* crow = cells[i];
+
+      // replace trailing spaces with -1's, which we won't print.
+      // for( ptr=crow+w-1; ptr>=crow; --ptr )
+      //   { 
+      //   if( ptr->ch==' ' )
+      //     {
+      //     ptr->ch = -1;
+      //     }
+      //   else
+      //     {
+      //     break;
+      //     }
+      //   }
+
+      // printf("%02d: ", i);
+      for( j=0; j<w; ++j )
+        {
+        c = crow->ch;
+        // if( c==-1 )
+        //   {
+        //   break;
+        //   }
+        if( a != crow->attr )
+          {
+          if( i==0 && j==0 )
+            {
+            printf("Processing attribute [%d] for 0,0\n", crow->attr );
+            }
+          ProcessAttribute( crow->attr );
+          }
+        a = crow->attr;
+        fputc(c,stdout);
+        ++crow;
+        }
+
+      fputc('\n',stdout);
+      }
+    }
+  ResetAttribute();
+  }
+
+void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
+  {
+  int n = 0;
+  int fileSize = 0;
+  int result = 0;
   unsigned char buf[BUFLEN];
-  vterm_t* vt = NULL;
 
-  signal( SIGWINCH, ResizeEvent );
-
-  if( GetTerminalDimensions( &h, &w ) )
-    {
-    fprintf( stderr, "ERROR: Failed to get screen dimensions!\n" );
-    exit(-1);
-    }
-
-  char* fileName = "/tmp/dump.script";
-  if( argc==2 )
-    {
-    fileName = argv[1];
-    }
   int fd = open( fileName, O_RDONLY);
   if( fd<0 )
     {
@@ -170,16 +212,6 @@ int main( int argc, char** argv )
     exit(-1);
     }
 
-  vt = vterm_create(w, h, VTERM_FLAG_NOPTY | VTERM_FLAG_NOCURSES );
-  if( vt==NULL )
-    {
-    fprintf( stderr, "ERROR: Cannot init vterm!\n" );
-    exit(-2);
-    }
-
-  int n = 0;
-  int fileSize = 0;
-  int result = 0;
   for(;;)
     {
     fd_set readset;
@@ -228,56 +260,40 @@ int main( int argc, char** argv )
     }
 
   close( fd );
-  // printf("Final return from read was %d - %s\n", n, strerror(n));
 
-  // printf("Pumped %d chars through.\n", fileSize);
-  vterm_get_size( vt, &w, &h );
+  // printf("Read %d chars from %s.\n", fileSize, fileName );
+  }
 
-  vterm_cell_t** cells = vterm_get_buffer( vt );
-  if( cells!=NULL )
+int main( int argc, char** argv )
+  {
+  vterm_t* vt = NULL;
+
+  signal( SIGWINCH, ResizeEvent );
+
+  char* fileName = "/tmp/dump.script";
+  if( argc==2 )
     {
-    int i=0, j=0, c=-1, a=-1;
-    ResetAttribute();
-    for( i=0; i<h; ++i )
-      {
-      vterm_cell_t* crow = cells[i], ptr=NULL;
-
-      a=-1;
-      // printf("%02d: ", i);
-      for( ptr=crow+w-1; ptr>=crow; --ptr )
-        { 
-        if( ptr->ch==' ' )
-          {
-          ptr->ch = 0;
-          }
-        else
-          {
-          break;
-          }
-        }
-
-      for( j=0; j<w; ++j )
-        {
-        c = crow->ch;
-        if( c==0 )
-          {
-          break;
-          }
-        if( a != crow->attr )
-          {
-          ProcessAttribute( crow->attr );
-          }
-        a = crow->attr;
-        fputc(c,stdout);
-        ++crow;
-        }
-
-      fputc('\n',stdout);
-      }
+    fileName = argv[1];
     }
 
+  int h=-1, w=-1;
+  if( GetTerminalDimensions( &h, &w ) )
+    {
+    fprintf( stderr, "ERROR: Failed to get screen dimensions!\n" );
+    exit(-1);
+    }
+
+  vt = vterm_create(w, h, VTERM_FLAG_NOPTY | VTERM_FLAG_NOCURSES );
+  if( vt==NULL )
+    {
+    fprintf( stderr, "ERROR: Cannot init vterm!\n" );
+    exit(-2);
+    }
+
+  ReadFileIntoTerminal( vt, fileName );
+  PrintTermBuffer( vt );
+
   vterm_destroy( vt );
-  ResetAttribute();
 
   return 0;
   }
