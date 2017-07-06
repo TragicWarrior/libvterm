@@ -34,6 +34,9 @@ dimensions are the same as the dimensions in the capture file.
 
 #define BUFLEN 500
 
+#define DISPLAY_INTERVAL 1
+#define MAX_CHARS_IN_BUF 20
+
 int GetTerminalDimensions( int* rows, int* cols )
   {
   int err;
@@ -141,12 +144,20 @@ void ProcessAttribute( int attr )
     }
   }
 
+void CursorTopLeft()
+  {
+  fputs( CSI, stdout );
+  fputs( "1;1H", stdout );
+  }
+
 void PrintTermBuffer( vterm_t* vt )
   {
   int h = -1;
   int w = -1;
 
   vterm_get_size( vt, &w, &h );
+
+  CursorTopLeft();
 
   vterm_cell_t** cells = vterm_get_buffer( vt );
   if( cells!=NULL )
@@ -155,54 +166,41 @@ void PrintTermBuffer( vterm_t* vt )
     ResetAttribute();
     for( i=0; i<h; ++i )
       {
-      // vterm_cell_t* ptr=NULL;
       vterm_cell_t* crow = cells[i];
 
-      // replace trailing spaces with -1's, which we won't print.
-      // for( ptr=crow+w-1; ptr>=crow; --ptr )
-      //   { 
-      //   if( ptr->ch==' ' )
-      //     {
-      //     ptr->ch = -1;
-      //     }
-      //   else
-      //     {
-      //     break;
-      //     }
-      //   }
-
-      // printf("%02d: ", i);
       for( j=0; j<w; ++j )
         {
-        c = crow->ch;
-        // if( c==-1 )
-        //   {
-        //   break;
-        //   }
-        if( a != crow->attr )
-          {
-          if( i==0 && j==0 )
-            {
-            printf("Processing attribute [%d] for 0,0\n", crow->attr );
-            }
-          ProcessAttribute( crow->attr );
+        if( i==h-1 && j==w-1 )
+          { // don't print the last char on the screen - it causes a scroll.
+          CursorTopLeft();
           }
-        a = crow->attr;
-        fputc(c,stdout);
-        ++crow;
+        else
+          {
+          c = crow->ch;
+          if( a != crow->attr )
+            {
+            ProcessAttribute( crow->attr );
+            }
+          a = crow->attr;
+          fputc(c,stdout);
+          ++crow;
+          }
         }
 
       fputc('\n',stdout);
       }
     }
+
   ResetAttribute();
   }
 
 void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
   {
   int n = 0;
+  int charsSincePrint = 0;
   int fileSize = 0;
   int result = 0;
+  time_t tLast = -1, tNow = -1;
   unsigned char buf[BUFLEN];
 
   int fd = open( fileName, O_RDONLY);
@@ -221,34 +219,47 @@ void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
     to.tv_sec = 1;
     to.tv_usec = 0;
     result = select(fd + 1, &readset, NULL, NULL, &to);
+
+    tNow = time( NULL );
+    if( (tNow - tLast) > DISPLAY_INTERVAL || charsSincePrint > MAX_CHARS_IN_BUF )
+      {
+      if( charsSincePrint>0 )
+        {
+        PrintTermBuffer( vt );
+        charsSincePrint = 0;
+        }
+      tLast = tNow;
+      }
+
     if( result!=1 )
       {
       // printf("Timeout.. Select returned %d\n",result);
       }
     if( result==-1 )
       {
+      // EOF or other error.
       break;
       }
     if( FD_ISSET( fd, &readset ) )
       {
-      // printf("Select ended and FD is set.\n");
+      // got something
       n = read(fd, buf, BUFLEN-1);
       if( n==EAGAIN )
         {
-        // printf("n==EAGAIN\n");
+        // nope - not really.
         sleep(1);
         continue;
         }
       if( n>0 )
         {
+        // got n chars.
         CheckForResize( vt );
-        // printf("read %d chars\n", n);
         fileSize += n;
+        charsSincePrint += n;
         vterm_render( vt, buf, n );
         }
       if( n==0 )
         {
-        // printf("read nothing.  EOF.\n");
         break;
         }
       }
