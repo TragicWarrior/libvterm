@@ -27,9 +27,11 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #include <sys/types.h>
 
-#include <curses.h>
+#ifndef NOCURSES
+#  include <curses.h>
+#endif
 
-#define ESEQ_BUF_SIZE           128  	    // size of escape sequence buffer
+#define ESEQ_BUF_SIZE           128          // size of escape sequence buffer
 
 #define STATE_ALT_CHARSET       (1 << 1)
 #define STATE_ESCAPE_MODE       (1 << 2)
@@ -44,8 +46,10 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 struct _vterm_s
 {
-    int	            rows,cols;              // terminal height & width
+    int                rows,cols;              // terminal height & width
+#ifndef NOCURSES
     WINDOW          *window;                // curses window
+#endif
     vterm_cell_t    **cells;
     char            ttyname[96];            // populated with ttyname_r()
     char            prgname[128];           /*
@@ -57,33 +61,33 @@ struct _vterm_s
                                                by libvterm.
                                             */
     unsigned int    curattr;                // current attribute set
-	int	            crow,ccol;			    // current cursor column & row
-	int	            scroll_min;				// top of scrolling region
-	int	            scroll_max;				// bottom of scrolling region
-	int	            saved_x,saved_y;		// saved cursor coords
+    int             crow,ccol;                // current cursor column & row
+    int             scroll_min;                // top of scrolling region
+    int             scroll_max;                // bottom of scrolling region
+    int             saved_x,saved_y;        // saved cursor coords
     short           colors;                 // color pair for default fg/bg
     int             fg,bg;                  // current fg/bg colors
 
-    char	        esbuf[ESEQ_BUF_SIZE];   /*
+    char            esbuf[ESEQ_BUF_SIZE];   /*
                                                0-terminated string. Does
                                                NOT include the initial
                                                escape (\x1B) character.
                                             */
 
-    int 	        esbuf_len;    	        /*
+    int             esbuf_len;                /*
                                                length of buffer. The
                                                following property is
                                                always kept:
                                                esbuf[esbuf_len] == '\0'
                                             */
 
-    int 	        pty_fd;                	/*
+    int             pty_fd;                    /*
                                                file descriptor for the pty
                                                attached to this terminal.
                                             */
 
     pid_t           child_pid;              // pid of the child process
-	unsigned int    flags;						      // user options
+    unsigned int    flags;                              // user options
     unsigned int    state;                  // internal state control
 
     void            (*write)        (vterm_t*,uint32_t);

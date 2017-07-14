@@ -54,7 +54,6 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
    int   i;
    short colors;
-   short default_fg,default_bg;
 
    if(pcount==0)
    {
@@ -167,9 +166,16 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
          }
          else
          {
+#ifdef NOCURSES
+             // should not ever execute - bad combination of flags and
+             // #define's.
+             colors = -1;
+#else
+             short default_fg,default_bg;
              pair_content(vterm->colors,&default_fg,&default_bg);
              vterm->fg=default_fg;
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+#endif
          }
          if(colors==-1) colors=0;
          vterm->curattr |= COLOR_PAIR(colors);
@@ -193,9 +199,16 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
          }
          else
          {
+#ifdef NOCURSES
+             // should not ever execute - bad combination of flags and
+             // #define's.
+             colors = -1;
+#else
+             short default_fg,default_bg;
              pair_content(vterm->colors,&default_fg,&default_bg);
              vterm->bg=default_bg;
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+#endif
          }
          if(colors==-1) colors=0;
          vterm->curattr |= COLOR_PAIR(colors);

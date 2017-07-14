@@ -26,6 +26,7 @@ dimensions are the same as the dimensions in the capture file.
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>

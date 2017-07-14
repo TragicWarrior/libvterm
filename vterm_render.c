@@ -195,7 +195,9 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
         // bell
         case '\a':
         {
+#ifndef NOCURSES
             beep();
+#endif
             break;
         }
 

@@ -23,6 +23,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 
+#ifndef NOCURSES
 void
 vterm_wnd_set(vterm_t *vterm,WINDOW *window)
 {
@@ -74,4 +75,5 @@ vterm_wnd_update(vterm_t *vterm)
 
     return;
 }
+#endif
 

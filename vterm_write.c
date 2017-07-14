@@ -23,8 +23,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <unistd.h>
 #include <string.h>
 #include <termios.h>
-
-#include <curses.h>
+#include <stdio.h>
 
 #include "vterm.h"
 #include "vterm_private.h"

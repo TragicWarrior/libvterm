@@ -47,6 +47,10 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     int             i;
 
+#ifdef NOCURSES
+    flags = flags | VTERM_FLAG_NOCURSES;
+#endif
+
     if(height <= 0 || width <= 0) return NULL;
 
     vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
@@ -83,7 +87,11 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     }
     else
     {
+#ifdef NOCURSES
+        vterm->curattr = 0;
+#else
         vterm->curattr = COLOR_PAIR( 0 );
+#endif
     }
 
     // initial scrolling area is the whole window

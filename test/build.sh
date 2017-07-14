@@ -4,7 +4,7 @@ reset
 cp ../libvterm.so .
 cp ../vterm.h .
 
-FIFO=/tmp/`logname`
+FIFO=/tmp/`whoami`
 
 if [ -p "$FIFO" ] ; then
   echo "FIFO exists"
@@ -21,6 +21,5 @@ gcc -g\
     -o test\
     test.c\
     -lvterm\
-    -lncurses\
     -lutil\
 && LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH ./test $FIFO

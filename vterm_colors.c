@@ -157,10 +157,14 @@ vterm_set_colors(vterm_t *vterm,short fg,short bg)
     }
     else // ncurses
     {
+#ifdef NOCURSES
+       colors = FindColorPair( fg, bg );
+#else
        if(has_colors() == FALSE)
            return -1;
 
        colors = find_color_pair(vterm, fg,bg);
+#endif
        if(colors == -1) colors = 0;
 
        vterm->colors = colors;
@@ -178,7 +182,9 @@ vterm_get_colors(vterm_t *vterm)
     }
     else // ncurses
     {
+#ifndef NOCURSES
        if(has_colors() == FALSE) return -1;
+#endif
     }
 
     return vterm->colors;
@@ -187,7 +193,6 @@ vterm_get_colors(vterm_t *vterm)
 short
 find_color_pair(vterm_t *vterm, short fg,short bg)
 {
-    short   fg_color,bg_color;
     int     i;
 
     if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
@@ -196,6 +201,10 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
     }
     else // ncurses
     {
+#ifdef NOCURSES
+       return -1;
+#else
+       short   fg_color,bg_color;
        if(has_colors() == FALSE)
            return -1;
 
@@ -207,6 +216,7 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 
        if(i == COLOR_PAIRS)
            return -1;
+#endif
     }
 
     return i;

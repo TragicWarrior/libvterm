@@ -23,7 +23,9 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #ifndef _VTERM_RENDER_H_
 #define _VTERM_RENDER_H_
 
-#include <curses.h>
+#ifndef NOCURSES
+#  include <curses.h>
+#endif
 
 #include "vterm.h"
 
