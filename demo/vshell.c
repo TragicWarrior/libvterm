@@ -30,12 +30,13 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 int screen_w, screen_h;
 WINDOW *term_win;
 
-int main()
+int main(int argc, char **argv)
 {
     vterm_t     *vterm;
     int 		i, j, ch;
 	char		*locale;
     ssize_t     bytes;
+    int         flags = 0;
 
 	locale = setlocale(LC_ALL,"");
 
@@ -51,6 +52,21 @@ int main()
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
+
+    if (argc > 2)
+    {
+        // interate through argv[] looking for params
+        for (i = 1; i < argc; i++)
+        {
+
+            if (strncmp(argv[i], "--dump", 6)
+            {
+                flags |= VTERM_FLAGS_DUMP;
+                continue;
+            }
+        }
+    }
+
 
     /*
         initialize the color pairs the way rote_vt_draw expects it. You might
