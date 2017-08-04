@@ -94,6 +94,14 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
 #endif
     }
 
+    if(flags & VTERM_FLAG_DUMP)
+    {
+        vterm->debug_filepath = (char*)calloc(PATH_MAX + 1,sizeof(char));
+        getcwd(vterm->debug_filepath, PATH_MAX);
+
+        // TODO:  write full path string
+    }
+
     // initial scrolling area is the whole window
     vterm->scroll_min = 0;
     vterm->scroll_max = height - 1;
