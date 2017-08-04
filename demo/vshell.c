@@ -24,6 +24,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
+#include <string.h>
 
 #include <vterm.h>
 
