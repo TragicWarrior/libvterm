@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     wrefresh(term_win);
 
     // create the terminal and have it run bash
-    vterm = vterm_create(80,25,VTERM_FLAG_RXVT);
+    vterm = vterm_create(80,25, VTERM_FLAG_RXVT | flags);
     vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);
     vterm_wnd_set(vterm,term_win);
 
