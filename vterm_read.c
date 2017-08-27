@@ -124,7 +124,7 @@ vterm_read_pipe(vterm_t *vterm)
         // write debug information if enabled
         if(vterm->flags & VTERM_FLAG_DUMP)
         {
-            write(vterm->debug_fd, (const void*)buf, bytes);
+            write(vterm->debug_fd, (const void*)buf, bytes_read);
         }
 
         vterm_render(vterm,buf,bytes_read);
