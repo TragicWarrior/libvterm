@@ -46,6 +46,7 @@ vterm_read_pipe(vterm_t *vterm)
     int             bytes_peek = 0;
 	size_t			bytes_waiting;
     ssize_t			bytes_read = 0;
+    ssize_t         bytes_written = 0;
     size_t          bytes_remaining = 0;
     size_t          bytes_total = 0;
     int             retval;
@@ -124,7 +125,8 @@ vterm_read_pipe(vterm_t *vterm)
         // write debug information if enabled
         if(vterm->flags & VTERM_FLAG_DUMP)
         {
-            write(vterm->debug_fd, (const void*)buf, bytes_read);
+            bytes_written = write(vterm->debug_fd,
+                (const void *)buf, bytes_read);
         }
 
         vterm_render(vterm,buf,bytes_read);

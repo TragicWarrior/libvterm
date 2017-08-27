@@ -30,8 +30,10 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <signal.h>
 #include <limits.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include "vterm.h"
 #include "vterm_private.h"
@@ -166,11 +168,11 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
 
         vterm->child_pid = child_pid;
 
-        if(flag & VTERM_FLAG_DUMP)
+        if(flags & VTERM_FLAG_DUMP)
         {
             sprintf(pos, "vterm-%d.dump", child_pid);
             vterm->debug_fd = open(vterm->debug_filepath,
-                O_CREAT | O_TRUNC | O_WRONLY);
+                O_CREAT | O_TRUNC | O_WRONLY, S_IWUSR | S_IRUSR);
         }
 
         if(ttyname_r(master_fd,vterm->ttyname,sizeof(vterm->ttyname) - 1) != 0)
