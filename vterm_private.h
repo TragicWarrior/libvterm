@@ -60,7 +60,7 @@ struct _vterm_s
                                                but is currently not supported
                                                by libvterm.
                                             */
-    unsigned int    curattr;                // current attribute set
+    int             curattr;                // current attribute set
     int             crow,ccol;                // current cursor column & row
     int             scroll_min;                // top of scrolling region
     int             scroll_max;                // bottom of scrolling region
@@ -100,4 +100,3 @@ struct _vterm_s
 #define VTERM_CELL(vterm_ptr,x,y)           ((y * vterm_ptr->cols) + x)
 
 #endif
-

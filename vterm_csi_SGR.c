@@ -125,19 +125,29 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
       if(param[i] >= 30 && param[i] <= 37)            // set fg color
       {
-         vterm->fg=param[i]-30;
-         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-             colors = FindColorPair( vterm->fg, vterm->bg );
-         else
+          int  attr_saved = 0;
+
+          vterm->fg=param[i]-30;
+
+          if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+            colors = FindColorPair( vterm->fg, vterm->bg );
+            else
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
          if(colors==-1)
              colors=0;
-         vterm->curattr |= COLOR_PAIR(colors);
+
+         if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+
+          vterm->curattr = 0;
+          vterm->curattr |= COLOR_PAIR(colors);
+          vterm->curattr |= attr_saved;
          continue;
       }
 
       if(param[i] >= 40 && param[i] <= 47)            // set bg color
       {
+          int  attr_saved = 0;
+
          vterm->bg=param[i]-40;
          if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
              colors = FindColorPair( vterm->fg, vterm->bg );
@@ -145,7 +155,12 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
          if(colors==-1)
              colors=0;
+
+        if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+
+         vterm->curattr = 0;
          vterm->curattr |= COLOR_PAIR(colors);
+         vterm->curattr |= attr_saved;
          continue;
       }
 
@@ -157,7 +172,6 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
              if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
              {
                  vterm->fg = fg;
-                 // vterm->fg = COLOR_RED;
                  colors = FindColorPair( vterm->fg, vterm->bg );
              }
              else
@@ -175,7 +189,6 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
              short default_fg,default_bg;
              pair_content(vterm->colors,&default_fg,&default_bg);
              vterm->fg = default_fg;
-             // vterm->fg = COLOR_RED;
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
 #endif
          }
