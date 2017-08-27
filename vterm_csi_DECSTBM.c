@@ -65,4 +65,3 @@ void interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
 
    return;
 }
-

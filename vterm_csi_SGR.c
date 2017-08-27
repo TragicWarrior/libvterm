@@ -157,6 +157,7 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
              if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
              {
                  vterm->fg = fg;
+                 // vterm->fg = COLOR_RED;
                  colors = FindColorPair( vterm->fg, vterm->bg );
              }
              else
@@ -173,18 +174,20 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 #else
              short default_fg,default_bg;
              pair_content(vterm->colors,&default_fg,&default_bg);
-             vterm->fg=default_fg;
+             vterm->fg = default_fg;
+             // vterm->fg = COLOR_RED;
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
 #endif
          }
          if(colors==-1) colors=0;
+         vterm->curattr = 0;
          vterm->curattr |= COLOR_PAIR(colors);
          continue;
       }
 
       if(param[i]==49)                                // reset bg color
       {
-         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+         if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
          {
              int fg, bg;
              if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
@@ -206,14 +209,15 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 #else
              short default_fg,default_bg;
              pair_content(vterm->colors,&default_fg,&default_bg);
-             vterm->bg=default_bg;
+             vterm->bg = default_bg;
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+             // colors=find_color_pair(vterm, vterm->bg,vterm->fg);
 #endif
          }
          if(colors==-1) colors=0;
+         vterm->curattr = 0;
          vterm->curattr |= COLOR_PAIR(colors);
          continue;
       }
    }
 }
-
