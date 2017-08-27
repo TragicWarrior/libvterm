@@ -90,7 +90,7 @@ struct _vterm_s
     unsigned int    flags;                  // user options
     unsigned int    state;                  // internal state control
 
-    char            *debug_filepaht;
+    char            *debug_filepath;
     int             debug_fd;
 
     void            (*write)        (vterm_t*,uint32_t);

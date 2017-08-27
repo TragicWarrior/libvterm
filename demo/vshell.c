@@ -26,7 +26,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <locale.h>
 #include <string.h>
 
-#include <vterm.h>
+#include <../vterm.h>
 
 int screen_w, screen_h;
 WINDOW *term_win;
@@ -54,15 +54,15 @@ int main(int argc, char **argv)
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
 
-    if (argc > 2)
+    if (argc > 1)
     {
         // interate through argv[] looking for params
         for (i = 1; i < argc; i++)
         {
 
-            if (strncmp(argv[i], "--dump", 6)
+            if (strncmp(argv[i], "--dump", 6) == 0)
             {
-                flags |= VTERM_FLAGS_DUMP;
+                flags |= VTERM_FLAG_DUMP;
                 continue;
             }
         }
