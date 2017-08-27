@@ -1,7 +1,22 @@
+0.99.13
+
+* [Bryan Christ] fixed attribute issue with SGR color setting.
+  improves compatibility with myman and iptraf.
+
+0.99.12
+
+* [Bryan Christ] fixed attribute issue with SGR foreground color reset
+  and SGR background color reset.
+
+0.99.11
+
+* [Idan Shoham] clean up code and make allow stream buffer output
+  instead of NCURSES.
+
 0.99.10
 
 *  [Bryan Christ] fixed the backspace key for getline() and other tools
-    that modify terminal attributes.
+   that modify terminal attributes.
 
 0.99.9
 
