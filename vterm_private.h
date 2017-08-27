@@ -87,8 +87,11 @@ struct _vterm_s
                                             */
 
     pid_t           child_pid;              // pid of the child process
-    unsigned int    flags;                              // user options
+    unsigned int    flags;                  // user options
     unsigned int    state;                  // internal state control
+
+    char            *debug_filepath;
+    int             debug_fd;
 
     void            (*write)        (vterm_t*,uint32_t);
     int             (*esc_handler)  (vterm_t*);

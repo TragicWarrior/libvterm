@@ -24,18 +24,20 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
+#include <string.h>
 
-#include <vterm.h>
+#include <../vterm.h>
 
 int screen_w, screen_h;
 WINDOW *term_win;
 
-int main()
+int main(int argc, char **argv)
 {
     vterm_t     *vterm;
     int 		i, j, ch;
 	char		*locale;
     ssize_t     bytes;
+    int         flags = 0;
 
 	locale = setlocale(LC_ALL,"");
 
@@ -51,6 +53,21 @@ int main()
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
+
+    if (argc > 1)
+    {
+        // interate through argv[] looking for params
+        for (i = 1; i < argc; i++)
+        {
+
+            if (strncmp(argv[i], "--dump", 6) == 0)
+            {
+                flags |= VTERM_FLAG_DUMP;
+                continue;
+            }
+        }
+    }
+
 
     /*
         initialize the color pairs the way rote_vt_draw expects it. You might
@@ -87,7 +104,7 @@ int main()
     wrefresh(term_win);
 
     // create the terminal and have it run bash
-    vterm = vterm_create(80,25,VTERM_FLAG_RXVT);
+    vterm = vterm_create(80,25, VTERM_FLAG_RXVT | flags);
     vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);
     vterm_wnd_set(vterm,term_win);
 

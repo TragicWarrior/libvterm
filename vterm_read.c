@@ -46,6 +46,7 @@ vterm_read_pipe(vterm_t *vterm)
     int             bytes_peek = 0;
 	size_t			bytes_waiting;
     ssize_t			bytes_read = 0;
+    ssize_t         bytes_written = 0;
     size_t          bytes_remaining = 0;
     size_t          bytes_total = 0;
     int             retval;
@@ -121,15 +122,12 @@ vterm_read_pipe(vterm_t *vterm)
     // render the data to the offscreen terminal buffer.
     if((bytes_waiting > 0) && (bytes_read != -1))
     {
-
-#ifdef _DEBUG
-        snprintf(debug_file,(sizeof(debug_file) - 1),
-            "/tmp/libvterm-%d-log",vterm->child_pid);
-
-        f_debug = fopen(debug_file,"a");
-        fwrite(buf,sizeof(char),bytes_read,f_debug);
-        fclose(f_debug);
-#endif
+        // write debug information if enabled
+        if(vterm->flags & VTERM_FLAG_DUMP)
+        {
+            bytes_written = write(vterm->debug_fd,
+                (const void *)buf, bytes_read);
+        }
 
         vterm_render(vterm,buf,bytes_read);
     }
@@ -141,5 +139,3 @@ vterm_read_pipe(vterm_t *vterm)
 
     return bytes_waiting - bytes_remaining;
 }
-
-

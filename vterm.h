@@ -84,9 +84,11 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #define LIBVTERM_VERSION       "0.99.10"
 
 #define VTERM_FLAG_RXVT        0                       // default
-#define VTERM_FLAG_VT100       (1<<1)
-#define VTERM_FLAG_NOPTY       (1<<2)  // skip all the fd and pty stuff - just render input args bytestream to a buffer
-#define VTERM_FLAG_NOCURSES    (1<<3)  // skip the curses WINDOW stuff - return the char cell array if required
+#define VTERM_FLAG_VT100       (1 << 1)
+#define VTERM_FLAG_NOPTY       (1 << 2)  // skip all the fd and pty stuff - just render input args bytestream to a buffer
+#define VTERM_FLAG_NOCURSES    (1 << 3)  // skip the curses WINDOW stuff - return the char cell array if required
+
+#define VTERM_FLAG_DUMP        (1 << 8)  // tell libvterm to write stream data to a dump file for debugging
 
 // Need this to be public if we want to expose the buffer to callers.
 struct _vterm_cell_s
