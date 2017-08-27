@@ -35,12 +35,12 @@ void interpret_csi_CUx(vterm_t *vterm,char verb,int param[],int pcount)
 
    switch (verb)
    {
-      case 'A':         vterm->crow -= n;          break;
+      case 'A':         vterm->crow -= n;               break;
       case 'B':
-      case 'e':         vterm->crow += n;          break;
+      case 'e':         vterm->crow += n;               break;
       case 'C':
-      case 'a':         vterm->ccol += n;          break;
-      case 'D':         vterm->ccol -= n;          break;
+      case 'a':         vterm->ccol += n;               break;
+      case 'D':         vterm->ccol -= n;               break;
       case 'E':
       {
          vterm->crow += n;
@@ -63,3 +63,17 @@ void interpret_csi_CUx(vterm_t *vterm,char verb,int param[],int pcount)
 
    return;
 }
+
+/*
+// DEBUG code
+void _write_row_forward(vterm_t *vterm, int len)
+{
+    int i = 0;
+
+    for(i = 0; i < len; i++)
+    {
+        vterm->cells[vterm->crow][i].ch = 'b';
+        vterm->cells[vterm->crow][i].attr = vterm->curattr;
+    }
+}
+*/
