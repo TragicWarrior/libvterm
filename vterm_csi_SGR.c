@@ -57,7 +57,8 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
    if(pcount==0)
    {
-      vterm->curattr=A_NORMAL;                        // reset attributes
+      vterm->curattr = A_NORMAL;                        // reset attributes
+      // vterm->curattr = 0;
       return;
    }
 
@@ -81,10 +82,16 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
          continue;
       }
 
-      if(param[i]==7 || param[i]==27)                 // reverse on
+      if(param[i] == 7)                 // reverse on
       {
          vterm->curattr |= A_REVERSE;
          continue;
+      }
+
+      if(param[i] == 27)
+      {
+            vterm->curattr &= ~(A_REVERSE);
+            continue;
       }
 
       if(param[i]==8)                                 // invisible on
@@ -166,6 +173,8 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
       if(param[i]==39)                                // reset fg color
       {
+          int  attr_saved = 0;
+
          if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
          {
              int fg, bg;
@@ -193,13 +202,20 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 #endif
          }
          if(colors==-1) colors=0;
-         vterm->curattr = 0;
-         vterm->curattr |= COLOR_PAIR(colors);
+
+         if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+
+          vterm->curattr = 0;
+          vterm->curattr |= COLOR_PAIR(colors);
+          vterm->curattr |= attr_saved;
+
          continue;
       }
 
       if(param[i]==49)                                // reset bg color
       {
+          int  attr_saved = 0;
+
          if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
          {
              int fg, bg;
@@ -228,8 +244,13 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 #endif
          }
          if(colors==-1) colors=0;
+
+         if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+
          vterm->curattr = 0;
          vterm->curattr |= COLOR_PAIR(colors);
+         vterm->curattr |= attr_saved;
+
          continue;
       }
    }
