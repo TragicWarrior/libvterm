@@ -66,7 +66,8 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
    {
       if(param[i]==0)                                 // reset attributes
       {
-         vterm->curattr=A_NORMAL;
+         vterm->curattr = A_NORMAL;
+         // vterm->curattr = 0;
          continue;
       }
 
