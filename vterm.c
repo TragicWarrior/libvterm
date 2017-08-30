@@ -143,8 +143,8 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
             signal(SIGINT,SIG_DFL);
 
             // default is rxvt emulation
-            setenv("TERM","rxvt",1);
-
+            setenv("TERM", "rxvt", 1);
+            
             if(flags & VTERM_FLAG_VT100)
             {
                 setenv("TERM","vt100",1);

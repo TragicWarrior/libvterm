@@ -29,11 +29,8 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #include "vterm.h"
 
-// made public - moved to vterm.h
-// void vterm_render(vterm_t *,const char *data,int len);
 void vterm_put_char(vterm_t *vterm,chtype c);
 void vterm_render_ctrl_char(vterm_t *vterm,char c);
 void try_interpret_escape_seq(vterm_t *vterm);
 
 #endif
-

@@ -31,6 +31,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_escape.h"
+#include "vterm_utf8.h"
 
 static void
 vterm_render_ctrl_char(vterm_t *vterm,char c);
@@ -42,7 +43,9 @@ vterm_put_char(vterm_t *vterm,chtype c);
 void
 vterm_render(vterm_t *vterm,const char *data,int len)
 {
-    int i;
+    chtype      utf8_char;
+    int         bytes = -1;
+    int         i;
 
     for (i = 0; i < len; i++, data++)
     {
@@ -51,11 +54,48 @@ vterm_render(vterm_t *vterm,const char *data,int len)
 
         if(!IS_MODE_ESCAPED(vterm))
         {
-            if(*data >= 1 && *data <= 31)
+            if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
             {
                 vterm_render_ctrl_char(vterm,*data);
                 continue;
             }
+        }
+
+        // the non-ascii code points for utf start at 0x80
+        if((unsigned int)*data > 0x7F)
+        {
+            if(!IS_MODE_UTF8(vterm))
+            {
+                vterm_utf8_start(vterm);
+            }
+        }
+
+        if(IS_MODE_UTF8(vterm))
+        {
+            if(vterm->utf8_buf_len >= UTF8_BUF_SIZE)
+            {
+                vterm_utf8_cancel(vterm);
+                continue;
+            }
+
+            // append byte to utf-8 buffer
+            vterm->utf8_buf[vterm->utf8_buf_len] = *data;
+
+            // increment the buffer length and push out the NULL terminator
+            vterm->utf8_buf_len++;
+            vterm->utf8_buf[vterm->utf8_buf_len] = 0;
+
+            // we're in UTF-8 mode... do this
+            bytes = vterm_utf8_decode(vterm, &utf8_char);
+
+            // we're done
+            if (bytes > 0)
+            {
+                vterm_put_char(vterm, utf8_char);
+                vterm_utf8_cancel(vterm);
+            }
+
+            continue;
         }
 
         if(IS_MODE_ESCAPED(vterm))
