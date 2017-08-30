@@ -88,18 +88,26 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
 
     switch (utf8_code)
     {
-        case 0x0000C2B7:    { *utf8_char = ACS_BULLET;          break;}
-
+        /*
+            these should map to ACS Teletype 5410v1 symbols but that
+            doesn't seem to work on many terminals so just render the
+            ascii doppelganger.
+        */
         case 0x00E28092:
         case 0x00E28093:    { *utf8_char = '-';                 break;}
-
-        case 0x00E28094:
-        case 0x00E28095:    { *utf8_char = ACS_HLINE;           break;}
 
         case 0x00E28690:    { *utf8_char = '<';                 break;}
         case 0x00E28691:    { *utf8_char = '^';                 break;}
         case 0x00E28692:    { *utf8_char = '>';                 break;}
         case 0x00E28693:    { *utf8_char = 'v';                 break;}
+
+        case 0x00E296AE:    { *utf8_char = '#';                 break;}
+
+#ifndef NOCURSES
+        case 0x0000C2B7:    { *utf8_char = ACS_BULLET;          break;}
+
+        case 0x00E28094:
+        case 0x00E28095:    { *utf8_char = ACS_HLINE;           break;}
 
         case 0x00E29480:
         case 0x00E29481:    { *utf8_char = ACS_HLINE;           break;}
@@ -120,8 +128,32 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
         case 0x00E29691:
         case 0x00E29692:
         case 0x00E29693:    { *utf8_char = ACS_CKBOARD;         break;}
+#else
+        case 0x0000C2B7:    { *utf8_char = 'o';                 break;}
 
-        case 0x00E296AE:    { *utf8_char = '#';                 break;}
+        case 0x00E28094:
+        case 0x00E28095:    { *utf8_char = '-';                 break;}
+
+        case 0x00E29480:
+        case 0x00E29481:    { *utf8_char = '-';                 break;}
+
+        case 0x00E29482:
+        case 0x00E29483:    { *utf8_char = '|';                 break;}
+
+        case 0x00E2948C:    { *utf8_char = '+';                 break;}
+        case 0x00E29490:    { *utf8_char = '+';                 break;}
+        case 0x00E29494:    { *utf8_char = '+';                 break;}
+        case 0x00E29498:    { *utf8_char = '+';                 break;}
+
+        case 0x00E2949C:    { *utf8_char = '+';                 break;}
+        case 0x00E294A4:    { *utf8_char = '+';                 break;}
+        case 0x00E294AC:	{ *utf8_char = '+';                 break;}
+        case 0x00E294B4:    { *utf8_char = '+';                 break;}
+
+        case 0x00E29691:
+        case 0x00E29692:
+        case 0x00E29693:    { *utf8_char = '#';                 break;}
+#endif
 
         // render a harmless space when we don't know what to do
         default:            { *utf8_char = ' ';                 break;}
