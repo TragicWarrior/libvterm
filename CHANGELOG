@@ -1,3 +1,7 @@
+0.99.14
+
+* [Bryan Christ] added primitive support for UTF-8 handling.
+
 0.99.13
 
 * [Bryan Christ] fixed attribute issue with SGR color setting.
