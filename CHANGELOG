@@ -1,3 +1,7 @@
+0.99.15
+
+* [Bryan Christ] better handling of SGR reset code
+
 0.99.14
 
 * [Bryan Christ] added primitive support for UTF-8 handling.
