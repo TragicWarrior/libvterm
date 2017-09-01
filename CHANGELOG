@@ -1,3 +1,10 @@
+1.00
+
+* [Bryan Christ] fixed a long standing bug in the newline code.
+it was an easy fix but it took me clearing the forest to see
+the tree.  libterm now works great with every piece of test
+software except some utf-8 glyphs don't show.
+
 0.99.16
 
 * [Bryan Christ] security fix to prevent recursion bomb that was
