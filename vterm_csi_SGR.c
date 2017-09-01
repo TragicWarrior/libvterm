@@ -52,9 +52,13 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
 void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
-    int     nested_params[MAX_CSI_ES_PARAMS];
-    int     i;
-    short   colors;
+    int         nested_params[MAX_CSI_ES_PARAMS];
+    int         i;
+    short       colors;
+    static int  depth = 0;
+
+    // this depth counter prevents a recursion bomb.  depth limit is arbitary.
+    if (depth > 6) return;
 
    if(pcount==0)
    {
@@ -72,7 +76,10 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
          // do a nested call to handle it.
          nested_params[0] = 39;
          nested_params[1] = 49;
+
+         depth++;
          interpret_csi_SGR(vterm, nested_params, 2);
+         depth--;
 
          continue;
       }
