@@ -169,7 +169,7 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
         // line-feed
         case '\n':
         {
-            vterm->ccol = 0;
+            // vterm->ccol = 0;
             vterm_scroll_down(vterm);
             break;
         }
