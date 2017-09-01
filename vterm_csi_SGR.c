@@ -52,13 +52,13 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
 void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
-   int   i;
-   short colors;
+    int     nested_params[MAX_CSI_ES_PARAMS];
+    int     i;
+    short   colors;
 
    if(pcount==0)
    {
       vterm->curattr = A_NORMAL;                        // reset attributes
-      // vterm->curattr = 0;
       return;
    }
 
@@ -67,7 +67,13 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
       if(param[i]==0)                                 // reset attributes
       {
          vterm->curattr = A_NORMAL;
-         // vterm->curattr = 0;
+
+         // attribute reset is an implicit color reset too so we'll
+         // do a nested call to handle it.
+         nested_params[0] = 39;
+         nested_params[1] = 49;
+         interpret_csi_SGR(vterm, nested_params, 2);
+
          continue;
       }
 
@@ -241,7 +247,6 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
              pair_content(vterm->colors,&default_fg,&default_bg);
              vterm->bg = default_bg;
              colors=find_color_pair(vterm, vterm->fg,vterm->bg);
-             // colors=find_color_pair(vterm, vterm->bg,vterm->fg);
 #endif
          }
          if(colors==-1) colors=0;
