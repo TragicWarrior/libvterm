@@ -1,3 +1,8 @@
+0.99.16
+
+* [Bryan Christ] security fix to prevent recursion bomb that was
+introduced in 0.99.15
+
 0.99.15
 
 * [Bryan Christ] better handling of SGR reset code
