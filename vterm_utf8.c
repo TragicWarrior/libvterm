@@ -125,7 +125,7 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
         case 0x00E294AC:	{ *utf8_char = ACS_TTEE;            break;}
         case 0x00E294B4:    { *utf8_char = ACS_BTEE;            break;}
 
-        case 0x00E29688:    { *utf8_char = ACS_BLOCK;           break;}
+        case 0x00E29688:    { *utf8_char = ACS_CKBOARD;         break;}
 
         case 0x00E29691:
         case 0x00E29692:
