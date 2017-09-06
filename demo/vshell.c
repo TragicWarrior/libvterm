@@ -26,7 +26,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <locale.h>
 #include <string.h>
 
-#include <../vterm.h>
+#include "../vterm.h"
 
 int screen_w, screen_h;
 WINDOW *term_win;

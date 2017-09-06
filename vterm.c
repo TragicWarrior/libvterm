@@ -45,7 +45,7 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     vterm_t         *vterm;
     struct passwd   *user_profile;
     char            *user_shell = NULL;
-    pid_t           master_pid = 0;
+    // pid_t           master_pid = 0;
     pid_t           child_pid = 0;
     int             master_fd;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
