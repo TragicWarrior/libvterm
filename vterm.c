@@ -103,15 +103,21 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     {
         // setup the base filepath for the dump file
         vterm->debug_filepath = (char*)calloc(PATH_MAX + 1,sizeof(char));
-        getcwd(vterm->debug_filepath, PATH_MAX);
-
-        pos = vterm->debug_filepath;
-        pos += strlen(vterm->debug_filepath);
-        if (pos[0] != '/')
-        {
+        if( getcwd(vterm->debug_filepath, PATH_MAX)==NULL )
+          {
+          fprintf(stderr,"ERROR: Failed to getcwd()\n");
+          pos = 0;
+          }
+        else
+          {
+          pos = vterm->debug_filepath;
+          pos += strlen(vterm->debug_filepath);
+          if (pos[0] != '/')
+            {
             pos[0] = '/';
             pos++;
-        }
+            }
+          }
     }
 
     // initial scrolling area is the whole window

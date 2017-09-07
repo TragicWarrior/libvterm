@@ -127,6 +127,11 @@ vterm_read_pipe(vterm_t *vterm)
         {
             bytes_written = write(vterm->debug_fd,
                 (const void *)buf, bytes_read);
+            if( bytes_written != bytes_read )
+              {
+              fprintf(stderr,"ERROR: wrote fewer bytes to debug than read (%d w / %d r)\n",
+                  (int)bytes_written, (int)bytes_read );
+              }
         }
 
         vterm_render(vterm,buf,bytes_read);

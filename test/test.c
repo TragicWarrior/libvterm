@@ -38,6 +38,14 @@ dimensions are the same as the dimensions in the capture file.
 #define DISPLAY_INTERVAL 1
 #define MAX_CHARS_IN_BUF 20
 
+#define DEBUG
+
+#ifdef DEBUG
+#  define DEBUG_fputs(A) fputs(A,debug)
+#else
+#  define DEBUG_fputs(A) 
+#endif
+
 int GetTerminalDimensions( int* rows, int* cols )
   {
   int err;
@@ -88,59 +96,95 @@ void ResetAttribute()
   fputs( "40m", stdout ); // black background
   }
 
-void ProcessAttribute( int attr )
+#ifdef DEBUG
+  FILE *debug = NULL;
+  int randCol = 0;
+#endif
+
+int lastFG = -1;
+int lastBG = -1;
+
+void ProcessAttribute( int attr, int row, int col )
   {
+#ifdef DEBUG
+  if( debug==NULL )
+    {
+    debug = fopen("/tmp/debug.log","w");
+    }
+#endif
+
   if( attr & A_BOLD )
     {
     fputs( CSI, stdout );
     fputs( "1m", stdout );
+    DEBUG_fputs( "(bold)\n" );
     }
 
   if( attr & A_BLINK )
     {
     fputs( CSI, stdout );
     fputs( "5m", stdout );
+    DEBUG_fputs("(blink)\n" );
     }
 
   if( attr & A_REVERSE )
     {
     fputs( CSI, stdout );
     fputs( "7m", stdout );
+    DEBUG_fputs("(reverse)\n" );
     }
 
   if( attr & A_INVIS )
     {
     fputs( CSI, stdout );
     fputs( "8m", stdout );
+    DEBUG_fputs("(invis)\n" );
     }
 
   int attrCol = (attr & 0xff00)>>8;
-  // int attrCol = (attr & 0x00ff);
+
   int fg = -1;
   int bg = -1;
   if( GetFGBGFromColorIndex( attrCol, &fg, &bg )==0 )
     {
-    if( fg>=0 && fg<8 )
+#ifdef DEBUG
+    if( (bg==0 && fg==0)
+        || (bg!=lastBG && fg!=lastBG) )
       {
-      fputs( CSI, stdout );
-      fprintf( stdout, "%dm", fg+30 );
+      fprintf(debug,"(fg=%d, bg=%d @ %d,%d )\n", fg, bg, row, col);
       }
-    else
+#endif
+    if( fg!=lastFG )
       {
-      printf("Invalid fg color: %d\n", fg );
+      if( fg>=0 && fg<8 )
+        {
+        fputs( CSI, stdout );
+        fprintf( stdout, "%dm", fg+30 );
+        }
+      else
+        {
+        printf("Invalid fg color: %d\n", fg );
+        }
+      lastFG = fg;
       }
-    if( bg>=0 && bg<8 )
+
+    if( bg!=lastBG )
       {
-      fputs( CSI, stdout );
-      fprintf( stdout, "%dm", bg+40 );
-      }
-    else
-      {
-      printf("Invalid bg color: %d\n", bg );
+      if( bg>=0 && bg<8 )
+        {
+        fputs( CSI, stdout );
+        fprintf( stdout, "%dm", bg+40 );
+        }
+      else
+        {
+        printf("Invalid bg color: %d\n", bg );
+        }
+      lastBG = bg;
       }
     }
   else
     {
+    DEBUG_fputs("(invalid color)\n" );
     printf("Invalid color index: %d\n", attrCol );
     }
   }
@@ -156,6 +200,14 @@ void PrintTermBuffer( vterm_t* vt )
   int h = -1;
   int w = -1;
 
+#ifdef DEBUG
+  if( debug==NULL )
+    {
+    debug = fopen("/tmp/debug.log","w");
+    }
+#endif
+
+  DEBUG_fputs("New TermBuffer\n" );
   vterm_get_size( vt, &w, &h );
 
   CursorTopLeft();
@@ -180,7 +232,7 @@ void PrintTermBuffer( vterm_t* vt )
           c = crow->ch;
           if( a != crow->attr )
             {
-            ProcessAttribute( crow->attr );
+            ProcessAttribute( crow->attr, i, j );
             }
           a = crow->attr;
           fputc(c,stdout);
@@ -258,6 +310,20 @@ void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
         fileSize += n;
         charsSincePrint += n;
         vterm_render( vt, buf, n );
+#ifdef DEBUG
+        if( debug==NULL )
+          {
+          debug = fopen("/tmp/debug.log","w");
+          }
+        int i;
+        fputs("DATA:\n", debug );
+        for( i=0; i<n; ++i )
+          {
+          int c = buf[i];
+          fputc( c, debug );
+          }
+        fputs("===\n", debug );
+#endif
         }
       if( n==0 )
         {
