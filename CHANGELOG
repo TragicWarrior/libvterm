@@ -1,3 +1,7 @@
+1.10
+
+* [Bryan Christ] convert to CMake build system
+
 1.00
 
 * [Bryan Christ] fixed a long standing bug in the newline code.
