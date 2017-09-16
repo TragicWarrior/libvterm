@@ -92,7 +92,7 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
     else
     {
         bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
-        if( bytes_written != strlen(buffer) )
+        if( bytes_written != (ssize_t)strlen(buffer) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
         }
@@ -152,7 +152,7 @@ vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
     else
     {
         bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
-        if( bytes_written != strlen(buffer) )
+        if( bytes_written != (ssize_t)strlen(buffer) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
         }

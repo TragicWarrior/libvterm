@@ -26,9 +26,12 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 void interpret_csi_RESTORECUR(vterm_t *vterm,int param[],int pcount)
 {
-   vterm->ccol=vterm->saved_x;
-   vterm->crow=vterm->saved_y;
+    vterm->ccol=vterm->saved_x;
+    vterm->crow=vterm->saved_y;
 
-   return;
+    (void)param;
+    (void)pcount;
+
+    return;
 }
 

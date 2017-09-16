@@ -35,11 +35,10 @@ int main(int argc, char **argv)
 {
     vterm_t     *vterm;
     int 		i, j, ch;
-	char		*locale;
     ssize_t     bytes;
     int         flags = 0;
 
-	locale = setlocale(LC_ALL,"");
+	setlocale(LC_ALL,"UTF-8");
 
     initscr();
     noecho();
