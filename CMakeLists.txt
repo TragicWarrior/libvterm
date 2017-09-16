@@ -88,13 +88,17 @@ add_library(vterm-shared SHARED
     $<TARGET_OBJECTS:vterm.o>
     )
 
+if (Curses_FOUND)
 add_executable(vshell
     demo/vshell.c
     )
+endif()
 
-#target_link_libraries(vterm-static -lutil)
-#target_link_libraries(vterm-shared -lutil)
+if (Curses_FOUND)
 target_link_libraries(vshell vterm-shared vterm-static -lutil ${CURSES_LIBRARIES} )
+else()
+target_link_libraries(vterm-shared vterm-static -lutil ${CURSES_LIBRARIES} )
+endif()
 
 # CMake doesn't allow targets with the same name.  This renames them properly afterward.
 SET_TARGET_PROPERTIES(vterm-static PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUTPUT 1)
