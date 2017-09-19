@@ -128,7 +128,7 @@ vterm_render(vterm_t *vterm,const char *data,int len)
 void
 vterm_put_char(vterm_t *vterm,chtype c)
 {
-	static char		vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
+    static char vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
 
     if(vterm->ccol >= vterm->cols)
     {
@@ -138,7 +138,7 @@ vterm_put_char(vterm_t *vterm,chtype c)
 
     if(IS_MODE_ACS(vterm))
     {
-	    if(strchr(vt100_acs,(char)c)!=NULL)
+        if(strchr(vt100_acs,(char)c)!=NULL)
         {
             vterm->cells[vterm->crow][vterm->ccol].ch = NCURSES_ACS(c);
         }
@@ -199,7 +199,7 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
         case '\x0E':
         {
             vterm->state |= STATE_ALT_CHARSET;
-        	break;
+            break;
         }
 
         // exit graphical character mode

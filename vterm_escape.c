@@ -40,6 +40,9 @@ vterm_interpret_esc_normal(vterm_t *vterm);
 static int
 vterm_interpret_esc_xterm_osc(vterm_t *vterm);
 
+static int
+vterm_interpret_esc_xterm_dsc(vterm_t *vterm);
+
 static bool
 validate_csi_escape_suffix(char c);
 
@@ -77,42 +80,43 @@ vterm_escape_cancel(vterm_t *vterm)
 void
 vterm_interpret_escapes(vterm_t *vterm)
 {
-	char	firstchar;
-   	char	lastchar;
+    char    firstchar;
+    char    lastchar;
 #ifdef _DEBUG
     FILE            *f_debug;
     char            debug_file[NAME_MAX];
 #endif
 
     firstchar = vterm->esbuf[0];
-   	lastchar = vterm->esbuf[vterm->esbuf_len - 1];
+    lastchar = vterm->esbuf[vterm->esbuf_len - 1];
 
 #ifdef _DEBUG
-        snprintf(debug_file,(sizeof(debug_file) - 1),
-            "/tmp/libvterm-%d-esc-log",vterm->child_pid);
+    snprintf(debug_file,(sizeof(debug_file) - 1),
+        "/tmp/libvterm-%d-esc-log",vterm->child_pid);
 
-        f_debug = fopen(debug_file,"w");
-        fwrite(vterm->esbuf,sizeof(char),vterm->esbuf_len,f_debug);
-        fclose(f_debug);
+    f_debug = fopen(debug_file,"w");
+    fwrite(vterm->esbuf,sizeof(char),vterm->esbuf_len,f_debug);
+    fclose(f_debug);
 #endif
 
-   	// too early to do anything
-   	if(!firstchar) return;
+    // too early to do anything
+    if(!firstchar) return;
 
-   	// interpret ESC-M as reverse line-feed
-   	if(firstchar == 'M')
+    // interpret ESC-M as reverse line-feed
+    if(firstchar == 'M')
     {
-    	vterm_scroll_up(vterm);
-      	vterm_escape_cancel(vterm);
+        vterm_scroll_up(vterm);
+        vterm_escape_cancel(vterm);
 
-      	return;
-   	}
+        return;
+    }
 
-   	if(firstchar != '[' && firstchar != ']')
-   	{
-    	vterm_escape_cancel(vterm);
-      	return;
-   	}
+    // if it's not these, we don't have code to handle it.
+    if(firstchar != '[' && firstchar != ']' && firstchar != 'P' )
+    {
+        vterm_escape_cancel(vterm);
+        return;
+    }
 
     // looks like an complete xterm Operating System Command
     if(firstchar == ']' && validate_xterm_escape_suffix(lastchar))
@@ -120,24 +124,32 @@ vterm_interpret_escapes(vterm_t *vterm)
         vterm->esc_handler = vterm_interpret_esc_xterm_osc;
     }
 
-   	// we have a complete csi escape sequence: interpret it
-   	if(firstchar == '[' && validate_csi_escape_suffix(lastchar))
-   	{
+    // we have a complete csi escape sequence: interpret it
+    if(firstchar == '[' && validate_csi_escape_suffix(lastchar))
+       {
         vterm->esc_handler = vterm_interpret_esc_normal;
-   	}
+       }
+
+    // DCS sequence - starts in P and ends in Esc backslash
+    if( firstchar == 'P'
+        && vterm->esbuf_len > 2
+        && vterm->esbuf[vterm->esbuf_len - 2] == '\x1B'
+        && lastchar=='\\' )
+    {
+        vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
+    }
 
     // if an escape handler has been configured, run it.
     if(vterm->esc_handler != NULL)
     {
         vterm->esc_handler(vterm);
-
         vterm_escape_cancel(vterm);
 
         return;
     }
 
 
-   	return;
+    return;
 }
 
 int
@@ -189,6 +201,33 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
                 break;
          }
     }
+
+    return 0;
+}
+
+int
+vterm_interpret_esc_xterm_dsc(vterm_t *vterm)
+{
+    /*
+        TODO
+
+        accept DSC (ESC-P) sequences from xterm but don't do anything
+        with them - just toss them to /dev/null for now.
+    */
+
+    const char  *p;
+
+    p = vterm->esbuf + 1;
+
+    if( *p=='+'
+        && *(p+1)=='q'
+        && isxdigit( *(p+2) )
+        && isxdigit( *(p+3) )
+        && isxdigit( *(p+4) )
+        && isxdigit( *(p+5) ) )
+        {
+        /* we have a valid code, and we'll promptly ignore it */
+        }
 
     return 0;
 }
