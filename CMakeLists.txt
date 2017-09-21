@@ -116,7 +116,10 @@ configure_file(
   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
 )
 
+if (Curses_FOUND)
 install (TARGETS vshell DESTINATION bin)
+endif()
+
 install (TARGETS vterm-static vterm-shared DESTINATION lib)
 install (FILES vterm.h DESTINATION include)
 
