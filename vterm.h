@@ -24,7 +24,6 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
    Contrast with VTERM_FLAG_NOCURSES which does not impact the link
    dependencies but suppresses *use* of curses at runtime.
 */
-#define NOCURSES
 
 #ifndef _VTERM_H_
 #define _VTERM_H_

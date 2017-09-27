@@ -31,6 +31,10 @@ interpret_csi_UNKNOWN(vterm_t *vterm, int param[], int pcount)
 {
     // STUB function
 
+    (void)vterm;
+    (void)param;
+    (void)pcount;
+
     return;
 }
 
