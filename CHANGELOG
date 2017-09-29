@@ -1,3 +1,8 @@
+1.11
+
+* [Bryan Christ] improved SGR handling of colors and attributes
+  which improves cdw and myman compatibility.
+
 1.10
 
 * [Bryan Christ] convert to CMake build system
