@@ -50,7 +50,8 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_colors.h"
 
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
-void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
+void
+interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
     int         nested_params[MAX_CSI_ES_PARAMS];
     int         i;
@@ -60,211 +61,226 @@ void interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     // this depth counter prevents a recursion bomb.  depth limit is arbitary.
     if (depth > 6) return;
 
-   if(pcount==0)
-   {
-      vterm->curattr = A_NORMAL;                        // reset attributes
-      return;
-   }
+    if(pcount == 0)
+    {
+        vterm->curattr = A_NORMAL;                      // reset attributes
+        return;
+    }
 
-   for(i=0;i<pcount;i++)
-   {
-      if(param[i]==0)                                 // reset attributes
-      {
-         vterm->curattr = A_NORMAL;
+    for(i = 0;i < pcount;i++)
+    {
+        if(param[i] == 0)                               // reset attributes
+        {
+            vterm->curattr = A_NORMAL;
 
-         // attribute reset is an implicit color reset too so we'll
-         // do a nested call to handle it.
-         nested_params[0] = 39;
-         nested_params[1] = 49;
+            // attribute reset is an implicit color reset too so we'll
+            // do a nested call to handle it.
+            nested_params[0] = 39;
+            nested_params[1] = 49;
 
-         depth++;
-         interpret_csi_SGR(vterm, nested_params, 2);
-         depth--;
+            depth++;
 
-         continue;
-      }
+            interpret_csi_SGR(vterm, nested_params, 2);
+            depth--;
 
-      if(param[i]==1 || param[i]==2 || param[i]==4)   // bold on
-      {
-         vterm->curattr |= A_BOLD;
-         continue;
-      }
+            continue;
+        }
 
-      if(param[i]==5)                                 // blink on
-      {
-         vterm->curattr |= A_BLINK;
-         continue;
-      }
+        if(param[i]==1 || param[i]==2 || param[i]==4)       // bold on
+        {
+            vterm->curattr |= A_BOLD;
+            continue;
+        }
 
-      if(param[i] == 7)                 // reverse on
-      {
-         vterm->curattr |= A_REVERSE;
-         continue;
-      }
+        if(param[i] == 5)                                   // blink on
+        {
+            vterm->curattr |= A_BLINK;
+            continue;
+        }
 
-      if(param[i] == 27)
-      {
+        if(param[i] == 7)                                   // reverse on
+        {
+            vterm->curattr |= A_REVERSE;
+            continue;
+        }
+
+        if(param[i] == 27)
+        {
             vterm->curattr &= ~(A_REVERSE);
             continue;
-      }
+        }
 
-      if(param[i]==8)                                 // invisible on
-      {
-         vterm->curattr |= A_INVIS;
-         continue;
-      }
+        if(param[i] == 8)                                 // invisible on
+        {
+            vterm->curattr |= A_INVIS;
+            continue;
+        }
 
-      if(param[i]==10)                                // rmacs
-      {
-         vterm->state &= ~STATE_ALT_CHARSET;
-         continue;
-      }
+        if(param[i] == 10)                                // rmacs
+        {
+            vterm->state &= ~STATE_ALT_CHARSET;
+            continue;
+        }
 
-		if(param[i]==11)                                // smacs
-      {
-         vterm->state |= STATE_ALT_CHARSET;
-         continue;
-      }
+		if(param[i] == 11)                                // smacs
+        {
+            vterm->state |= STATE_ALT_CHARSET;
+            continue;
+        }
 
-      if(param[i]==22 || param[i]==24)                // bold off
-      {
-         vterm->curattr &= ~A_BOLD;
-         continue;
-      }
+        if(param[i] == 22 || param[i] == 24)                // bold off
+        {
+            vterm->curattr &= ~A_BOLD;
+            continue;
+        }
 
-      if(param[i]==25)                                // blink off
-      {
-         vterm->curattr &= ~A_BLINK;
-         continue;
-      }
+        if(param[i] == 25)                                // blink off
+        {
+            vterm->curattr &= ~A_BLINK;
+            continue;
+        }
 
-      if(param[i]==28)                                // invisible off
-      {
-         vterm->curattr &= ~A_INVIS;
-         continue;
-      }
+        if(param[i] == 28)                                // invisible off
+        {
+            vterm->curattr &= ~A_INVIS;
+            continue;
+        }
 
-      if(param[i] >= 30 && param[i] <= 37)            // set fg color
-      {
-          int  attr_saved = 0;
+        if(param[i] >= 30 && param[i] <= 37)            // set fg color
+        {
+            int  attr_saved = 0;
 
-          vterm->fg=param[i]-30;
+            vterm->fg = param[i] - 30;
 
-          if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-            colors = FindColorPair( vterm->fg, vterm->bg );
+            if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+                colors = FindColorPair( vterm->fg, vterm->bg );
             else
-             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
-         if(colors==-1)
-             colors=0;
+                colors = find_color_pair(vterm, vterm->fg, vterm->bg);
 
-         if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if(colors == -1)
+                colors = 0;
 
-          vterm->curattr = 0;
-          vterm->curattr |= COLOR_PAIR(colors);
-          vterm->curattr |= attr_saved;
-         continue;
-      }
+            /*
+                changing color turns off A_BOLD but not A_REVERSE so we need
+                to preserve that attr.
+            */
+            if(vterm->curattr & A_REVERSE) attr_saved |= A_REVERSE;
 
-      if(param[i] >= 40 && param[i] <= 47)            // set bg color
-      {
-          int  attr_saved = 0;
+            vterm->curattr = 0;
+            vterm->curattr |= COLOR_PAIR(colors);
+            vterm->curattr |= attr_saved;
 
-         vterm->bg=param[i]-40;
-         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-             colors = FindColorPair( vterm->fg, vterm->bg );
-         else
-             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
-         if(colors==-1)
-             colors=0;
+            continue;
+        }
 
-        if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+        if(param[i] >= 40 && param[i] <= 47)            // set bg color
+        {
+            int  attr_saved = 0;
 
-         vterm->curattr = 0;
-         vterm->curattr |= COLOR_PAIR(colors);
-         vterm->curattr |= attr_saved;
-         continue;
-      }
+            vterm->bg = param[i]-40;
+            if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+                colors = FindColorPair( vterm->fg, vterm->bg );
+            else
+                colors = find_color_pair(vterm, vterm->fg, vterm->bg);
 
-      if(param[i]==39)                                // reset fg color
-      {
-          int  attr_saved = 0;
+            if(colors == -1)
+                colors = 0;
 
-         if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-         {
-             int fg, bg;
-             if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
-             {
-                 vterm->fg = fg;
-                 colors = FindColorPair( vterm->fg, vterm->bg );
-             }
-             else
-             {
-                 colors = -1;
-             }
-         }
-         else
-         {
+            /*
+                changing color turns off A_BOLD but not A_REVERSE so we need
+                to preserve that attr.
+            */
+            if(vterm->curattr & A_REVERSE) attr_saved |= A_REVERSE;
+
+            vterm->curattr = 0;
+            vterm->curattr |= COLOR_PAIR(colors);
+            vterm->curattr |= attr_saved;
+
+            continue;
+        }
+
+        if(param[i] == 39)                                // reset fg color
+        {
+            int  attr_saved = 0;
+
+            if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+            {
+                int fg, bg;
+                if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
+                {
+                    vterm->fg = fg;
+                    colors = FindColorPair( vterm->fg, vterm->bg );
+                }
+                else
+                {
+                    colors = -1;
+                }
+            }
+            else
+            {
 #ifdef NOCURSES
-             // should not ever execute - bad combination of flags and
-             // #define's.
-             colors = -1;
+                // should not ever execute - bad combination of flags and
+                // #define's.
+                colors = -1;
 #else
-             short default_fg,default_bg;
-             pair_content(vterm->colors,&default_fg,&default_bg);
-             vterm->fg = default_fg;
-             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+                short default_fg,default_bg;
+                pair_content(vterm->colors, &default_fg, &default_bg);
+                vterm->fg = default_fg;
+                colors = find_color_pair(vterm, vterm->fg, vterm->bg);
 #endif
-         }
-         if(colors==-1) colors=0;
+            }
+            if(colors == -1) colors = 0;
 
-         if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if(vterm->curattr & A_REVERSE) attr_saved |= A_REVERSE;
 
-          vterm->curattr = 0;
-          vterm->curattr |= COLOR_PAIR(colors);
-          vterm->curattr |= attr_saved;
+            vterm->curattr = 0;
+            vterm->curattr |= COLOR_PAIR(colors);
+            vterm->curattr |= attr_saved;
 
-         continue;
-      }
+            continue;
+        }
 
-      if(param[i]==49)                                // reset bg color
-      {
-          int  attr_saved = 0;
+        if(param[i] == 49)                                // reset bg color
+        {
+            int  attr_saved = 0;
 
-         if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
-         {
-             int fg, bg;
-             if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
-             {
-                 vterm->bg = bg;
-                 colors = FindColorPair( vterm->fg, vterm->bg );
-             }
-             else
-             {
-                 colors = -1;
-             }
-         }
-         else
-         {
+            if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
+            {
+                int fg, bg;
+                if( GetFGBGFromColorIndex( vterm->colors, &fg, &bg )==0 )
+                {
+                    vterm->bg = bg;
+                    colors = FindColorPair( vterm->fg, vterm->bg );
+                }
+                else
+                {
+                    colors = -1;
+                }
+            }
+            else
+            {
 #ifdef NOCURSES
-             // should not ever execute - bad combination of flags and
-             // #define's.
-             colors = -1;
+                // should not ever execute - bad combination of flags and
+                // #define's.
+                colors = -1;
 #else
-             short default_fg,default_bg;
-             pair_content(vterm->colors,&default_fg,&default_bg);
-             vterm->bg = default_bg;
-             colors=find_color_pair(vterm, vterm->fg,vterm->bg);
+                short default_fg, default_bg;
+                pair_content(vterm->colors, &default_fg, &default_bg);
+                vterm->bg = default_bg;
+                colors = find_color_pair(vterm, vterm->fg,vterm->bg);
 #endif
-         }
-         if(colors==-1) colors=0;
+            }
+            if(colors == -1) colors = 0;
 
-         if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if (vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if (vterm->curattr & A_REVERSE) attr_saved |= A_REVERSE;
 
-         vterm->curattr = 0;
-         vterm->curattr |= COLOR_PAIR(colors);
-         vterm->curattr |= attr_saved;
+            vterm->curattr = 0;
+            vterm->curattr |= COLOR_PAIR(colors);
+            vterm->curattr |= attr_saved;
 
-         continue;
-      }
-   }
+            continue;
+        }
+    }
 }
