@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(libvterm)
 
+option(DEFINE_CURSES "Build with curses" ON)
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fPIC")
 set(PROJECT_DESCRIPTION "A rxvt/vt100 terminal emulator library written in C.")
 
@@ -17,6 +19,10 @@ add_definitions("-D_POSIX_C_SOURCE=200112L")
 
 set(CURSES_NEED_NCURSES "TRUE")
 find_package(Curses)
+
+if (!DEFINE_CURSES)
+    add_definitions("-DNOCURSES")
+endif()
 
 if (!Curses_FOUND)
     add_definitions("-DNOCURSES")
@@ -89,12 +95,14 @@ add_library(vterm-shared SHARED
     )
 
 if (Curses_FOUND)
-add_executable(vshell
-    demo/vshell.c
-    )
+    if(DEFINE_CURSES)
+        add_executable(vshell
+            demo/vshell.c
+            )
+    endif(DEFINE_CURSES)
 endif()
 
-if (Curses_FOUND)
+if ((Curses_FOUND) AND (DEFINE_CURSES))
 target_link_libraries(vshell vterm-shared vterm-static -lutil ${CURSES_LIBRARIES} )
 else()
 target_link_libraries(vterm-shared vterm-static -lutil ${CURSES_LIBRARIES} )
@@ -117,7 +125,9 @@ configure_file(
 )
 
 if (Curses_FOUND)
-install (TARGETS vshell DESTINATION bin)
+    if(DEFINE_CURSES)
+        install (TARGETS vshell DESTINATION bin)
+    endif(DEFINE_CURSES)
 endif()
 
 install (TARGETS vterm-static vterm-shared DESTINATION lib)
