@@ -1,3 +1,8 @@
+1.12
+
+* [Bryan Christ] modified build so that curses can be intentionally
+  ignored by specifiying 'cmake -DDEFINE_CURSES=OFF'
+
 1.11
 
 * [Bryan Christ] improved SGR handling of colors and attributes

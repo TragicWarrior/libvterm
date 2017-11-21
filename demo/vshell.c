@@ -25,11 +25,20 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <signal.h>
 #include <locale.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "../vterm.h"
 
 int screen_w, screen_h;
-WINDOW *term_win;
+// WINDOW *term_win;
+
+typedef struct
+{
+    WINDOW  *term_win;
+}
+testwin_t;
+
+#define VWINDOW(x)  (*(WINDOW**)x)
 
 int main(int argc, char **argv)
 {
@@ -37,6 +46,8 @@ int main(int argc, char **argv)
     int 		i, j, ch;
     ssize_t     bytes;
     int         flags = 0;
+    testwin_t   *twin;
+
 
 	setlocale(LC_ALL,"UTF-8");
 
@@ -52,6 +63,8 @@ int main(int argc, char **argv)
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
+
+    twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
     if (argc > 1)
     {
@@ -97,15 +110,15 @@ int main(int argc, char **argv)
     refresh();
 
     // create a window with a frame
-    term_win = newwin(25,80,1,4);
-    wattrset(term_win, COLOR_PAIR(7*8+7-0));        // black over white
-    mvwprintw(term_win, 0, 27, " Term In a Box ");
-    wrefresh(term_win);
+    VWINDOW(twin) = newwin(25,80,1,4);
+    wattrset(VWINDOW(twin), COLOR_PAIR(7*8+7-0));        // black over white
+    mvwprintw(VWINDOW(twin), 0, 27, " Term In a Box ");
+    wrefresh(VWINDOW(twin));
 
     // create the terminal and have it run bash
     vterm = vterm_create(80,25, VTERM_FLAG_RXVT | flags);
     vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);
-    vterm_wnd_set(vterm,term_win);
+    vterm_wnd_set(vterm, VWINDOW(twin));
 
     /*
         keep reading keypresses from the user and passing them to
@@ -119,8 +132,8 @@ int main(int argc, char **argv)
         if(bytes > 0)
         {
             vterm_wnd_update(vterm);
-            touchwin(term_win);
-            wrefresh(term_win);
+            touchwin(VWINDOW(twin));
+            wrefresh(VWINDOW(twin));
             refresh();
         }
 
