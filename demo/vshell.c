@@ -72,9 +72,15 @@ int main(int argc, char **argv)
         for (i = 1; i < argc; i++)
         {
 
-            if (strncmp(argv[i], "--dump", 6) == 0)
+            if (strncmp(argv[i], "--dump", strlen("--dump")) == 0)
             {
                 flags |= VTERM_FLAG_DUMP;
+                continue;
+            }
+
+            if (strncmp(argv[i], "--vt100", strlen("--vt100")) == 0)
+            {
+                flags |= VTERM_FLAG_VT100;
                 continue;
             }
         }

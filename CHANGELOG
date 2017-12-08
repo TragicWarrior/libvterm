@@ -1,3 +1,8 @@
+1.13
+
+* [Bryan Christ] added --vt100 command line parameter for
+  vshell demo program.
+
 1.12
 
 * [Bryan Christ] modified build so that curses can be intentionally
