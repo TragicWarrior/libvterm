@@ -24,7 +24,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <pty.h>
 #include <stdio.h>
 #include <string.h>
-#include <pwd.h>
+// #include <pwd.h>
 #include <utmp.h>
 #include <termios.h>
 #include <signal.h>
@@ -38,19 +38,18 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_write.h"
+#include "vterm_exec.h"
 
 vterm_t*
 vterm_create(uint16_t width,uint16_t height,unsigned int flags)
 {
     vterm_t         *vterm;
-    struct passwd   *user_profile;
-    char            *user_shell = NULL;
-    // pid_t           master_pid = 0;
     pid_t           child_pid = 0;
     int             master_fd;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     int             i;
     char            *pos = NULL;
+    int             retval;
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
@@ -103,21 +102,21 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
     {
         // setup the base filepath for the dump file
         vterm->debug_filepath = (char*)calloc(PATH_MAX + 1,sizeof(char));
-        if( getcwd(vterm->debug_filepath, PATH_MAX)==NULL )
-          {
-          fprintf(stderr,"ERROR: Failed to getcwd()\n");
-          pos = 0;
-          }
+        if( getcwd(vterm->debug_filepath, PATH_MAX) == NULL )
+        {
+            fprintf(stderr,"ERROR: Failed to getcwd()\n");
+            pos = 0;
+        }
         else
-          {
-          pos = vterm->debug_filepath;
-          pos += strlen(vterm->debug_filepath);
-          if (pos[0] != '/')
+        {
+            pos = vterm->debug_filepath;
+            pos += strlen(vterm->debug_filepath);
+            if (pos[0] != '/')
             {
-            pos[0] = '/';
-            pos++;
+                pos[0] = '/';
+                pos++;
             }
-          }
+        }
     }
 
     // initial scrolling area is the whole window
@@ -150,24 +149,15 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
 
             // default is rxvt emulation
             setenv("TERM", "rxvt", 1);
-            
+
             if(flags & VTERM_FLAG_VT100)
             {
                 setenv("TERM","vt100",1);
             }
 
-            user_profile = getpwuid(getuid());
-            if(user_profile == NULL) user_shell = "/bin/sh";
-            else if(user_profile->pw_shell == NULL) user_shell = "/bin/sh";
-            else user_shell = user_profile->pw_shell;
+            retval = vterm_exec_binary(vterm);
 
-            if(user_shell == NULL) user_shell="/bin/sh";
-
-            // start the shell
-            if(execl(user_shell,user_shell,"-l",NULL) == -1)
-            {
-                exit(EXIT_FAILURE);
-            }
+            if(retval == -1) exit(EXIT_FAILURE);
 
             exit(EXIT_SUCCESS);
         }
@@ -233,3 +223,4 @@ vterm_get_ttyname(vterm_t *vterm)
 
    return (const char*)vterm->ttyname;
 }
+

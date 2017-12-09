@@ -99,9 +99,12 @@ struct _vterm_s
                                                     attached to this terminal.
                                                 */
 
-    pid_t           child_pid;                  // pid of the child process
-    unsigned int    flags;                      // user options
-    unsigned int    state;                      // internal state control
+    pid_t           child_pid;                  //  pid of the child process
+    unsigned int    flags;                      //  user options
+    unsigned int    state;                      //  internal state control
+
+    char            *exec_path;                 //  optional binary path to use
+    char            **exec_argv;                //  instead of starting shell.
 
     char            *debug_filepath;
     int             debug_fd;
