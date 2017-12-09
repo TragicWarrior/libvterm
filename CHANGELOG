@@ -1,3 +1,11 @@
+2.0
+
+* [Bryan Christ] API change that enables caller to pass in an
+  alternate binary path which uses execv() to launch.  In
+  compliment to this change the vshell demo program was updated
+  with a --exec paramenter to support passing in programs from
+  the command line.
+
 1.13
 
 * [Bryan Christ] added --vt100 command line parameter for
@@ -20,14 +28,14 @@
 1.00
 
 * [Bryan Christ] fixed a long standing bug in the newline code.
-it was an easy fix but it took me clearing the forest to see
-the tree.  libterm now works great with every piece of test
-software except some utf-8 glyphs don't show.
+  it was an easy fix but it took me clearing the forest to see
+  the tree.  libterm now works great with every piece of test
+  software except some utf-8 glyphs don't show.
 
 0.99.16
 
 * [Bryan Christ] security fix to prevent recursion bomb that was
-introduced in 0.99.15
+  introduced in 0.99.15
 
 0.99.15
 

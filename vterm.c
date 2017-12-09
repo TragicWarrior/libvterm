@@ -41,9 +41,18 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_exec.h"
 
 vterm_t*
-vterm_create(uint16_t width,uint16_t height,unsigned int flags)
+vterm_alloc(void)
 {
-    vterm_t         *vterm;
+    vterm_t *vterm;
+
+    vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
+
+    return  vterm;
+}
+
+vterm_t*
+vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
+{
     pid_t           child_pid = 0;
     int             master_fd;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
@@ -57,7 +66,8 @@ vterm_create(uint16_t width,uint16_t height,unsigned int flags)
 
     if(height <= 0 || width <= 0) return NULL;
 
-    vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
+    if(vterm == NULL)
+        vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
 
     // record dimensions
     vterm->rows = height;

@@ -28,9 +28,9 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <stdlib.h>
 
 #include "../vterm.h"
+#include "../strings.h"
 
 int screen_w, screen_h;
-// WINDOW *term_win;
 
 typedef struct
 {
@@ -47,6 +47,9 @@ int main(int argc, char **argv)
     ssize_t     bytes;
     int         flags = 0;
     testwin_t   *twin;
+    char        *exec_path = NULL;
+    char        **exec_argv = NULL;
+    int         count = 1;
 
 
 	setlocale(LC_ALL,"UTF-8");
@@ -82,6 +85,32 @@ int main(int argc, char **argv)
             {
                 flags |= VTERM_FLAG_VT100;
                 continue;
+            }
+
+            if (strncmp(argv[i], "--exec", strlen("--exec")) == 0)
+            {
+                // must have at least exec path
+                i++;
+                if (i < argc)
+                {
+                    exec_path = strdup(argv[i]);
+
+                    // first arg shouldbe same as path
+                    exec_argv = (char **)calloc(argc, sizeof(char *));
+                    exec_argv[0] = strdup(argv[i]);
+                    i++;
+                }
+
+                count = 1;
+                while(i < argc)
+                {
+                    exec_argv[count] = strdup(argv[i]);
+                    count++;
+                    i++;
+                }
+
+                // this will always be the last set of params we handle
+                break;
             }
         }
     }
@@ -122,7 +151,18 @@ int main(int argc, char **argv)
     wrefresh(VWINDOW(twin));
 
     // create the terminal and have it run bash
-    vterm = vterm_create(80,25, VTERM_FLAG_RXVT | flags);
+
+    if(exec_path != NULL)
+    {
+        vterm = vterm_alloc();
+        vterm_set_exec(vterm, exec_path, exec_argv);
+        vterm_init(vterm, 80, 25, flags);
+    }
+    else
+    {
+        vterm = vterm_create(80, 25, flags);
+    }
+
     vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);
     vterm_wnd_set(vterm, VWINDOW(twin));
 

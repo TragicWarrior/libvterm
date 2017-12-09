@@ -80,7 +80,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
   #include <curses.h>
 #endif
 
-#define LIBVTERM_VERSION       "1.12"
+#define LIBVTERM_VERSION       "2.0"
 
 #define VTERM_FLAG_RXVT        0                       // default
 #define VTERM_FLAG_VT100       (1 << 1)
@@ -100,12 +100,16 @@ typedef struct _vterm_cell_s vterm_cell_t;
 
 typedef struct _vterm_s         vterm_t;
 
-vterm_t*        vterm_create(uint16_t width,uint16_t height,unsigned int flags);
+vterm_t*        vterm_alloc(void);
+vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
+                    unsigned int flags);
+#define         vterm_create(width, height, flags) \
+                    vterm_init(NULL, width, height, flags)
 void            vterm_destroy(vterm_t *vterm);
 pid_t           vterm_get_pid(vterm_t *vterm);
 int             vterm_get_pty_fd(vterm_t *vterm);
 const char*     vterm_get_ttyname(vterm_t *vterm);
-void            vterm_set_exec(vterm_t *vterm, char *path, ...);
+void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);
 
 ssize_t         vterm_read_pipe(vterm_t *vterm);
 void            vterm_write_pipe(vterm_t *vterm,uint32_t keycode);
