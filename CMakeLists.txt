@@ -15,7 +15,9 @@ endif()
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
 
 add_definitions("-D_REENTRANT")
-add_definitions("-D_POSIX_C_SOURCE=200112L")
+#add_definitions("-D_POSIX_C_SOURCE=200112L")
+add_definitions("-D_POSIX_C_SOURCE=200809L")
+
 
 set(CURSES_NEED_NCURSES "TRUE")
 find_package(Curses)
@@ -30,6 +32,7 @@ endif()
 
 add_library(vterm-static STATIC
     vterm.c
+    vterm_exec.c
     vterm_colors.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c
@@ -57,10 +60,12 @@ add_library(vterm-static STATIC
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
+    strings.c
     )
 
 add_library(vterm.o OBJECT
     vterm.c
+    vterm_exec.c
     vterm_colors.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c
@@ -88,6 +93,7 @@ add_library(vterm.o OBJECT
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
+    strings.c
     )
 
 add_library(vterm-shared SHARED
