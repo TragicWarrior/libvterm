@@ -159,10 +159,13 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
 
             // default is rxvt emulation
             setenv("TERM", "rxvt", 1);
+            setenv("COLORTERM", "rxvt", 1);
 
             if(flags & VTERM_FLAG_VT100)
             {
-                setenv("TERM","vt100",1);
+                setenv("TERM", "vt100", 1);
+                // setenv("COLORTERM", "vt100", 1);
+                unsetenv("COLORTERM");
             }
 
             retval = vterm_exec_binary(vterm);
