@@ -1,3 +1,8 @@
+2.1
+
+* [Bryan Christ] set (or clear) COLORTERM environment variable
+  depending on init flags.
+
 2.0
 
 * [Bryan Christ] API change that enables caller to pass in an
