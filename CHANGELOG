@@ -1,3 +1,10 @@
+2.2
+
+* [Bryan Christ] Make vshell window size vary according to the
+  size of the terminal it's running in.
+* [Bryan Christ] Fix a long-standing bug with the bold
+  attribute.
+
 2.1
 
 * [Bryan Christ] set (or clear) COLORTERM environment variable
