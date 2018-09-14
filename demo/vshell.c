@@ -51,7 +51,6 @@ int main(int argc, char **argv)
     char        **exec_argv = NULL;
     int         count = 1;
 
-
 	setlocale(LC_ALL,"UTF-8");
 
     initscr();
@@ -145,7 +144,10 @@ int main(int argc, char **argv)
     refresh();
 
     // create a window with a frame
-    VWINDOW(twin) = newwin(25,80,1,4);
+
+    // VWINDOW(twin) = newwin(25,80,1,4);
+    VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
+
     wattrset(VWINDOW(twin), COLOR_PAIR(7*8+7-0));        // black over white
     mvwprintw(VWINDOW(twin), 0, 27, " Term In a Box ");
     wrefresh(VWINDOW(twin));
@@ -160,7 +162,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        vterm = vterm_create(80, 25, flags);
+        vterm = vterm_create(screen_w - 4, screen_h - 2, flags);
     }
 
     vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);

@@ -86,7 +86,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             continue;
         }
 
-        if(param[i]==1 || param[i]==2 || param[i]==4)       // bold on
+        if(param[i] == 1 || param[i] == 2 || param[i] == 4)       // bold on
         {
             vterm->curattr |= A_BOLD;
             continue;
@@ -161,10 +161,11 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 colors = 0;
 
             /*
-                changing color turns off A_BOLD but not A_REVERSE so we need
-                to preserve that attr.
+                the COLOR_PAIR macros seems to trample attributes.
+                save them before making changes and OR them back in.
             */
             if(vterm->curattr & A_REVERSE) attr_saved |= A_REVERSE;
+            if(vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
 
             vterm->curattr = 0;
             vterm->curattr |= COLOR_PAIR(colors);
@@ -187,10 +188,11 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 colors = 0;
 
             /*
-                changing color turns off A_BOLD but not A_REVERSE so we need
-                to preserve that attr.
+                the COLOR_PAIR macros seems to trample attributes.
+                save them before making changes and OR them back in.
             */
             if(vterm->curattr & A_REVERSE) attr_saved |= A_REVERSE;
+            if(vterm->curattr & A_BOLD) attr_saved |= A_BOLD;
 
             vterm->curattr = 0;
             vterm->curattr |= COLOR_PAIR(colors);
