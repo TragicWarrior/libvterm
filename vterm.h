@@ -100,42 +100,146 @@ typedef struct _vterm_cell_s vterm_cell_t;
 
 typedef struct _vterm_s         vterm_t;
 
+/*
+    alloc a raw terminal object
+*/
 vterm_t*        vterm_alloc(void);
+
+/*
+    init a terminal object with a known height and width and alloc object
+    if need be.
+*/
 vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     unsigned int flags);
+
+/*
+    convenience macro for alloc-ing a ready to use terminal object.
+*/
 #define         vterm_create(width, height, flags) \
                     vterm_init(NULL, width, height, flags)
+
+/*
+    destroy a terminal object.
+*/
 void            vterm_destroy(vterm_t *vterm);
+
+/*
+    fetch the process id (pid) of the terminal.
+*/
 pid_t           vterm_get_pid(vterm_t *vterm);
+
+
+/*
+    get the file descriptor of the pty.
+*/
 int             vterm_get_pty_fd(vterm_t *vterm);
+
+/*
+    get the name of the tty.
+*/
 const char*     vterm_get_ttyname(vterm_t *vterm);
+
+/*
+    set a binary and args to launch instead of a shell.
+*/
 void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);
 
+/*
+    read bytes from the terminal.
+*/
 ssize_t         vterm_read_pipe(vterm_t *vterm);
-void            vterm_write_pipe(vterm_t *vterm,uint32_t keycode);
+
+/*
+    write a keystroke to the terminal.
+*/
+void            vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
 #ifndef NOCURSES
-void            vterm_wnd_set(vterm_t *vterm,WINDOW *window);
+/*
+    set the WINDOW * to that the terminal will use for output.
+*/
+void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
+
+/*
+    get the WINDOW * that the terminal is using.
+*/
 WINDOW*         vterm_wnd_get(vterm_t *vterm);
+
+/*
+    cause updates to the terminal to be blitted 
+*/
 void            vterm_wnd_update(vterm_t *vterm);
 #endif
 
+/*
+    set the foreground and bakground colors that will be used by
+    default on erase operations.
+*/
 int             vterm_set_colors(vterm_t *vterm,short fg,short bg);
+
+/*
+    get the color pair number of the current fg/bg combination.
+*/
 short           vterm_get_colors(vterm_t *vterm);
 
+/*
+    erase the contents of the terminal.
+*/
 void            vterm_erase(vterm_t *vterm);
+
+/*
+    erase the specified row of the terminal.
+*/
 void            vterm_erase_row(vterm_t *vterm,int row);
+
+/*
+    erase the terminal beginning at a certain row and toward the bottom
+    margin.
+*/
 void            vterm_erase_rows(vterm_t *vterm,int start_row);
+
+/*
+    erase the specified column of the terminal.
+*/
 void            vterm_erase_col(vterm_t *vterm,int col);
+
+/*
+    erase the terminal at a specific column and toward the right margin.
+*/
 void            vterm_erase_cols(vterm_t *vterm,int start_cols);
+
+/*
+    cause the terminal to be scrolled up by one row and placing an empty
+    row at the bottom.
+*/
 void            vterm_scroll_up(vterm_t *vterm);
+
+/*
+    cause the termianl to be scrolled down by one row and placing an
+    empty row at the top.
+*/
 void            vterm_scroll_down(vterm_t *vterm);
 
+/*
+    resize the terminal to a specific size.  when shrinking the terminal,
+    excess will be clipped and discarded.  this is typically used in
+    reponse to a SIGWINCH signal.
+*/
 void            vterm_resize(vterm_t *vterm,uint16_t width,uint16_t height);
 
-/* Needed to allow an app to see what's on screen right now */
+/*
+    needed to allow an app to see what's on screen right now.
+*/
 void            vterm_render(vterm_t *, const char *data, int len);
+
+/*
+    populate width and height with the current terminal dimentions.
+*/
 void            vterm_get_size(vterm_t *vterm, int *width, int *height);
+
+/*
+    raw access to the screen matrix which is current ncurses 'chtype'.
+*/
 vterm_cell_t**  vterm_get_buffer(vterm_t *vterm);
 
 /* Needed if we don't use curses */
