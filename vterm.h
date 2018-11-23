@@ -221,11 +221,24 @@ void            vterm_scroll_up(vterm_t *vterm);
 void            vterm_scroll_down(vterm_t *vterm);
 
 /*
-    resize the terminal to a specific size.  when shrinking the terminal,
-    excess will be clipped and discarded.  this is typically used in
-    reponse to a SIGWINCH signal.
+    this is a convenience macro to keep original behavior intact for
+    applications that just don't care.  it assumes resize occurs from
+    the bottom right origin.
 */
-void            vterm_resize(vterm_t *vterm,uint16_t width,uint16_t height);
+#define         vterm_resize(vterm, width, height, gt, gl, gb, gr)  \
+                    vterm_resize_full(vterm, width, height, 0, 0, 1, 1)
+
+/*
+    resize the terminal to a specific size.  when shrinking the terminal,
+    excess will be clipped and discarded based on where the grip edges
+    are originating from.
+
+    this API is typically used in reponse to a SIGWINCH signal.
+*/
+void            vterm_resize_full(vterm_t *vterm,
+                    uint16_t width, uint16_t height,
+                    int grip_top, int grip_left,
+                    int grip_right, int grip_bottom);
 
 /*
     needed to allow an app to see what's on screen right now.
