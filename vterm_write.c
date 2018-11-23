@@ -38,7 +38,7 @@ vterm_write_pipe(vterm_t *vterm,uint32_t keycode)
 
     retval = vterm->write(vterm, keycode);
 
-    return;
+    return retval;
 }
 
 int
