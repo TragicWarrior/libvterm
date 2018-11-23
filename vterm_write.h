@@ -27,7 +27,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #include "vterm.h"
 
-void    vterm_write_rxvt(vterm_t *vterm,uint32_t keycode);
-void    vterm_write_vt100(vterm_t *vterm,uint32_t keycode);
+int vterm_write_rxvt(vterm_t *vterm,uint32_t keycode);
+int vterm_write_vt100(vterm_t *vterm,uint32_t keycode);
 
 #endif

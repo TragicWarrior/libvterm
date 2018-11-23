@@ -29,23 +29,26 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_private.h"
 #include "vterm_write.h"
 
-void
+int
 vterm_write_pipe(vterm_t *vterm,uint32_t keycode)
 {
-   if(vterm == NULL) return;
+    int     retval;
 
-   vterm->write(vterm,keycode);
+    if(vterm == NULL) return -1;
 
-   return;
+    retval = vterm->write(vterm, keycode);
+
+    return;
 }
 
-void
+int
 vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
+    int                     retval = 0;
 
     tcgetattr(vterm->pty_fd,&term_state);
 
@@ -87,6 +90,7 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
         if( bytes_written != sizeof(char) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+            retval = -1;
         }
     }
     else
@@ -95,19 +99,21 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
         if( bytes_written != (ssize_t)strlen(buffer) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+            retval = -1;
         }
     }
 
-   return;
+   return retval;
 }
 
-void
+int
 vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
+    int                     retval = 0;
 
     tcgetattr(vterm->pty_fd,&term_state);
 
@@ -147,6 +153,7 @@ vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
         if( bytes_written != sizeof(char) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+            retval = -1;
         }
     }
     else
@@ -155,9 +162,10 @@ vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
         if( bytes_written != (ssize_t)strlen(buffer) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+            retval = -1;
         }
     }
 
-    return;
+    return retval;
 }
 

@@ -109,7 +109,7 @@ struct _vterm_s
     char            *debug_filepath;
     int             debug_fd;
 
-    void            (*write)        (vterm_t*,uint32_t);
+    int             (*write)        (vterm_t*,uint32_t);
     int             (*esc_handler)  (vterm_t*);
 };
 

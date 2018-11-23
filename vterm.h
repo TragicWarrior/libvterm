@@ -152,7 +152,7 @@ ssize_t         vterm_read_pipe(vterm_t *vterm);
 /*
     write a keystroke to the terminal.
 */
-void            vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
+int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
 #ifndef NOCURSES
 /*
