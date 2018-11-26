@@ -225,7 +225,7 @@ void            vterm_scroll_down(vterm_t *vterm);
     applications that just don't care.  it assumes resize occurs from
     the bottom right origin.
 */
-#define         vterm_resize(vterm, width, height, gt, gl, gb, gr)  \
+#define         vterm_resize(vterm, width, height)  \
                     vterm_resize_full(vterm, width, height, 0, 0, 1, 1)
 
 /*

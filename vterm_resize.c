@@ -51,6 +51,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     start_x = vterm->cols;
     start_y = vterm->rows;
 
+    // realloc to accomodat the new matrix size
     vterm->cells = (vterm_cell_t**)realloc(vterm->cells,
         sizeof(vterm_cell_t*) * height);
 
