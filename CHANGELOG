@@ -1,3 +1,10 @@
+2.4
+
+* [Bryan Christ] Implement trapping of cursor save and cursor restore
+  CSI codes which makes the 'apt' package manager output more pleasant.
+* [Bryan Christ] Added reference documentation folder so others can
+  follow along.
+
 2.3
 
 * [Bryan Christ] Added more API documentation.
