@@ -40,6 +40,10 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
+// prototypes
+void    vshell_paint_screen(void);
+int     vshell_resize(testwin_t *twin, vterm_t * vterm);
+
 int main(int argc, char **argv)
 {
     vterm_t     *vterm;
@@ -223,7 +227,7 @@ vshell_paint_screen(void)
 }
 
 int
-vshell_resize(WINDOW *twin, vterm_t * vterm)
+vshell_resize(testwin_t *twin, vterm_t * vterm)
 {
     getmaxyx(stdscr, screen_h, screen_w);
 

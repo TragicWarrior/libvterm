@@ -1,3 +1,8 @@
+2.5
+
+* [Bryan Christ] Fixed some compiler warnings and improperly
+  typed functions in demo program.
+
 2.4
 
 * [Bryan Christ] Implement trapping of cursor save and cursor restore
