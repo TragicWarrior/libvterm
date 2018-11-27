@@ -1,3 +1,10 @@
+2.3
+
+* [Bryan Christ] Added more API documentation.
+* [Bryan Christ] Update demo program to handle resizing.
+* [Bryan Christ] Added new interface for granular resizing and a macro
+  to preserve the simpler interface.
+
 2.2
 
 * [Bryan Christ] Make vshell window size vary according to the
