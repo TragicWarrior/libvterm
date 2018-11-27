@@ -136,20 +136,12 @@ int main(int argc, char **argv)
     }
 
     // paint the screen blue
-    attrset(COLOR_PAIR(32));
-    for (i = 0; i < screen_h; i++)
-    {
-        for (j = 0; j < screen_w; j++) addch(' ');
-    }
-    refresh();
-
-    // create a window with a frame
+    vshell_paint_screen();
 
     // VWINDOW(twin) = newwin(25,80,1,4);
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
 
     wattrset(VWINDOW(twin), COLOR_PAIR(7*8+7-0));        // black over white
-    mvwprintw(VWINDOW(twin), 0, 27, " Term In a Box ");
     wrefresh(VWINDOW(twin));
 
     // create the terminal and have it run bash
@@ -162,7 +154,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        vterm = vterm_create(screen_w - 4, screen_h - 2, flags);
+        vterm = vterm_create(screen_w - 2, screen_h - 2, flags);
     }
 
     vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);
@@ -188,6 +180,14 @@ int main(int argc, char **argv)
         if(bytes == -1) break;
 
         ch = getch();
+
+        // handle special events like resize first
+        if(ch == KEY_RESIZE)
+        {
+            vshell_resize(twin, vterm);
+            continue;
+        }
+
         if (ch != ERR) vterm_write_pipe(vterm,ch);
     }
 
@@ -195,4 +195,48 @@ int main(int argc, char **argv)
     return 0;
 }
 
+void
+vshell_paint_screen(void)
+{
+    char    title[] = " Term In A Box ";
+    int     len;
+    int     offset;
+    int     i;
+    int     j;
+
+    // paint the screen blue
+    attrset(COLOR_PAIR(32));
+    for (i = 0; i < screen_h; i++)
+    {
+        for (j = 0; j < screen_w; j++) addch(' ');
+    }
+
+    // quick computer of title location
+    len = sizeof(title) / sizeof(title[0]);
+    offset = (screen_w >> 1) - (len >> 1);
+
+    mvprintw(0, offset , title);
+
+    refresh();
+
+    return;
+}
+
+int
+vshell_resize(WINDOW *twin, vterm_t * vterm)
+{
+    getmaxyx(stdscr, screen_h, screen_w);
+
+    vshell_paint_screen();
+
+    wresize(VWINDOW(twin), screen_h - 2, screen_w - 2);
+
+    vterm_resize(vterm, screen_w - 2, screen_h - 2);
+
+    touchwin(VWINDOW(twin));
+    wrefresh(VWINDOW(twin));
+    refresh();
+
+    return 0;
+}
 

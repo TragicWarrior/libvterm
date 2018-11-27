@@ -32,7 +32,9 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_misc.h"
 
 void
-vterm_resize(vterm_t *vterm,uint16_t width,uint16_t height)
+vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
+                    int grip_top, int grip_left,
+                    int grip_bottom, int grip_right)
 {
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     uint16_t        i;
@@ -49,6 +51,7 @@ vterm_resize(vterm_t *vterm,uint16_t width,uint16_t height)
     start_x = vterm->cols;
     start_y = vterm->rows;
 
+    // realloc to accomodat the new matrix size
     vterm->cells = (vterm_cell_t**)realloc(vterm->cells,
         sizeof(vterm_cell_t*) * height);
 
