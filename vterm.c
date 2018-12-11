@@ -197,11 +197,11 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
-    for(i = 0;i < vterm->vterm_desc[0].rows; i++)
+    // todo:  do something more elegant in the future
+    for(i = 0; i < 2; i++)
     {
-        free(vterm->vterm_desc[0].cells[i]);
+        vterm_dealloc_buffer(vterm, i);
     }
-    free(vterm->vterm_desc[0].cells);
 
     free(vterm);
 
