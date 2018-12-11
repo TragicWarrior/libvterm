@@ -23,43 +23,51 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret the 'erase line' escape sequence */
-void interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
+void
+interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 {
-   int erase_start, erase_end, i;
-   int cmd=0;
+    vterm_desc_t    *v_desc = NULL;
+    int             erase_start, erase_end, i;
+    int             cmd = 0;
+    int             idx;
 
-   if(pcount>0) cmd=param[0];
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   switch(cmd)
-   {
-      case 1:
-      {
-         erase_start=0;
-         erase_end=vterm->ccol;
-         break;
-      }
-      case 2:
-      {
-         erase_start=0;
-         erase_end=vterm->cols-1;
-         break;
-      }
-      default:
-      {
-         erase_start=vterm->ccol;
-         erase_end=vterm->cols-1;
-         break;
-      }
-   }
+    if(pcount > 0) cmd = param[0];
 
-   for(i=erase_start;i <= erase_end;i++)
-   {
-      vterm->cells[vterm->crow][i].ch = 0x20; 
-      vterm->cells[vterm->crow][i].attr = vterm->curattr;
-   }
+    switch(cmd)
+    {
+        case 1:
+        {
+            erase_start = 0;
+            erase_end = v_desc->ccol;
+            break;
+        }
+        case 2:
+        {
+            erase_start = 0;
+            erase_end = v_desc->cols - 1;
+            break;
+        }
+        default:
+        {
+            erase_start = v_desc->ccol;
+            erase_end = v_desc->cols-1;
+            break;
+        }
+    }
 
-   return;
+    for(i = erase_start; i <= erase_end; i++)
+    {
+        v_desc->cells[v_desc->crow][i].ch = 0x20;
+        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+    }
+
+    return;
 }
 

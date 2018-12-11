@@ -33,6 +33,7 @@ Copyright (c) 2004 Bruno T. C. de Oliveira
 #include "vterm_csi.h"
 #include "vterm_render.h"
 #include "vterm_misc.h"
+#include "vterm_buffer.h"
 
 static int
 vterm_interpret_esc_normal(vterm_t *vterm);
@@ -52,7 +53,14 @@ validate_xterm_escape_suffix(char c);
 void
 vterm_escape_start(vterm_t *vterm)
 {
-    vterm->state |= STATE_ESCAPE_MODE;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
+    // set vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    v_desc->buffer_state |= STATE_ESCAPE_MODE;
 
     // zero out the escape buffer just in case
     vterm->esbuf_len = 0;
@@ -66,7 +74,14 @@ vterm_escape_start(vterm_t *vterm)
 void
 vterm_escape_cancel(vterm_t *vterm)
 {
-    vterm->state &= ~STATE_ESCAPE_MODE;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
+    // set vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    v_desc->buffer_state &= ~STATE_ESCAPE_MODE;
 
     // zero out the escape buffer for the next run
     vterm->esbuf_len = 0;
@@ -80,11 +95,11 @@ vterm_escape_cancel(vterm_t *vterm)
 void
 vterm_interpret_escapes(vterm_t *vterm)
 {
-    char    firstchar;
-    char    lastchar;
+    char                firstchar;
+    char                lastchar;
 #ifdef _DEBUG
-    FILE            *f_debug;
-    char            debug_file[NAME_MAX];
+    FILE                *f_debug;
+    char                debug_file[NAME_MAX];
 #endif
 
     firstchar = vterm->esbuf[0];
@@ -92,10 +107,10 @@ vterm_interpret_escapes(vterm_t *vterm)
 
 #ifdef _DEBUG
     snprintf(debug_file,(sizeof(debug_file) - 1),
-        "/tmp/libvterm-%d-esc-log",vterm->child_pid);
+        "/tmp/libvterm-%d-esc-log", vterm->child_pid);
 
-    f_debug = fopen(debug_file,"w");
-    fwrite(vterm->esbuf,sizeof(char),vterm->esbuf_len,f_debug);
+    f_debug = fopen(debug_file, "w");
+    fwrite(vterm->esbuf, sizeof(char),vterm->esbuf_len, f_debug);
     fclose(f_debug);
 #endif
 
@@ -146,7 +161,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     if( firstchar == 'P'
         && vterm->esbuf_len > 2
         && vterm->esbuf[vterm->esbuf_len - 2] == '\x1B'
-        && lastchar=='\\' )
+        && lastchar == '\\' )
     {
         vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
     }
@@ -159,7 +174,6 @@ vterm_interpret_escapes(vterm_t *vterm)
 
         return;
     }
-
 
     return;
 }

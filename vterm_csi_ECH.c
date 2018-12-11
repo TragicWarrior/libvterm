@@ -23,22 +23,30 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret an 'erase characters' (ECH) sequence */
-void interpret_csi_ECH(vterm_t *vterm,int param[],int pcount)
+void
+interpret_csi_ECH(vterm_t *vterm, int param[], int pcount)
 {
-   int i;
-   int n=1;
+    vterm_desc_t    *v_desc = NULL;
+    int             i;
+    int             n = 1;
+    int             idx;
 
-   if(pcount && param[0] > 0) n=param[0];
+    // set vterm descipton buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   for(i=vterm->ccol;i < vterm->ccol+n; i++)
-   {
-      if(i >= vterm->cols) break;
+    if(pcount && param[0] > 0) n = param[0];
 
-      vterm->cells[vterm->crow][i].ch=0x20;
-      vterm->cells[vterm->crow][i].attr=vterm->curattr;
-   }
+    for(i = v_desc->ccol; i < v_desc->ccol + n; i++)
+    {
+        if(i >= v_desc->cols) break;
 
-   return;
+        v_desc->cells[v_desc->crow][i].ch = 0x20;
+        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+    }
+
+    return;
 }

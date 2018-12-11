@@ -43,17 +43,36 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #define STATE_CURSOR_INVIS      (1 << 10)
 #define STATE_SCROLL_SHORT      (1 << 11)   // scroll region is not full height
 
-#define IS_MODE_ESCAPED(x)      (x->state & STATE_ESCAPE_MODE)
-#define IS_MODE_ACS(x)          (x->state & STATE_ALT_CHARSET)
-#define IS_MODE_UTF8(x)         (x->state & STATE_UTF8_MODE)
+#define IS_MODE_ESCAPED(x)      (x->buffer_state & STATE_ESCAPE_MODE)
+#define IS_MODE_ACS(x)          (x->buffer_state & STATE_ALT_CHARSET)
+#define IS_MODE_UTF8(x)         (x->buffer_state & STATE_UTF8_MODE)
+
+struct _vterm_desc_s
+{
+    int             rows,cols;                  // terminal height & width
+    vterm_cell_t    **cells;
+
+    unsigned int    buffer_state;               //  internal state control
+
+    int             curattr;                    // current attribute set
+    int             crow, ccol;                 // current cursor column & row
+    int             scroll_min;                 // top of scrolling region
+    int             scroll_max;                 // bottom of scrolling region
+    int             saved_x, saved_y;           // saved cursor coords
+    int             fg, bg;                     // current fg/bg colors
+    short           colors;                     // color pair for default fg/bg
+};
+
+typedef struct _vterm_desc_s    vterm_desc_t;
 
 struct _vterm_s
 {
-    int             rows,cols;                  // terminal height & width
+    vterm_desc_t    vterm_desc[2];              // normal buffer and special buffer
+    int             vterm_desc_idx;             // index of active buffer; 
+
 #ifndef NOCURSES
     WINDOW          *window;                    // curses window
 #endif
-    vterm_cell_t    **cells;
     char            ttyname[96];                // populated with ttyname_r()
 
     char            prgname[128];               /*
@@ -66,13 +85,6 @@ struct _vterm_s
                                                     by libvterm.
                                                 */
 
-    int             curattr;                    // current attribute set
-    int             crow,ccol;                  // current cursor column & row
-    int             scroll_min;                 // top of scrolling region
-    int             scroll_max;                 // bottom of scrolling region
-    int             saved_x,saved_y;            // saved cursor coords
-    short           colors;                     // color pair for default fg/bg
-    int             fg,bg;                      // current fg/bg colors
 
     char            esbuf[ESEQ_BUF_SIZE];       /*
                                                     0-terminated string. Does
@@ -101,7 +113,7 @@ struct _vterm_s
 
     pid_t           child_pid;                  //  pid of the child process
     unsigned int    flags;                      //  user options
-    unsigned int    state;                      //  internal state control
+    unsigned int    internal_state;             //  internal state control
 
     char            *exec_path;                 //  optional binary path to use
     char            **exec_argv;                //  instead of starting shell.

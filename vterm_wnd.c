@@ -22,6 +22,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #include "vterm.h"
 #include "vterm_private.h"
+#include "vterm_buffer.h"
 
 #ifndef NOCURSES
 void
@@ -43,34 +44,40 @@ vterm_wnd_get(vterm_t *vterm)
 void
 vterm_wnd_update(vterm_t *vterm)
 {
+    vterm_desc_t    *v_desc = NULL;
     int             i;
     int             x,y;
     int             cell_count;
+    int             idx;
     chtype          ch;
     unsigned int    attr;
 
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;
 
-    cell_count = vterm->rows * vterm->cols;
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-    for(i = 0;i < cell_count;i++)
+    cell_count = v_desc->rows * v_desc->cols;
+
+    for(i = 0; i < cell_count; i++)
     {
-        x = i % vterm->cols;
-        y = (int)(i / vterm->cols);
+        x = i % v_desc->cols;
+        y = (int)(i / v_desc->cols);
 
-        ch = vterm->cells[y][x].ch;
-        attr = vterm->cells[y][x].attr;
+        ch = v_desc->cells[y][x].ch;
+        attr = v_desc->cells[y][x].attr;
 
-        wattrset(vterm->window,attr);
-        wmove(vterm->window,y,x);
-        waddch(vterm->window,ch);
+        wattrset(vterm->window, attr);
+        wmove(vterm->window, y, x);
+        waddch(vterm->window, ch);
     }
 
-    if(!(vterm->state & STATE_CURSOR_INVIS))
+    if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
     {
-        mvwchgat(vterm->window,vterm->crow,vterm->ccol,1,A_REVERSE,
-            vterm->colors,NULL);
+        mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
+            v_desc->colors, NULL);
     }
 
     return;

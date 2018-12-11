@@ -24,26 +24,34 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret the 'delete chars' sequence (DCH) */
-void interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
+void
+interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
 {
-   int i;
-   int n=1;
+    vterm_desc_t    *v_desc = NULL;
+    int             i;
+    int             n = 1;
+    int             idx;
 
-   if(pcount && param[0] > 0) n=param[0]; 
+    if(pcount && param[0] > 0) n = param[0];
 
-   for(i=vterm->ccol;i < vterm->cols;i++)
-   {
-      if(i+n < vterm->cols)
-      {
-         vterm->cells[vterm->crow][i]=vterm->cells[vterm->crow][i+n];
-      }
-      else
-      {
-         vterm->cells[vterm->crow][i].ch=0x20;
-         vterm->cells[vterm->crow][i].attr=vterm->curattr;
-      }
-   }
+    // select the correct desc
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    for(i = v_desc->ccol; i < v_desc->cols; i++)
+    {
+        if(i + n < v_desc->cols)
+        {
+            v_desc->cells[v_desc->crow][i] = v_desc->cells[v_desc->crow][i + n];
+        }
+        else
+        {
+            v_desc->cells[v_desc->crow][i].ch = 0x20;
+            v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+        }
+    }
 }
 

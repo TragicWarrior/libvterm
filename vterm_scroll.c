@@ -20,10 +20,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 */
 
-#include "vterm.h"
-#include "vterm_private.h"
-#include "vterm_csi.h"
-
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -31,52 +27,73 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <sys/types.h>
 #include <sys/stat.h>
 
-void vterm_scroll_down(vterm_t *vterm)
+#include "vterm.h"
+#include "vterm_private.h"
+#include "vterm_csi.h"
+#include "vterm_buffer.h"
+
+void
+vterm_scroll_down(vterm_t *vterm)
 {
-   int i;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+    int             i;
 
-   vterm->crow++;
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   if(vterm->crow <= vterm->scroll_max) return;
+    v_desc->crow++;
 
-   /* must scroll the scrolling region up by 1 line, and put cursor on 
-    * last line of it */
-   vterm->crow=vterm->scroll_max;
+    if(v_desc->crow <= v_desc->scroll_max) return;
 
-   for(i=vterm->scroll_min; i < vterm->scroll_max; i++)
-   {
-      // vterm->dirty_lines[i]=TRUE;
-      memcpy(vterm->cells[i],vterm->cells[i+1],
-         sizeof(vterm_cell_t)*vterm->cols);
-   }
+    /*
+        must scroll the scrolling region up by 1 line, and put cursor on
+        last line of it
+    */
+    v_desc->crow = v_desc->scroll_max;
 
-   /* clear last row of the scrolling region */
-   vterm_erase_row(vterm,vterm->scroll_max);
+    for(i = v_desc->scroll_min; i < v_desc->scroll_max; i++)
+    {
+        memcpy(v_desc->cells[i], v_desc->cells[i + 1],
+            sizeof(vterm_cell_t) * v_desc->cols);
+    }
 
-   return;
+    /* clear last row of the scrolling region */
+    vterm_erase_row(vterm, v_desc->scroll_max);
+
+    return;
 }
 
-void vterm_scroll_up(vterm_t *vterm)
+void
+vterm_scroll_up(vterm_t *vterm)
 {
-   int i;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+    int             i;
 
-   vterm->crow--;
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   if(vterm->crow >= vterm->scroll_min) return;
+    v_desc->crow--;
 
-   /* must scroll the scrolling region up by 1 line, and put cursor on 
-    * first line of it */
-   vterm->crow=vterm->scroll_min;
+    if(v_desc->crow >= v_desc->scroll_min) return;
 
-   for(i=vterm->scroll_max;i > vterm->scroll_min;i--)
-   {
-      // vterm->dirty_lines[i]=TRUE;
-      memcpy(vterm->cells[i],vterm->cells[i-1],
-         sizeof(vterm_cell_t)*vterm->cols);
-   }
+    /*
+        must scroll the scrolling region up by 1 line, and put cursor on
+        first line of it
+    */
+    v_desc->crow = v_desc->scroll_min;
 
-   /* clear first row of the scrolling region */
-   vterm_erase_row(vterm,vterm->scroll_min);
+    for(i = v_desc->scroll_max; i > v_desc->scroll_min; i--)
+    {
+        memcpy(v_desc->cells[i], v_desc->cells[i - 1],
+            sizeof(vterm_cell_t) * v_desc->cols);
+    }
 
-   return;
+    /* clear first row of the scrolling region */
+    vterm_erase_row(vterm, v_desc->scroll_min);
+
+    return;
 }

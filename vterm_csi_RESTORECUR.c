@@ -23,11 +23,20 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
-void interpret_csi_RESTORECUR(vterm_t *vterm,int param[],int pcount)
+void
+interpret_csi_RESTORECUR(vterm_t *vterm, int param[], int pcount)
 {
-    vterm->ccol=vterm->saved_x;
-    vterm->crow=vterm->saved_y;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    v_desc->ccol = v_desc->saved_x;
+    v_desc->crow = v_desc->saved_y;
 
     (void)param;
     (void)pcount;

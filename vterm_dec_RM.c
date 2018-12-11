@@ -23,17 +23,25 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret the DEC RM (reset mode) */
-void interpret_dec_RM(vterm_t *vterm,int param[],int pcount)
+void
+interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
 {
-   int i;
+    vterm_desc_t    *v_desc = NULL;
+    int             i;
+    int             idx;
 
-   if(pcount==0) return;
+    if(pcount == 0) return;
 
-   for(i=0;i < pcount;i++)
-   {
-      /* civis is actually the "normal" vibility for rxvt   */
-      if(param[i]==25) vterm->state |= STATE_CURSOR_INVIS;
-   }
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    for(i = 0; i < pcount; i++)
+    {
+        /* civis is actually the "normal" vibility for rxvt   */
+        if(param[i] == 25) v_desc->buffer_state |= STATE_CURSOR_INVIS;
+    }
 }

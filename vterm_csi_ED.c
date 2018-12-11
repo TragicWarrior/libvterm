@@ -23,43 +23,54 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* interprets an 'erase display' (ED) escape sequence */
-void interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
+void
+interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
 {
-   int r, c;
-   int start_row, start_col, end_row, end_col;
+    vterm_desc_t    *v_desc = NULL;
+    int             r, c;
+    int             start_row, start_col, end_row, end_col;
+    int             idx;
 
-   /* decide range */
-   if(pcount && param[0]==2)
-   {
-      start_row=0;
-      start_col=0;
-      end_row=vterm->rows-1;
-      end_col=vterm->cols-1;
-   }
-   else if(pcount && param[0]==1)
-   {
-      start_row=0;
-      start_col=0;
-      end_row=vterm->crow;
-      end_col=vterm->ccol;
-   }
-   else
-   {
-      start_row=vterm->crow;
-      start_col=vterm->ccol;
-      end_row=vterm->rows-1;
-      end_col=vterm->cols-1;
-   }
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   /* clean range */
-   for(r=start_row;r <= end_row;r++)
-   {
-      for(c=start_col;c <= end_col;c++)
-      {
-         vterm->cells[r][c].ch=0x20;               // erase with blanks.
-         vterm->cells[r][c].attr=vterm->curattr;   // set to current attributes.
-      }
-   }
+    /* decide range */
+    if(pcount && param[0] == 2)
+    {
+        start_row = 0;
+        start_col = 0;
+        end_row = v_desc->rows - 1;
+        end_col = v_desc->cols - 1;
+    }
+    else if(pcount && param[0] == 1)
+    {
+        start_row = 0;
+        start_col = 0;
+        end_row = v_desc->crow;
+        end_col = v_desc->ccol;
+    }
+    else
+    {
+        start_row = v_desc->crow;
+        start_col = v_desc->ccol;
+        end_row = v_desc->rows - 1;
+        end_col = v_desc->cols-1;
+    }
+
+    /* clean range */
+    for(r = start_row;r <= end_row; r++)
+    {
+        for(c = start_col; c <= end_col; c++)
+        {
+            // erase with blanks.
+            v_desc->cells[r][c].ch = 0x20;
+
+            // set to current attributes.
+            v_desc->cells[r][c].attr = v_desc->curattr;
+        }
+    }
 }

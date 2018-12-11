@@ -39,6 +39,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_private.h"
 #include "vterm_write.h"
 #include "vterm_exec.h"
+#include "vterm_buffer.h"
 
 vterm_t*
 vterm_alloc(void)
@@ -56,7 +57,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     pid_t           child_pid = 0;
     int             master_fd;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
-    int             i;
     char            *pos = NULL;
     int             retval;
 
@@ -70,24 +70,18 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
         vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
 
     // record dimensions
-    vterm->rows = height;
-    vterm->cols = width;
+    vterm->vterm_desc[0].rows = height;
+    vterm->vterm_desc[0].cols = width;
 
-    // create the cell matrix
-    vterm->cells = (vterm_cell_t**)calloc(1,(sizeof(vterm_cell_t*) * height));
-
-    for(i = 0;i < height;i++)
-    {
-        vterm->cells[i] = (vterm_cell_t*)calloc(1,
-            (sizeof(vterm_cell_t) * width));
-    }
+    // allocate a the buffer (a matrix of cells)
+    vterm_alloc_buffer(vterm, VTERM_BUFFER_STD, width, height);
 
     // initialize all cells with defaults
     vterm_erase(vterm);
 
     // initialization of other public fields
-    vterm->crow = 0;
-    vterm->ccol = 0;
+    vterm->vterm_desc[0].crow = 0;
+    vterm->vterm_desc[0].ccol = 0;
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
@@ -97,14 +91,14 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
         int colorIndex = FindColorPair( COLOR_WHITE, COLOR_BLACK );
         if( colorIndex<0 || colorIndex>255 )
             colorIndex = 0;
-        vterm->curattr = (colorIndex & 0xff) << 8;
+        vterm->vterm_desc[0].curattr = (colorIndex & 0xff) << 8;
     }
     else
     {
 #ifdef NOCURSES
-        vterm->curattr = 0;
+        vterm->vterm_desc[0].curattr = 0;
 #else
-        vterm->curattr = COLOR_PAIR( 0 );
+        vterm->vterm_desc[0].curattr = COLOR_PAIR( 0 );
 #endif
     }
 
@@ -130,8 +124,8 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     }
 
     // initial scrolling area is the whole window
-    vterm->scroll_min = 0;
-    vterm->scroll_max = height - 1;
+    vterm->vterm_desc[0].scroll_min = 0;
+    vterm->vterm_desc[0].scroll_max = height - 1;
 
     vterm->flags = flags;
 
@@ -144,7 +138,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     }
     else
     {
-        child_pid = forkpty(&master_fd,NULL,NULL,&ws);
+        child_pid = forkpty(&master_fd, NULL, NULL, &ws);
         vterm->pty_fd = master_fd;
 
         if(child_pid < 0)
@@ -203,8 +197,11 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
-    for(i = 0;i < vterm->rows;i++) free(vterm->cells[i]);
-    free(vterm->cells);
+    for(i = 0;i < vterm->vterm_desc[0].rows; i++)
+    {
+        free(vterm->vterm_desc[0].cells[i]);
+    }
+    free(vterm->vterm_desc[0].cells);
 
     free(vterm);
 

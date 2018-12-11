@@ -23,33 +23,39 @@ Copyright (c) 2004 Bruno T. C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret an 'insert line' sequence (IL) */
-void interpret_csi_IL(vterm_t *vterm,int param[],int pcount)
+void
+interpret_csi_IL(vterm_t *vterm,int param[],int pcount)
 {
-   int i, j;
-   int n=1;
+    vterm_desc_t    *v_desc = NULL;
+    int             i, j;
+    int             n = 1;
+    int             idx;
 
-   if(pcount && param[0] > 0) n=param[0];
+    // set vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   for(i=vterm->scroll_max;i >= vterm->crow+n;i--)
-   {
-      memcpy(vterm->cells[i],vterm->cells[i - n],
-         sizeof(vterm_cell_t)*vterm->cols);
-   }
+    if(pcount && param[0] > 0) n = param[0];
 
-   for(i=vterm->crow;i < vterm->crow+n; i++)
-   {
-      if(i>vterm->scroll_max) break;
+    for(i = v_desc->scroll_max; i >= v_desc->crow + n; i--)
+    {
+        memcpy(v_desc->cells[i], v_desc->cells[i - n],
+            sizeof(vterm_cell_t) * v_desc->cols);
+    }
 
-      // vterm->dirty_lines[i]=TRUE;
+    for(i = v_desc->crow; i < v_desc->crow + n; i++)
+    {
+        if(i > v_desc->scroll_max) break;
 
-      for(j=0;j < vterm->cols; j++)
-      {
-         vterm->cells[i][j].ch = 0x20;
-         vterm->cells[i][j].attr=vterm->curattr;
-      }
-   }
+        for(j = 0;j < v_desc->cols; j++)
+        {
+            v_desc->cells[i][j].ch = 0x20;
+            v_desc->cells[i][j].attr = v_desc->curattr;
+        }
+    }
 
-   return;
+    return;
 }

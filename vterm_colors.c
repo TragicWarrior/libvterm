@@ -26,12 +26,14 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_colors.h"
+#include "vterm_buffer.h"
 
 struct _my_color_pair
-  {
-  short fg;
-  short bg;
-  };
+{
+    short fg;
+    short bg;
+};
+
 typedef struct _my_color_pair MY_COLOR_PAIR;
 
 #define MAX_COLOR_PAIRS 512
@@ -144,30 +146,37 @@ int GetFGBGFromColorIndex( int index, int* fg, int* bg )
   }
 
 int
-vterm_set_colors(vterm_t *vterm,short fg,short bg)
+vterm_set_colors(vterm_t *vterm, short fg, short bg)
 {
-    short   colors;
+    vterm_desc_t    *v_desc = NULL;
+    short           colors;
+    int             idx;
 
     if(vterm == NULL) return -1;
-    if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+
+    // set vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-      colors = (short)FindColorPair( fg, bg );
-      if(colors == -1) colors = 0;
-      vterm->colors = colors;
+        colors = (short)FindColorPair( fg, bg );
+        if(colors == -1) colors = 0;
+        v_desc->colors = colors;
     }
     else // ncurses
     {
 #ifdef NOCURSES
-       colors = FindColorPair( fg, bg );
+        colors = FindColorPair(fg, bg);
 #else
-       if(has_colors() == FALSE)
-           return -1;
+        if(has_colors() == FALSE)
+            return -1;
 
-       colors = find_color_pair(vterm, fg,bg);
+        colors = find_color_pair(vterm, fg, bg);
 #endif
-       if(colors == -1) colors = 0;
+        if(colors == -1) colors = 0;
 
-       vterm->colors = colors;
+        v_desc->colors = colors;
     }
 
     return 0;
@@ -176,46 +185,54 @@ vterm_set_colors(vterm_t *vterm,short fg,short bg)
 short
 vterm_get_colors(vterm_t *vterm)
 {
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
     if(vterm == NULL) return -1;
-    if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+
+    // set vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
     }
     else // ncurses
     {
 #ifndef NOCURSES
-       if(has_colors() == FALSE) return -1;
+        if(has_colors() == FALSE) return -1;
 #endif
     }
 
-    return vterm->colors;
+    return v_desc->colors;
 }
 
 short
 find_color_pair(vterm_t *vterm, short fg,short bg)
 {
-    int     i;
+    int             i;
 
-    if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
+    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-       return FindColorPair( fg, bg );
+        return FindColorPair(fg, bg);
     }
     else // ncurses
     {
 #ifdef NOCURSES
-       return -1;
+        return -1;
 #else
-       short   fg_color,bg_color;
-       if(has_colors() == FALSE)
-           return -1;
+        short   fg_color, bg_color;
+        if(has_colors() == FALSE)
+            return -1;
 
-       for(i = 1;i < COLOR_PAIRS;i++)
-       {
-           pair_content(i,&fg_color,&bg_color);
-           if(fg_color == fg && bg_color == bg) break;
-       }
+        for(i = 1; i < COLOR_PAIRS; i++)
+        {
+            pair_content(i, &fg_color, &bg_color);
+            if(fg_color == fg && bg_color == bg) break;
+        }
 
-       if(i == COLOR_PAIRS)
-           return -1;
+        if(i == COLOR_PAIRS)
+            return -1;
 #endif
     }
 

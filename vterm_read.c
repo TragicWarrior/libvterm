@@ -69,7 +69,7 @@ vterm_read_pipe(vterm_t *vterm)
 
     if(child_pid == vterm->child_pid || child_pid==-1)
     {
-        vterm->state |= STATE_CHILD_EXITED;
+        vterm->internal_state |= STATE_CHILD_EXITED;
         return -1;
     }
 

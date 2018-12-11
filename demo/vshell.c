@@ -229,9 +229,14 @@ vshell_paint_screen(void)
 int
 vshell_resize(testwin_t *twin, vterm_t * vterm)
 {
+    // pid_t   child = 0;
+
     getmaxyx(stdscr, screen_h, screen_w);
 
     vshell_paint_screen();
+
+    // child = vterm_get_pid(vterm);
+    // kill(child, SIGWINCH);
 
     wresize(VWINDOW(twin), screen_h - 2, screen_w - 2);
 

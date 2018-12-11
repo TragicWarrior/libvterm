@@ -23,6 +23,7 @@ Copyright (c) 2017 Bryan Christ
 
 #include "vterm.h"
 #include "vterm_private.h"
+#include "vterm_buffer.h"
 
 /*
     the way UTF-8 is encoded, we can just test the highest bit, pop it
@@ -34,7 +35,14 @@ Copyright (c) 2017 Bryan Christ
 void
 vterm_utf8_start(vterm_t *vterm)
 {
-    vterm->state |= STATE_UTF8_MODE;
+    int             idx;
+    vterm_desc_t    *v_desc = NULL;
+
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    v_desc->buffer_state |= STATE_UTF8_MODE;
 
     // zero out the utf-8 buffer just in case
     vterm->utf8_buf_len = 0;
@@ -46,7 +54,14 @@ vterm_utf8_start(vterm_t *vterm)
 void
 vterm_utf8_cancel(vterm_t *vterm)
 {
-    vterm->state &= ~STATE_UTF8_MODE;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    v_desc->buffer_state &= ~STATE_UTF8_MODE;
 
     // zero out the utf-8 buffer for the next run
     vterm->utf8_buf_len = 0;
