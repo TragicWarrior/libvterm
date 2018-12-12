@@ -22,75 +22,105 @@ Copyright (c) 2009 Bryan Christ
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_render.h"
+#include "vterm_buffer.h"
 
 void
-vterm_erase(vterm_t *vterm)
+vterm_erase(vterm_t *vterm, int idx)
 {
-    int   cell_count;
-    int   x,y;
-    int   i;
+    vterm_desc_t    *v_desc = NULL;
+    int             cell_count;
+    int             x, y;
+    int             i;
 
     if(vterm == NULL) return;
 
-    cell_count = vterm-> rows * vterm->cols;
-
-    for(i = 0;i < cell_count;i++)
+    // a value of -1 means current, active buffer
+    if(idx == -1)
     {
-        x = i % vterm->cols;
-        y = (int)(i / vterm->cols);
-        vterm->cells[y][x].ch = 0x20;
-        vterm->cells[y][x].attr = COLOR_PAIR(vterm->colors);
+        // set the vterm description buffer selector
+        idx = vterm_get_active_buffer(vterm);
+    }
+
+    v_desc = &vterm->vterm_desc[idx];
+
+    cell_count = v_desc-> rows * v_desc->cols;
+
+    for(i = 0;i < cell_count; i++)
+    {
+        x = i % v_desc->cols;
+        y = (int)(i / v_desc->cols);
+        v_desc->cells[y][x].ch = 0x20;
+        v_desc->cells[y][x].attr = COLOR_PAIR(v_desc->colors);
     }
 
     return;
 }
 
 void
-vterm_erase_row(vterm_t *vterm,int row)
+vterm_erase_row(vterm_t *vterm, int row)
 {
-    int i;
+    vterm_desc_t    *v_desc = NULL;
+    int             i;
+    int             idx;
 
     if(vterm == NULL) return;
 
-    if(row == -1) row = vterm->crow;
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-    for(i = 0;i < vterm->cols;i++)
+    if(row == -1) row = v_desc->crow;
+
+    for(i = 0;i < v_desc->cols; i++)
     {
-        vterm->cells[row][i].ch = 0x20;
-        vterm->cells[row][i].attr = COLOR_PAIR(vterm->colors);
+        v_desc->cells[row][i].ch = 0x20;
+        v_desc->cells[row][i].attr = COLOR_PAIR(v_desc->colors);
     }
 
     return;
 }
 
 void
-vterm_erase_rows(vterm_t *vterm,int start_row)
+vterm_erase_rows(vterm_t *vterm, int start_row)
 {
-   if(vterm == NULL) return;
-   if(start_row < 0) return;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
 
-   while(start_row < vterm->rows)
-   {
-      vterm_erase_row(vterm,start_row);
-      start_row++;
-   }
+    if(vterm == NULL) return;
+    if(start_row < 0) return;
 
-   return;
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    while(start_row < v_desc->rows)
+    {
+        vterm_erase_row(vterm,start_row);
+        start_row++;
+    }
+
+    return;
 }
 
 void
-vterm_erase_col(vterm_t *vterm,int col)
+vterm_erase_col(vterm_t *vterm, int col)
 {
-    int i;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+    int             i;
 
     if(vterm == NULL) return;
 
-    if(col == -1) col = vterm->ccol;
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-    for(i = 0;i < vterm->rows;i++)
+    if(col == -1) col = v_desc->ccol;
+
+    for(i = 0;i < v_desc->rows; i++)
     {
-        vterm->cells[i][col].ch = 0x20;
-        vterm->cells[i][col].attr = COLOR_PAIR(vterm->colors);
+        v_desc->cells[i][col].ch = 0x20;
+        v_desc->cells[i][col].attr = COLOR_PAIR(v_desc->colors);
     }
 
     return;
@@ -99,12 +129,19 @@ vterm_erase_col(vterm_t *vterm,int col)
 void
 vterm_erase_cols(vterm_t *vterm,int start_col)
 {
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
     if(vterm == NULL) return;
     if(start_col < 0) return;
 
-    while(start_col < vterm->cols)
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    while(start_col < v_desc->cols)
     {
-        vterm_erase_col(vterm,start_col);
+        vterm_erase_col(vterm, start_col);
         start_col++;
     }
 

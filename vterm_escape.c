@@ -33,6 +33,8 @@ Copyright (c) 2004 Bruno T. C. de Oliveira
 #include "vterm_csi.h"
 #include "vterm_render.h"
 #include "vterm_misc.h"
+#include "vterm_buffer.h"
+#include "macros.h"
 
 static int
 vterm_interpret_esc_normal(vterm_t *vterm);
@@ -43,16 +45,23 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm);
 static int
 vterm_interpret_esc_xterm_dsc(vterm_t *vterm);
 
+static int
+vterm_interpret_esc_scs(vterm_t *vterm);
+
 static bool
 validate_csi_escape_suffix(char c);
 
 static bool
 validate_xterm_escape_suffix(char c);
 
+static bool
+validate_scs_escape_suffix(char c);
+
 void
 vterm_escape_start(vterm_t *vterm)
 {
-    vterm->state |= STATE_ESCAPE_MODE;
+    // v_desc->buffer_state |= STATE_ESCAPE_MODE;
+    vterm->internal_state |= STATE_ESCAPE_MODE;
 
     // zero out the escape buffer just in case
     vterm->esbuf_len = 0;
@@ -66,7 +75,8 @@ vterm_escape_start(vterm_t *vterm)
 void
 vterm_escape_cancel(vterm_t *vterm)
 {
-    vterm->state &= ~STATE_ESCAPE_MODE;
+    // v_desc->buffer_state &= ~STATE_ESCAPE_MODE;
+    vterm->internal_state &= ~STATE_ESCAPE_MODE;
 
     // zero out the escape buffer for the next run
     vterm->esbuf_len = 0;
@@ -80,24 +90,14 @@ vterm_escape_cancel(vterm_t *vterm)
 void
 vterm_interpret_escapes(vterm_t *vterm)
 {
-    char    firstchar;
-    char    lastchar;
-#ifdef _DEBUG
-    FILE            *f_debug;
-    char            debug_file[NAME_MAX];
-#endif
+    static char         interims[] = "[]P()";
+    static char         *end = interims + ARRAY_SZ(interims);
+    char                firstchar;
+    char                lastchar;
+    char                *pos;
 
     firstchar = vterm->esbuf[0];
     lastchar = vterm->esbuf[vterm->esbuf_len - 1];
-
-#ifdef _DEBUG
-    snprintf(debug_file,(sizeof(debug_file) - 1),
-        "/tmp/libvterm-%d-esc-log",vterm->child_pid);
-
-    f_debug = fopen(debug_file,"w");
-    fwrite(vterm->esbuf,sizeof(char),vterm->esbuf_len,f_debug);
-    fclose(f_debug);
-#endif
 
     // too early to do anything
     if(!firstchar) return;
@@ -124,7 +124,18 @@ vterm_interpret_escapes(vterm_t *vterm)
     }
 
     // if it's not these, we don't have code to handle it.
-    if(firstchar != '[' && firstchar != ']' && firstchar != 'P' )
+    pos = interims;
+
+    // look for intermediates we can handle
+    while(pos != end)
+    {
+        // match found
+        if(firstchar == *pos) break;
+        pos++;
+    }
+
+    // we didn't find a match.  end escape mode processing.
+    if(pos == end)
     {
         vterm_escape_cancel(vterm);
         return;
@@ -138,15 +149,27 @@ vterm_interpret_escapes(vterm_t *vterm)
 
     // we have a complete csi escape sequence: interpret it
     if(firstchar == '[' && validate_csi_escape_suffix(lastchar))
-       {
+    {
         vterm->esc_handler = vterm_interpret_esc_normal;
-       }
+    }
+
+    // SCS G0 sequence - discards for now
+    if(firstchar == '(' && validate_scs_escape_suffix(lastchar))
+    {
+        vterm->esc_handler = vterm_interpret_esc_scs;
+    }
+
+    // SCS G1 sequence - discards for now
+    if(firstchar == ')' && validate_scs_escape_suffix(lastchar))
+    {
+        vterm->esc_handler = vterm_interpret_esc_scs;
+    }
 
     // DCS sequence - starts in P and ends in Esc backslash
     if( firstchar == 'P'
         && vterm->esbuf_len > 2
         && vterm->esbuf[vterm->esbuf_len - 2] == '\x1B'
-        && lastchar=='\\' )
+        && lastchar == '\\' )
     {
         vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
     }
@@ -160,22 +183,16 @@ vterm_interpret_escapes(vterm_t *vterm)
         return;
     }
 
-
     return;
 }
 
 int
 vterm_interpret_esc_xterm_osc(vterm_t *vterm)
 {
-    /*
-        TODO
-
-        this function basically does nothing right now but it would be quite
-        easy to parse the data and set the "window" title supplied by the
-        Xterm OSC information.
-    */
-
     const char  *p;
+    char        *pos;
+    int         count = 0;
+    int         max_sz;
 
     p = vterm->esbuf + 1;
 
@@ -185,26 +202,40 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
         switch(*p)
         {
             // Change Icon Name and Window Title
-            case 0:
-            {
-                break;
-            }
+            case '0':
 
             // Change Icon Name
-            case 1:
+            case '1':
 
             // Change Window Title
-            case 2:
+            case '2':
             {
                 /*
-                    TODO:  for now we will simply return the number of
-                    characters processed.  by not returning 0 or -1 then
-                    calling function will keep us in ESCAPE MODE.
-
-                    In the future we could actually store the string for
-                    the user.
+                    todo:  for now we will simply copy the string and
+                    treat all OSC sequences the same (icon, name, both).
                 */
-                break;
+
+                // advance past the control code and the semicolon
+                p += 2;
+
+                max_sz = (sizeof(vterm->title) / sizeof(vterm->title[0])) - 1;
+                memset(vterm->title, 0, max_sz + 1);
+                pos = vterm->title;
+
+                while(*p != '\x07')
+                {
+                    // don't overflow buffer
+                    if(count < max_sz)
+                    {
+                        *pos = *p;
+                        pos++;
+                    }
+
+                    p++;
+                    count++;
+
+                    continue;
+                }
 
                 break;
             }
@@ -214,7 +245,7 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
          }
     }
 
-    return 0;
+    return count;
 }
 
 int
@@ -292,13 +323,13 @@ vterm_interpret_esc_normal(vterm_t *vterm)
 
         case 'l':
         {
-            interpret_dec_RM(vterm,csiparam,param_count);
+            interpret_dec_RM(vterm, csiparam, param_count);
             break;
         }
 
         case 'h':
         {
-            interpret_dec_SM(vterm,csiparam,param_count);
+            interpret_dec_SM(vterm, csiparam, param_count);
             break;
         }
 
@@ -398,6 +429,26 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     return 0;
 }
 
+static int
+vterm_interpret_esc_scs(vterm_t *vterm)
+{
+    const char  *p;
+
+    p = vterm->esbuf;
+
+    // G0 sequence - unused
+    if(*p == '(') {}
+
+    // G1 sequence - unused
+    if(*p == ')') {}
+
+    p++;
+    // could do something with the codes
+
+    // return the number of bytes handled
+    return 2;
+}
+
 bool
 validate_csi_escape_suffix(char c)
 {
@@ -414,6 +465,18 @@ validate_xterm_escape_suffix(char c)
 {
     if(c == '\x07') return TRUE;
     if(c == '\x96') return TRUE;
+
+    return FALSE;
+}
+
+bool
+validate_scs_escape_suffix(char c)
+{
+    if(c == 'A') return TRUE;
+    if(c == 'B') return TRUE;
+    if(c == '0') return TRUE;
+    if(c == '1') return TRUE;
+    if(c == '2') return TRUE;
 
     return FALSE;
 }

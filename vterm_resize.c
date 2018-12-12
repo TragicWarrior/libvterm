@@ -30,46 +30,59 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_misc.h"
+#include "vterm_buffer.h"
 
 void
 vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
                     int grip_top, int grip_left,
                     int grip_bottom, int grip_right)
 {
+    vterm_desc_t    *v_desc = NULL;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     uint16_t        i;
     int             delta_x;
     int             delta_y;
     int             start_x;
     int             start_y;
+    int             idx;
+
+    // suppress warnings
+    (void)grip_top;
+    (void)grip_left;
+    (void)grip_bottom;
+    (void)grip_right;
 
     if(vterm == NULL) return;
     if(width == 0 || height == 0) return;
 
-    delta_x = width - vterm->cols;
-    delta_y = height - vterm->rows;
-    start_x = vterm->cols;
-    start_y = vterm->rows;
+    // set the vterm description buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    delta_x = width - v_desc->cols;
+    delta_y = height - v_desc->rows;
+    start_x = v_desc->cols;
+    start_y = v_desc->rows;
 
     // realloc to accomodat the new matrix size
-    vterm->cells = (vterm_cell_t**)realloc(vterm->cells,
+    v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
         sizeof(vterm_cell_t*) * height);
 
     for(i = 0;i < height;i++)
     {
         // realloc() does not initlize new elements
-        if((delta_y > 0) && (i > (vterm->rows - 1))) vterm->cells[i] = NULL;
+        if((delta_y > 0) && (i > (v_desc->rows - 1))) v_desc->cells[i] = NULL;
 
-        vterm->cells[i] = (vterm_cell_t*)realloc(vterm->cells[i],
+        v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
             sizeof(vterm_cell_t) * width);
     }
 
-    vterm->rows = height;
-    vterm->cols = width;
+    v_desc->rows = height;
+    v_desc->cols = width;
 
-    if(!(vterm->state & STATE_SCROLL_SHORT))
+    if(!(v_desc->buffer_state & STATE_SCROLL_SHORT))
     {
-        vterm->scroll_max = height - 1;
+        v_desc->scroll_max = height - 1;
     }
 
     ws.ws_row = height;
@@ -77,11 +90,12 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
 
     clamp_cursor_to_bounds(vterm);
 
-    if(delta_x > 0) vterm_erase_cols(vterm,start_x);
-    if(delta_y > 0) vterm_erase_rows(vterm,start_y);
+    if(delta_x > 0) vterm_erase_cols(vterm, start_x);
+    if(delta_y > 0) vterm_erase_rows(vterm, start_y);
 
-    ioctl(vterm->pty_fd,TIOCSWINSZ,&ws);
-    kill(vterm->child_pid,SIGWINCH);
+    // signal the child process that terminal changed size
+    ioctl(vterm->pty_fd, TIOCSWINSZ, &ws);
+    kill(vterm->child_pid, SIGWINCH);
 
     return;
 }

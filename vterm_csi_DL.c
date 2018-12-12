@@ -25,31 +25,39 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret a 'delete line' sequence (DL) */
-void interpret_csi_DL(vterm_t *vterm,int param[],int pcount)
+void
+interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 {
-   int i, j;
-   int n=1;
+    vterm_desc_t    *v_desc = NULL;
+    int             i, j;
+    int             n = 1;
+    int             idx;
 
-   if(pcount && param[0] > 0) n=param[0];
+    // set selector for buffer description
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   for(i=vterm->crow;i <= vterm->scroll_max; i++)
-   {
-      if(i+n <= vterm->scroll_max)
-      {
-         memcpy(vterm->cells[i],vterm->cells[i+n],
-            sizeof(vterm_cell_t)*vterm->cols);
-      }
-      else
-      {
-         for(j=0;j < vterm->cols;j++)
-         {
-            vterm->cells[i][j].ch=0x20;
-            vterm->cells[i][j].attr=vterm->curattr;
-         }
-      }
-   }
+    if(pcount && param[0] > 0) n = param[0];
 
-   return;
+    for(i = v_desc->crow; i <= v_desc->scroll_max; i++)
+    {
+        if(i + n <= v_desc->scroll_max)
+        {
+            memcpy(v_desc->cells[i], v_desc->cells[i + n],
+                sizeof(vterm_cell_t) * v_desc->cols);
+        }
+        else
+        {
+            for(j = 0; j < v_desc->cols; j++)
+            {
+                v_desc->cells[i][j].ch = 0x20;
+                v_desc->cells[i][j].attr = v_desc->curattr;
+            }
+        }
+    }
+
+    return;
 }

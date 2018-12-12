@@ -23,25 +23,33 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_buffer.h"
 
 /* Interpret the 'insert blanks' sequence (ICH) */
-void interpret_csi_ICH(vterm_t *vterm,int param[],int pcount)
+void
+interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 {
-   int i;
-   int n=1;
+    vterm_desc_t    *v_desc = NULL;
+    int             i;
+    int             n = 1;
+    int             idx;
 
-   if(pcount && param[0]>0) n=param[0];
+    // set the vterm desciption selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   for (i=vterm->cols-1;i >= vterm->ccol+n;i--)
-   {
-      vterm->cells[vterm->crow][i]=vterm->cells[vterm->crow][i-n];
-   }
+    if(pcount && param[0] > 0) n = param[0];
 
-   for(i=vterm->ccol;i < vterm->ccol+n;i++)
-   {
-      vterm->cells[vterm->crow][i].ch=0x20;
-      vterm->cells[vterm->crow][i].attr = vterm->curattr;
-   }
+    for(i = v_desc->cols - 1; i >= v_desc->ccol + n; i--)
+    {
+        v_desc->cells[v_desc->crow][i] = v_desc->cells[v_desc->crow][i - n];
+    }
 
-   return;
+    for(i = v_desc->ccol; i < v_desc->ccol + n; i++)
+    {
+        v_desc->cells[v_desc->crow][i].ch = 0x20;
+        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+    }
+
+    return;
 }

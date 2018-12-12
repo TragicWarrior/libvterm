@@ -20,33 +20,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "vterm.h"
 #include "vterm_private.h"
-#include "vterm_csi.h"
-#include "vterm_buffer.h"
 
-/* Interpret an 'erase characters' (ECH) sequence */
 void
-interpret_csi_ECH(vterm_t *vterm, int param[], int pcount)
+vterm_get_title(vterm_t *vterm, char *buf, int buf_sz)
 {
-    vterm_desc_t    *v_desc = NULL;
-    int             i;
-    int             n = 1;
-    int             idx;
+    if(vterm == NULL) return;
+    if(buf == NULL) return;
+    if(buf_sz < 2) return;
 
-    // set vterm descipton buffer selector
-    idx = vterm_get_active_buffer(vterm);
-    v_desc = &vterm->vterm_desc[idx];
-
-    if(pcount && param[0] > 0) n = param[0];
-
-    for(i = v_desc->ccol; i < v_desc->ccol + n; i++)
-    {
-        if(i >= v_desc->cols) break;
-
-        v_desc->cells[v_desc->crow][i].ch = 0x20;
-        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
-    }
+    memset(buf, 0, buf_sz);
+    strncpy(buf, vterm->title, buf_sz - 1);
 
     return;
 }

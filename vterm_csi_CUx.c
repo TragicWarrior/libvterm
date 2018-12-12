@@ -24,44 +24,50 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_misc.h"
+#include "vterm_buffer.h"
 
 /* Interpret the 'relative mode' sequences: CUU, CUD, CUF, CUB, CNL,
  * CPL, CHA, HPR, VPA, VPR, HPA */
 void interpret_csi_CUx(vterm_t *vterm,char verb,int param[],int pcount)
 {
-   int n=1;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+    int             n = 1;
 
-   if(pcount && param[0]>0) n=param[0];
+    if(pcount && param[0] > 0) n = param[0];
 
-   switch (verb)
-   {
-      case 'A':         vterm->crow -= n;               break;
-      case 'B':
-      case 'e':         vterm->crow += n;               break;
-      case 'C':
-      case 'a':         vterm->ccol += n;               break;
-      case 'D':         vterm->ccol -= n;               break;
-      case 'E':
-      {
-         vterm->crow += n;
-         vterm->ccol = 0;
-         break;
-      }
-      case 'F':
-      {
-         vterm->crow -= n;
-         vterm->ccol = 0;
-         break;
-      }
-      case 'G':
-      case '`':         vterm->ccol=param[0]-1;    break;
-      case 'd':         vterm->crow=param[0]-1;    break;
-   }
+    // set active vterm description selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-   // vterm->state |= STATE_DIRTY_CURSOR;
-   clamp_cursor_to_bounds(vterm);
+    switch (verb)
+    {
+        case 'A':   v_desc->crow -= n;             break;
+        case 'B':
+        case 'e':   v_desc->crow += n;             break;
+        case 'C':
+        case 'a':   v_desc->ccol += n;             break;
+        case 'D':   v_desc->ccol -= n;             break;
+        case 'E':
+        {
+            v_desc->crow += n;
+            v_desc->ccol = 0;
+            break;
+        }
+        case 'F':
+        {
+            v_desc->crow -= n;
+            v_desc->ccol = 0;
+            break;
+        }
+        case 'G':
+        case '`':   v_desc->ccol = param[0] - 1;   break;
+        case 'd':   v_desc->crow = param[0] - 1;   break;
+    }
 
-   return;
+    clamp_cursor_to_bounds(vterm);
+
+    return;
 }
 
 /*

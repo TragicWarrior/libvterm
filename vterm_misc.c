@@ -22,16 +22,26 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #include "vterm.h"
 #include "vterm_misc.h"
+#include "vterm_private.h"
+#include "vterm_buffer.h"
 
-void clamp_cursor_to_bounds(vterm_t *vterm)
+inline void
+clamp_cursor_to_bounds(vterm_t *vterm)
 {
-    if(vterm->crow < 0) vterm->crow = 0;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
 
-    if(vterm->ccol < 0) vterm->ccol = 0;
+    // set vterm description buffer seletor
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
 
-    if(vterm->crow >= vterm->rows) vterm->crow = vterm->rows - 1;
+    if(v_desc->crow < 0) v_desc->crow = 0;
 
-    if(vterm->ccol >= vterm->cols) vterm->ccol = vterm->cols - 1;
+    if(v_desc->ccol < 0) v_desc->ccol = 0;
+
+    if(v_desc->crow >= v_desc->rows) v_desc->crow = v_desc->rows - 1;
+
+    if(v_desc->ccol >= v_desc->cols) v_desc->ccol = v_desc->cols - 1;
 
     return;
 }

@@ -32,6 +32,8 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_csi.h"
 #include "vterm_escape.h"
 #include "vterm_utf8.h"
+#include "vterm_buffer.h"
+#include "macros.h"
 
 static void
 vterm_render_ctrl_char(vterm_t *vterm,char c);
@@ -41,13 +43,13 @@ vterm_put_char(vterm_t *vterm,chtype c);
 
 
 void
-vterm_render(vterm_t *vterm,const char *data,int len)
+vterm_render(vterm_t *vterm, const char *data, int len)
 {
-    chtype      utf8_char;
-    int         bytes = -1;
-    int         i;
+    chtype          utf8_char;
+    int             bytes = -1;
+    int             i;
 
-    for (i = 0; i < len; i++, data++)
+    for(i = 0; i < len; i++, data++)
     {
         // completely ignore NUL
         if(*data == 0) continue;
@@ -118,7 +120,7 @@ vterm_render(vterm_t *vterm,const char *data,int len)
         }
         else
         {
-            vterm_put_char(vterm,*data);
+            vterm_put_char(vterm, *data);
         }
     }
 
@@ -126,50 +128,72 @@ vterm_render(vterm_t *vterm,const char *data,int len)
 }
 
 void
-vterm_put_char(vterm_t *vterm,chtype c)
+vterm_put_char(vterm_t *vterm, chtype c)
 {
-    static char vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
+    vterm_desc_t    *v_desc = NULL;
+    static char     vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
+    static char     *end = vt100_acs + ARRAY_SZ(vt100_acs);
+    char            *pos = NULL;
+    int             idx;
 
-    if(vterm->ccol >= vterm->cols)
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    if(v_desc->ccol >= v_desc->cols)
     {
-        vterm->ccol = 0;
+        v_desc->ccol = 0;
         vterm_scroll_down(vterm);
     }
 
     if(IS_MODE_ACS(vterm))
     {
-        if(strchr(vt100_acs,(char)c)!=NULL)
+        pos = vt100_acs;
+
+        // iternate through ACS looking for matches
+        while(pos != end)
         {
-            vterm->cells[vterm->crow][vterm->ccol].ch = NCURSES_ACS(c);
+            if((char)c == *pos)
+            {
+                v_desc->cells[v_desc->crow][v_desc->ccol].ch = NCURSES_ACS(c);
+            }
+
+            pos++;
         }
     }
     else
     {
-        vterm->cells[vterm->crow][vterm->ccol].ch = c;
+        v_desc->cells[v_desc->crow][v_desc->ccol].ch = c;
     }
 
-    vterm->cells[vterm->crow][vterm->ccol].attr = vterm->curattr;
-    vterm->ccol++;
+    v_desc->cells[v_desc->crow][v_desc->ccol].attr = v_desc->curattr;
+    v_desc->ccol++;
 
     return;
 }
 
 void
-vterm_render_ctrl_char(vterm_t *vterm,char c)
+vterm_render_ctrl_char(vterm_t *vterm, char c)
 {
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
     switch(c)
     {
         // carriage return
         case '\r':
         {
-            vterm->ccol = 0;
+            v_desc->ccol = 0;
             break;
         }
 
         // line-feed
         case '\n':
         {
-            // vterm->ccol = 0;
             vterm_scroll_down(vterm);
             break;
         }
@@ -177,14 +201,14 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
         // backspace
         case '\b':
         {
-            if(vterm->ccol > 0) vterm->ccol--;
+            if(v_desc->ccol > 0) v_desc->ccol--;
             break;
         }
 
         // tab
         case '\t':
         {
-            while(vterm->ccol % 8) vterm_put_char(vterm,' ');
+            while(v_desc->ccol % 8) vterm_put_char(vterm,' ');
             break;
         }
 
@@ -198,39 +222,19 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
         // enter graphical character mode
         case '\x0E':
         {
-            vterm->state |= STATE_ALT_CHARSET;
+            vterm->internal_state |= STATE_ALT_CHARSET;
             break;
         }
 
         // exit graphical character mode
         case '\x0F':
         {
-            vterm->state &= ~STATE_ALT_CHARSET;
+            vterm->internal_state &= ~STATE_ALT_CHARSET;
             break;
         }
-
-/*
-        // CSI character. Equivalent to ESC [
-        case '\x9B':
-        {
-            vterm_escape_start(vterm);
-
-            // inject the bracket [
-            vterm->esbuf[vterm->esbuf_len++] = '[';
-            break;
-        }
-*/
 
         // these interrupt escape sequences
         case '\x18':
-
-/*
-        case '\x1A':
-        {
-            vterm_escape_cancel(vterm);
-            break;
-        }
-*/
 
         // bell
         case '\a':
@@ -252,18 +256,33 @@ vterm_render_ctrl_char(vterm_t *vterm,char c)
 void
 vterm_get_size( vterm_t *vterm, int *width, int *height )
 {
-   if( vterm==NULL || width==NULL || height==NULL )
-      return;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
 
-   *width = vterm->cols;
-   *height = vterm->rows;
+    if(vterm == NULL || width == NULL || height == NULL )
+        return;
+
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    *width = v_desc->cols;
+    *height = v_desc->rows;
+
+    return;
 }
 
 vterm_cell_t**
 vterm_get_buffer( vterm_t *vterm )
 {
-   if( vterm==NULL )
-      return NULL;
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
 
-   return vterm->cells;
+    if(vterm == NULL) return NULL;
+
+    // set vterm desc buffer selector
+    idx = vterm_get_active_buffer(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    return v_desc->cells;
 }

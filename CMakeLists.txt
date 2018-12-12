@@ -33,6 +33,7 @@ endif()
 add_library(vterm-static STATIC
     vterm.c
     vterm_exec.c
+    vterm_buffer.c
     vterm_colors.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c
@@ -53,6 +54,7 @@ add_library(vterm-static STATIC
     vterm_erase.c
     vterm_escape.c
     vterm_misc.c
+    vterm_osc.c
     vterm_read.c
     vterm_render.c
     vterm_resize.c
@@ -65,6 +67,7 @@ add_library(vterm-static STATIC
 
 add_library(vterm.o OBJECT
     vterm.c
+    vterm_buffer.c
     vterm_exec.c
     vterm_colors.c
     vterm_csi_CUP.c
@@ -86,6 +89,7 @@ add_library(vterm.o OBJECT
     vterm_erase.c
     vterm_escape.c
     vterm_misc.c
+    vterm_osc.c
     vterm_read.c
     vterm_render.c
     vterm_resize.c

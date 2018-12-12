@@ -40,8 +40,10 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
+WINDOW  *screen_wnd;
+
 // prototypes
-void    vshell_paint_screen(void);
+void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 
 int main(int argc, char **argv)
@@ -57,7 +59,7 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL,"UTF-8");
 
-    initscr();
+    screen_wnd = initscr();
     noecho();
     start_color();
     raw();
@@ -140,7 +142,7 @@ int main(int argc, char **argv)
     }
 
     // paint the screen blue
-    vshell_paint_screen();
+    vshell_paint_screen(NULL);
 
     // VWINDOW(twin) = newwin(25,80,1,4);
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
@@ -200,26 +202,29 @@ int main(int argc, char **argv)
 }
 
 void
-vshell_paint_screen(void)
+vshell_paint_screen(vterm_t *vterm)
 {
-    char    title[] = " Term In A Box ";
-    int     len;
-    int     offset;
-    int     i;
-    int     j;
+    extern WINDOW   *screen_wnd;
+    char            title[256] = " Term In A Box ";
+    char            buf[254];
+    int             len;
+    int             offset;
 
     // paint the screen blue
-    attrset(COLOR_PAIR(32));
-    for (i = 0; i < screen_h; i++)
-    {
-        for (j = 0; j < screen_w; j++) addch(' ');
-    }
+    // attrset(COLOR_PAIR(5));  // green on black
+    attrset(COLOR_PAIR(32));    // white on blue
+    box(screen_wnd, 0, 0);
 
     // quick computer of title location
-    len = sizeof(title) / sizeof(title[0]);
-    offset = (screen_w >> 1) - (len >> 1);
+    vterm_get_title(vterm, buf, sizeof(buf));
+    if(buf[0] != '\0')
+    {
+        sprintf(title, " %s ", buf);
+    }
 
-    mvprintw(0, offset , title);
+    len = strlen(title);
+    offset = (screen_w >> 1) - (len >> 1);
+    mvprintw(0, offset, title);
 
     refresh();
 
@@ -229,9 +234,11 @@ vshell_paint_screen(void)
 int
 vshell_resize(testwin_t *twin, vterm_t * vterm)
 {
+    // pid_t   child = 0;
+
     getmaxyx(stdscr, screen_h, screen_w);
 
-    vshell_paint_screen();
+    vshell_paint_screen(vterm);
 
     wresize(VWINDOW(twin), screen_h - 2, screen_w - 2);
 
