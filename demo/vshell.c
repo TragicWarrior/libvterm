@@ -40,6 +40,8 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
+WINDOW  *screen_wnd;
+
 // prototypes
 void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
@@ -57,7 +59,7 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL,"UTF-8");
 
-    initscr();
+    screen_wnd = initscr();
     noecho();
     start_color();
     raw();
@@ -202,36 +204,27 @@ int main(int argc, char **argv)
 void
 vshell_paint_screen(vterm_t *vterm)
 {
-    char    title[] = " Term In A Box ";
-    char    buf[256];
-    int     len;
-    int     offset;
-    int     i;
-    int     j;
+    extern WINDOW   *screen_wnd;
+    char            title[256] = " Term In A Box ";
+    char            buf[254];
+    int             len;
+    int             offset;
 
     // paint the screen blue
-    attrset(COLOR_PAIR(32));
-    for (i = 0; i < screen_h; i++)
-    {
-        for (j = 0; j < screen_w; j++) addch(' ');
-    }
+    // attrset(COLOR_PAIR(5));  // green on black
+    attrset(COLOR_PAIR(32));    // white on blue
+    box(screen_wnd, 0, 0);
 
     // quick computer of title location
-    if(vterm == NULL)
+    vterm_get_title(vterm, buf, sizeof(buf));
+    if(buf[0] != '\0')
     {
-        len = sizeof(title) / sizeof(title[0]);
-        offset = (screen_w >> 1) - (len >> 1);
-
-        mvprintw(0, offset, title);
+        sprintf(title, " %s ", buf);
     }
-    else
-    {
-        vterm_get_title(vterm, buf, sizeof(buf));
-        len = strlen(buf);
-        offset = (screen_w >> 1) - (len >> 1);
 
-        mvprintw(0, offset, buf);
-    }
+    len = strlen(title);
+    offset = (screen_w >> 1) - (len >> 1);
+    mvprintw(0, offset, title);
 
     refresh();
 

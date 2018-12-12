@@ -40,7 +40,8 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 
     v_desc = &vterm->vterm_desc[idx];
 
-    v_desc->cells = (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
+    v_desc->cells =
+        (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
 
     for(i = 0;i < height;i++)
     {
@@ -50,6 +51,9 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 
     v_desc->rows = height;
     v_desc->cols = width;
+
+    v_desc->scroll_min = 0;
+    v_desc->scroll_max = height - 1;
 
     return;
 }
@@ -80,7 +84,7 @@ vterm_dealloc_buffer(vterm_t *vterm, int idx)
 int
 vterm_set_active_buffer(vterm_t *vterm, int idx)
 {
-
+    vterm_desc_t    *v_desc = NULL;
     int             curr_idx;
     struct winsize  ws = {.ws_xpixel = 0, .ws_ypixel = 0};
     int             width;
@@ -91,7 +95,10 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
 
     curr_idx = vterm_get_active_buffer(vterm);
 
-    // check to see if current buffer index is the requested one.  if so, no-op
+    /*
+        check to see if current buffer index is the same as the
+        requested one.  if so, this is a no-op.
+    */
     if(idx == curr_idx) return 0;
 
     /*
@@ -105,15 +112,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     height = ws.ws_row;
     width = ws.ws_col;
 
-    // endwin();
-    // printf("w:%d h:%d\n\r", width, height); 
-    // exit(0);
-
-    if(idx == VTERM_BUFFER_ALT)
-    {
-        vterm_alloc_buffer(vterm, VTERM_BUFFER_ALT, width, height);
-    }
-
+    // treat the standard buffer special -- it never goes away
     if(idx == VTERM_BUFFER_STD)
     {
         /*
@@ -122,9 +121,21 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
         */
         if(curr_idx == VTERM_BUFFER_ALT)
         {
-            vterm_dealloc_buffer(vterm, VTERM_BUFFER_STD);
+            vterm_dealloc_buffer(vterm, VTERM_BUFFER_ALT);
         }
     }
+    else
+    {
+        vterm_alloc_buffer(vterm, VTERM_BUFFER_ALT, width, height);
+        v_desc = &vterm->vterm_desc[idx];
+
+        // copy some defaults from standard buffer
+        v_desc->colors = vterm->vterm_desc[VTERM_BUFFER_STD].colors;
+
+        // erase the newly created buffer
+        vterm_erase(vterm, idx);
+    }
+
 
     // update the vterm buffer desc index
     vterm->vterm_desc_idx = idx;

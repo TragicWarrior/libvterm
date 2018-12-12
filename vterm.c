@@ -67,17 +67,10 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     if(height <= 0 || width <= 0) return NULL;
 
     if(vterm == NULL)
-        vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
+        vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
     // allocate a the buffer (a matrix of cells)
     vterm_alloc_buffer(vterm, VTERM_BUFFER_STD, width, height);
-
-    // initialize all cells with defaults
-    vterm_erase(vterm);
-
-    // initialization of other public fields
-    vterm->vterm_desc[0].crow = 0;
-    vterm->vterm_desc[0].ccol = 0;
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
@@ -85,7 +78,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     if(flags & VTERM_FLAG_NOCURSES)
     {
         int colorIndex = FindColorPair( COLOR_WHITE, COLOR_BLACK );
-        if( colorIndex<0 || colorIndex>255 )
+        if( colorIndex < 0 || colorIndex > 255 )
             colorIndex = 0;
         vterm->vterm_desc[0].curattr = (colorIndex & 0xff) << 8;
     }
@@ -97,6 +90,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
         vterm->vterm_desc[0].curattr = COLOR_PAIR( 0 );
 #endif
     }
+
+    // initialize all cells with defaults
+    vterm_erase(vterm, VTERM_BUFFER_STD);
 
     if(flags & VTERM_FLAG_DUMP)
     {
@@ -118,10 +114,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
             }
         }
     }
-
-    // initial scrolling area is the whole window
-    vterm->vterm_desc[0].scroll_min = 0;
-    vterm->vterm_desc[0].scroll_max = height - 1;
 
     vterm->flags = flags;
 

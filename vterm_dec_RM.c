@@ -49,10 +49,9 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
         if(param[i] == 47)
         {
             // check to see if we're already using the ALT buffer
-            if(idx == VTERM_BUFFER_ALT) continue;
+            if(idx == VTERM_BUFFER_STD) continue;
 
-            vterm_set_active_buffer(vterm, VTERM_BUFFER_ALT);
-            // vterm_wnd_update(vterm);
+            vterm_set_active_buffer(vterm, VTERM_BUFFER_STD);
             continue;
         }
     }

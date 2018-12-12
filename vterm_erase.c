@@ -25,18 +25,22 @@ Copyright (c) 2009 Bryan Christ
 #include "vterm_buffer.h"
 
 void
-vterm_erase(vterm_t *vterm)
+vterm_erase(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc = NULL;
     int             cell_count;
     int             x, y;
     int             i;
-    int             idx;
 
     if(vterm == NULL) return;
 
-    // set the vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    // a value of -1 means current, active buffer
+    if(idx == -1)
+    {
+        // set the vterm description buffer selector
+        idx = vterm_get_active_buffer(vterm);
+    }
+
     v_desc = &vterm->vterm_desc[idx];
 
     cell_count = v_desc-> rows * v_desc->cols;

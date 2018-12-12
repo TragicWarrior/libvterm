@@ -172,7 +172,7 @@ void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
 WINDOW*         vterm_wnd_get(vterm_t *vterm);
 
 /*
-    cause updates to the terminal to be blitted 
+    cause updates to the terminal to be blitted
 */
 void            vterm_wnd_update(vterm_t *vterm);
 #endif
@@ -181,7 +181,7 @@ void            vterm_wnd_update(vterm_t *vterm);
     set the foreground and bakground colors that will be used by
     default on erase operations.
 */
-int             vterm_set_colors(vterm_t *vterm,short fg,short bg);
+int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
 
 /*
     get the color pair number of the current fg/bg combination.
@@ -190,8 +190,11 @@ short           vterm_get_colors(vterm_t *vterm);
 
 /*
     erase the contents of the terminal.
+    @params:
+        vterm   - handle to a vterm object
+        idx     - index of the buffer or -1 for current 
 */
-void            vterm_erase(vterm_t *vterm);
+void            vterm_erase(vterm_t *vterm, int idx);
 
 /*
     erase the specified row of the terminal.

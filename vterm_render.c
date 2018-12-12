@@ -33,6 +33,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_escape.h"
 #include "vterm_utf8.h"
 #include "vterm_buffer.h"
+#include "macros.h"
 
 static void
 vterm_render_ctrl_char(vterm_t *vterm,char c);
@@ -44,22 +45,16 @@ vterm_put_char(vterm_t *vterm,chtype c);
 void
 vterm_render(vterm_t *vterm, const char *data, int len)
 {
-    vterm_desc_t    *v_desc = NULL;
     chtype          utf8_char;
     int             bytes = -1;
-    int             idx;
     int             i;
-
-    // set the vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
-    v_desc = &vterm->vterm_desc[idx];
 
     for(i = 0; i < len; i++, data++)
     {
         // completely ignore NUL
         if(*data == 0) continue;
 
-        if(!IS_MODE_ESCAPED(v_desc))
+        if(!IS_MODE_ESCAPED(vterm))
         {
             if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
             {
@@ -71,13 +66,13 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         // the non-ascii code points for utf start at 0x80
         if((unsigned int)*data > 0x7F)
         {
-            if(!IS_MODE_UTF8(v_desc))
+            if(!IS_MODE_UTF8(vterm))
             {
                 vterm_utf8_start(vterm);
             }
         }
 
-        if(IS_MODE_UTF8(v_desc))
+        if(IS_MODE_UTF8(vterm))
         {
             if(vterm->utf8_buf_len >= UTF8_BUF_SIZE)
             {
@@ -105,7 +100,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             continue;
         }
 
-        if(IS_MODE_ESCAPED(v_desc))
+        if(IS_MODE_ESCAPED(vterm))
         {
             if(vterm->esbuf_len >= ESEQ_BUF_SIZE)
             {
@@ -133,10 +128,12 @@ vterm_render(vterm_t *vterm, const char *data, int len)
 }
 
 void
-vterm_put_char(vterm_t *vterm,chtype c)
+vterm_put_char(vterm_t *vterm, chtype c)
 {
     vterm_desc_t    *v_desc = NULL;
     static char     vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
+    static char     *end = vt100_acs + ARRAY_SZ(vt100_acs);
+    char            *pos = NULL;
     int             idx;
 
     // set vterm desc buffer selector
@@ -149,11 +146,19 @@ vterm_put_char(vterm_t *vterm,chtype c)
         vterm_scroll_down(vterm);
     }
 
-    if(IS_MODE_ACS(v_desc))
+    if(IS_MODE_ACS(vterm))
     {
-        if(strchr(vt100_acs, (char)c) != NULL)
+        pos = vt100_acs;
+
+        // iternate through ACS looking for matches
+        while(pos != end)
         {
-            v_desc->cells[v_desc->crow][v_desc->ccol].ch = NCURSES_ACS(c);
+            if((char)c == *pos)
+            {
+                v_desc->cells[v_desc->crow][v_desc->ccol].ch = NCURSES_ACS(c);
+            }
+
+            pos++;
         }
     }
     else
@@ -189,7 +194,6 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            // vterm->ccol = 0;
             vterm_scroll_down(vterm);
             break;
         }
@@ -218,39 +222,19 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // enter graphical character mode
         case '\x0E':
         {
-            v_desc->buffer_state |= STATE_ALT_CHARSET;
+            vterm->internal_state |= STATE_ALT_CHARSET;
             break;
         }
 
         // exit graphical character mode
         case '\x0F':
         {
-            v_desc->buffer_state &= ~STATE_ALT_CHARSET;
+            vterm->internal_state &= ~STATE_ALT_CHARSET;
             break;
         }
-
-/*
-        // CSI character. Equivalent to ESC [
-        case '\x9B':
-        {
-            vterm_escape_start(vterm);
-
-            // inject the bracket [
-            vterm->esbuf[vterm->esbuf_len++] = '[';
-            break;
-        }
-*/
 
         // these interrupt escape sequences
         case '\x18':
-
-/*
-        case '\x1A':
-        {
-            vterm_escape_cancel(vterm);
-            break;
-        }
-*/
 
         // bell
         case '\a':

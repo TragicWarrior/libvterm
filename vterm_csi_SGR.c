@@ -125,13 +125,15 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         if(param[i] == 10)                                // rmacs
         {
-            v_desc->buffer_state &= ~STATE_ALT_CHARSET;
+            // v_desc->buffer_state &= ~STATE_ALT_CHARSET;
+            vterm->internal_state &= ~STATE_ALT_CHARSET;
             continue;
         }
 
 		if(param[i] == 11)                                // smacs
         {
-            v_desc->buffer_state |= STATE_ALT_CHARSET;
+            // v_desc->buffer_state |= STATE_ALT_CHARSET;
+            vterm->internal_state |= STATE_ALT_CHARSET;
             continue;
         }
 

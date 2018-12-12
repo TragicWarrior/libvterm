@@ -43,9 +43,9 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #define STATE_CURSOR_INVIS      (1 << 10)
 #define STATE_SCROLL_SHORT      (1 << 11)   // scroll region is not full height
 
-#define IS_MODE_ESCAPED(x)      (x->buffer_state & STATE_ESCAPE_MODE)
-#define IS_MODE_ACS(x)          (x->buffer_state & STATE_ALT_CHARSET)
-#define IS_MODE_UTF8(x)         (x->buffer_state & STATE_UTF8_MODE)
+#define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
+#define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
+#define IS_MODE_UTF8(x)         (x->internal_state & STATE_UTF8_MODE)
 
 struct _vterm_desc_s
 {

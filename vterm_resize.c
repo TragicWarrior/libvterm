@@ -46,6 +46,12 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     int             start_y;
     int             idx;
 
+    // suppress warnings
+    (void)grip_top;
+    (void)grip_left;
+    (void)grip_bottom;
+    (void)grip_right;
+
     if(vterm == NULL) return;
     if(width == 0 || height == 0) return;
 
