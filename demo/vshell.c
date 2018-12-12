@@ -41,7 +41,7 @@ testwin_t;
 #define VWINDOW(x)  (*(WINDOW**)x)
 
 // prototypes
-void    vshell_paint_screen(void);
+void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 
 int main(int argc, char **argv)
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     }
 
     // paint the screen blue
-    vshell_paint_screen();
+    vshell_paint_screen(NULL);
 
     // VWINDOW(twin) = newwin(25,80,1,4);
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
@@ -200,9 +200,10 @@ int main(int argc, char **argv)
 }
 
 void
-vshell_paint_screen(void)
+vshell_paint_screen(vterm_t *vterm)
 {
     char    title[] = " Term In A Box ";
+    char    buf[256];
     int     len;
     int     offset;
     int     i;
@@ -216,10 +217,21 @@ vshell_paint_screen(void)
     }
 
     // quick computer of title location
-    len = sizeof(title) / sizeof(title[0]);
-    offset = (screen_w >> 1) - (len >> 1);
+    if(vterm == NULL)
+    {
+        len = sizeof(title) / sizeof(title[0]);
+        offset = (screen_w >> 1) - (len >> 1);
 
-    mvprintw(0, offset , title);
+        mvprintw(0, offset, title);
+    }
+    else
+    {
+        vterm_get_title(vterm, buf, sizeof(buf));
+        len = strlen(buf);
+        offset = (screen_w >> 1) - (len >> 1);
+
+        mvprintw(0, offset, buf);
+    }
 
     refresh();
 
@@ -233,10 +245,7 @@ vshell_resize(testwin_t *twin, vterm_t * vterm)
 
     getmaxyx(stdscr, screen_h, screen_w);
 
-    vshell_paint_screen();
-
-    // child = vterm_get_pid(vterm);
-    // kill(child, SIGWINCH);
+    vshell_paint_screen(vterm);
 
     wresize(VWINDOW(twin), screen_h - 2, screen_w - 2);
 

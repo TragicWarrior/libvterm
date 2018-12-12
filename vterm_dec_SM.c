@@ -42,12 +42,21 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
     for(i = 0; i < pcount; i++)
     {
         /* civis is actually "normal" for rxvt */
-        if(param[i] == 25) v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
+        if(param[i] == 25)
+        {
+            v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
+            continue;
+        }
 
-        // restore standard buffer
+        // start alt buffer
+        // CSI handler:  ESC [ ? 47 h
         if(param[i] == 47)
         {
-            //vterm_set_buffer(vterm,
-        } 
+            // check to see if we're already using the ALT buffer
+            if(idx == VTERM_BUFFER_ALT) continue;
+
+            vterm_set_active_buffer(vterm, VTERM_BUFFER_ALT);
+            continue;
+        }
     }
 }

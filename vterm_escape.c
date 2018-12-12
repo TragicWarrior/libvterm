@@ -153,9 +153,9 @@ vterm_interpret_escapes(vterm_t *vterm)
 
     // we have a complete csi escape sequence: interpret it
     if(firstchar == '[' && validate_csi_escape_suffix(lastchar))
-       {
+    {
         vterm->esc_handler = vterm_interpret_esc_normal;
-       }
+    }
 
     // DCS sequence - starts in P and ends in Esc backslash
     if( firstchar == 'P'
@@ -181,15 +181,10 @@ vterm_interpret_escapes(vterm_t *vterm)
 int
 vterm_interpret_esc_xterm_osc(vterm_t *vterm)
 {
-    /*
-        TODO
-
-        this function basically does nothing right now but it would be quite
-        easy to parse the data and set the "window" title supplied by the
-        Xterm OSC information.
-    */
-
     const char  *p;
+    char        *pos;
+    int         count = 0;
+    int         max_sz;
 
     p = vterm->esbuf + 1;
 
@@ -199,26 +194,40 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
         switch(*p)
         {
             // Change Icon Name and Window Title
-            case 0:
-            {
-                break;
-            }
+            case '0':
 
             // Change Icon Name
-            case 1:
+            case '1':
 
             // Change Window Title
-            case 2:
+            case '2':
             {
                 /*
-                    TODO:  for now we will simply return the number of
-                    characters processed.  by not returning 0 or -1 then
-                    calling function will keep us in ESCAPE MODE.
-
-                    In the future we could actually store the string for
-                    the user.
+                    todo:  for now we will simply copy the string and
+                    treat all OSC sequences the same (icon, name, both).
                 */
-                break;
+
+                // advance past the control code and the semicolon
+                p += 2;
+
+                max_sz = (sizeof(vterm->title) / sizeof(vterm->title[0])) - 1;
+                memset(vterm->title, 0, max_sz + 1);
+                pos = vterm->title;
+
+                while(*p != '\x07')
+                {
+                    // don't overflow buffer
+                    if(count < max_sz)
+                    {
+                        *pos = *p;
+                        pos++;
+                    }
+
+                    p++;
+                    count++;
+
+                    continue;
+                }
 
                 break;
             }
@@ -228,7 +237,7 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
          }
     }
 
-    return 0;
+    return count;
 }
 
 int
@@ -306,13 +315,13 @@ vterm_interpret_esc_normal(vterm_t *vterm)
 
         case 'l':
         {
-            interpret_dec_RM(vterm,csiparam,param_count);
+            interpret_dec_RM(vterm, csiparam, param_count);
             break;
         }
 
         case 'h':
         {
-            interpret_dec_SM(vterm,csiparam,param_count);
+            interpret_dec_SM(vterm, csiparam, param_count);
             break;
         }
 

@@ -69,10 +69,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     if(vterm == NULL)
         vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
 
-    // record dimensions
-    vterm->vterm_desc[0].rows = height;
-    vterm->vterm_desc[0].cols = width;
-
     // allocate a the buffer (a matrix of cells)
     vterm_alloc_buffer(vterm, VTERM_BUFFER_STD, width, height);
 

@@ -140,6 +140,12 @@ int             vterm_get_pty_fd(vterm_t *vterm);
 const char*     vterm_get_ttyname(vterm_t *vterm);
 
 /*
+    get the name of the window title (if set by OSC command)
+*/
+
+void            vterm_get_title(vterm_t *vterm, char *buf, int buf_sz);
+
+/*
     set a binary and args to launch instead of a shell.
 */
 void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);

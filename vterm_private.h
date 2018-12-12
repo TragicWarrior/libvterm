@@ -67,22 +67,20 @@ typedef struct _vterm_desc_s    vterm_desc_t;
 
 struct _vterm_s
 {
-    vterm_desc_t    vterm_desc[2];              // normal buffer and special buffer
-    int             vterm_desc_idx;             // index of active buffer; 
+    vterm_desc_t    vterm_desc[2];              // normal buffer and alt buffer
+    int             vterm_desc_idx;             // index of active buffer;
 
 #ifndef NOCURSES
     WINDOW          *window;                    // curses window
 #endif
     char            ttyname[96];                // populated with ttyname_r()
 
-    char            prgname[128];               /*
-                                                    this can be the name of the
+    char            title[128];                 /*
+                                                    possibly the name of the
                                                     application running in the
                                                     terminal.  the data is
                                                     supplied by the Xterm OSC
-                                                    code sequences but is
-                                                    currently not supported
-                                                    by libvterm.
+                                                    code sequences.
                                                 */
 
 

@@ -21,6 +21,8 @@
 
 #include <stdlib.h>
 
+#include <sys/ioctl.h>
+
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
@@ -28,21 +30,26 @@
 void
 vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 {
-    int i;
+    vterm_desc_t    *v_desc;
+    int             i;
 
     if(vterm == NULL) return;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
 
     if(width < 0 || height < 0) return;
 
-    vterm->vterm_desc[idx].cells =
-        (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
+    v_desc = &vterm->vterm_desc[idx];
+
+    v_desc->cells = (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
 
     for(i = 0;i < height;i++)
     {
-        vterm->vterm_desc[idx].cells[i] =
+        v_desc->cells[i] = 
             (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
     }
+
+    v_desc->rows = height;
+    v_desc->cols = width;
 
     return;
 }
@@ -73,13 +80,54 @@ vterm_dealloc_buffer(vterm_t *vterm, int idx)
 int
 vterm_set_active_buffer(vterm_t *vterm, int idx)
 {
-    int     curr_idx;
+
+    int             curr_idx;
+    struct winsize  ws = {.ws_xpixel = 0, .ws_ypixel = 0};
+    int             width;
+    int             height;
 
     if(vterm == NULL) return -1;
-
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return -1;
 
     curr_idx = vterm_get_active_buffer(vterm);
+
+    // check to see if current buffer index is the requested one.  if so, no-op
+    if(idx == curr_idx) return 0;
+
+    /*
+        get current terminal size using the best methods available.  typically,
+        that means using TIOCGWINSZ ioctl which is pretty portable.  an
+        alternative method could be getmaxyx() which is found in most curses
+        implementations.  however, that causes problems for uses of libvterm
+        where the rendering apparatus is not a curses WINDOW.
+    */
+    ioctl(vterm->pty_fd, TIOCGWINSZ, &ws);
+    height = ws.ws_row;
+    width = ws.ws_col;
+
+    // endwin();
+    // printf("w:%d h:%d\n\r", width, height); 
+    // exit(0);
+
+    if(idx == VTERM_BUFFER_ALT)
+    {
+        vterm_alloc_buffer(vterm, VTERM_BUFFER_ALT, width, height);
+    }
+
+    if(idx == VTERM_BUFFER_STD)
+    {
+        /*
+            if the current buffer was the ALT buffer, we need to tear it
+            it down befor switching.
+        */
+        if(curr_idx == VTERM_BUFFER_ALT)
+        {
+            vterm_dealloc_buffer(vterm, VTERM_BUFFER_STD);
+        }
+    }
+
+    // update the vterm buffer desc index
+    vterm->vterm_desc_idx = idx;
 
     return 0;
 }

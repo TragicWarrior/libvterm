@@ -43,5 +43,17 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
     {
         /* civis is actually the "normal" vibility for rxvt   */
         if(param[i] == 25) v_desc->buffer_state |= STATE_CURSOR_INVIS;
+
+        // restore standard buffer
+        // CSI hanlder:  ESC [ ? 47 l
+        if(param[i] == 47)
+        {
+            // check to see if we're already using the ALT buffer
+            if(idx == VTERM_BUFFER_ALT) continue;
+
+            vterm_set_active_buffer(vterm, VTERM_BUFFER_ALT);
+            // vterm_wnd_update(vterm);
+            continue;
+        }
     }
 }

@@ -82,5 +82,8 @@ vterm_wnd_update(vterm_t *vterm)
 
     return;
 }
+
+
+
 #endif
 
