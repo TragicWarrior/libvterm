@@ -61,22 +61,25 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 void
 vterm_dealloc_buffer(vterm_t *vterm, int idx)
 {
-    vterm_desc_t    *vterm_desc;
+    vterm_desc_t    *v_desc;
     int             i;
 
     if(vterm == NULL) return;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
 
-    vterm_desc = &vterm->vterm_desc[idx];
+    v_desc = &vterm->vterm_desc[idx];
 
-    for(i = 0; i < vterm_desc->rows; i++)
+    // prevent a double-free
+    if(v_desc->cells == NULL) return;
+
+    for(i = 0; i < v_desc->rows; i++)
     {
-        free(vterm_desc->cells[i]);
-        vterm_desc->cells[i] = NULL;
+        free(v_desc->cells[i]);
+        v_desc->cells[i] = NULL;
     }
 
-    free(vterm_desc->cells);
-    vterm_desc->cells = NULL;
+    free(v_desc->cells);
+    v_desc->cells = NULL;
 
     return;
 }
