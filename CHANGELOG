@@ -1,3 +1,12 @@
+3.0
+
+* [Bryan Christ] Added support for multiple buffers.
+* [Bryan Christ] Improved handling of OSC codes including a new
+  API for fetching window title.
+* [Bryan Christ] Performance improvements in parsing systems.
+* [Bryan Christ] Bugfixes.
+* [Bryan Christ] Update demo program for showcase and testing.
+
 2.5
 
 * [Bryan Christ] Fixed some compiler warnings and improperly
