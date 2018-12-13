@@ -44,7 +44,7 @@ vterm_read_pipe(vterm_t *vterm)
     char 			*buf = NULL;
     char            *pos;
     int             bytes_peek = 0;
-	size_t			bytes_waiting;
+	size_t			bytes_waiting = 0;
     ssize_t			bytes_read = 0;
     ssize_t         bytes_written = 0;
     size_t          bytes_remaining = 0;
@@ -65,9 +65,9 @@ vterm_read_pipe(vterm_t *vterm)
     if(vterm->pty_fd < 0) return -1;
 
     // check to see if child pid has exited
-    child_pid = waitpid(vterm->child_pid,&pid_status,WNOHANG);
+    child_pid = waitpid(vterm->child_pid, &pid_status, WNOHANG);
 
-    if(child_pid == vterm->child_pid || child_pid==-1)
+    if(child_pid == vterm->child_pid || child_pid == -1)
     {
         vterm->internal_state |= STATE_CHILD_EXITED;
         return -1;
@@ -77,7 +77,7 @@ vterm_read_pipe(vterm_t *vterm)
     fd_array.events = POLLIN;
 
     // wait 10 millisecond for data on pty file descriptor.
-    retval = poll(&fd_array,1,10);
+    retval = poll(&fd_array, 1, 10);
 
     // no data or poll() error.
     if(retval <= 0)
@@ -87,27 +87,34 @@ vterm_read_pipe(vterm_t *vterm)
     }
 
 #ifdef FIONREAD
-	retval = ioctl(vterm->pty_fd,FIONREAD,&bytes_peek);
+	retval = ioctl(vterm->pty_fd, FIONREAD, &bytes_peek);
 #else
-	retval = ioclt(vterm->pty_fd,TIOCINQ,&bytes_peek);
+	retval = ioclt(vterm->pty_fd, TIOCINQ, &bytes_peek);
 #endif
 
     if(retval == -1) return 0;
 	if(bytes_peek == 0) return 0;
 
     bytes_waiting = bytes_peek;
-    if(bytes_waiting > SSIZE_MAX) bytes_waiting=SSIZE_MAX;
+    // if(bytes_waiting > SSIZE_MAX) bytes_waiting = SSIZE_MAX;
+    if(bytes_waiting > PIPE_BUF) bytes_waiting = PIPE_BUF;
     bytes_remaining = bytes_waiting;
 
-	buf = (char*)calloc(bytes_waiting + 10,sizeof(char));	/* 10 byte padding	*/
+	// 10 byte padding
+	buf = (char*)calloc(bytes_waiting + 10, sizeof(char));
     pos = buf;
 
     do
     {
-        bytes_read = read(vterm->pty_fd,pos,bytes_remaining);
+        bytes_read = read(vterm->pty_fd, pos, bytes_remaining);
         if(bytes_read == -1)
         {
-            if(errno == EINTR) bytes_read=0;
+            // retry if interrupted by a signal
+            if(errno == EINTR)
+            {
+                bytes_read = 0;
+                continue;
+            }
             else errcpy = errno;
         }
 
@@ -128,13 +135,14 @@ vterm_read_pipe(vterm_t *vterm)
             bytes_written = write(vterm->debug_fd,
                 (const void *)buf, bytes_read);
             if( bytes_written != bytes_read )
-              {
-              fprintf(stderr,"ERROR: wrote fewer bytes to debug than read (%d w / %d r)\n",
-                  (int)bytes_written, (int)bytes_read );
-              }
+            {
+                fprintf(stderr,
+                    "ERROR: wrote fewer bytes than read (%d w / %d r)\n",
+                    (int)bytes_written, (int)bytes_read);
+            }
         }
 
-        vterm_render(vterm,buf,bytes_read);
+        vterm_render(vterm, buf, bytes_read);
     }
 
     // release memory
