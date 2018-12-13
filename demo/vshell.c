@@ -26,6 +26,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <locale.h>
 #include <string.h>
 #include <stdlib.h>
+// #include <limits.h>
 
 #include "../vterm.h"
 #include "../strings.h"
@@ -198,6 +199,9 @@ int main(int argc, char **argv)
     }
 
     endwin();
+
+    // printf("Pipe buffer size was %d\n\r", PIPE_BUF);
+
     return 0;
 }
 
