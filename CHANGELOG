@@ -1,4 +1,9 @@
-3.0
+3.2
+
+* [Bryan Christ] Fixed a SEGV caused by high-velocity applications
+  we made malloc blow up.
+
+3.1
 
 * [Bryan Christ] Fix a double-free situation.
 
