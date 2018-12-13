@@ -230,6 +230,10 @@ vshell_paint_screen(vterm_t *vterm)
     offset = (screen_w >> 1) - (len >> 1);
     mvprintw(0, offset, title);
 
+    sprintf(title, " %d x %d ", screen_w - 2, screen_h - 2);
+    len = strlen(title);
+    mvprintw(screen_h - 1, offset, title);
+
     refresh();
 
     return;
