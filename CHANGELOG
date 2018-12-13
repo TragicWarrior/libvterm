@@ -1,5 +1,9 @@
 3.0
 
+* [Bryan Christ] Fix a double-free situation.
+
+3.0
+
 * [Bryan Christ] Added support for multiple buffers.
 * [Bryan Christ] Improved handling of OSC codes including a new
   API for fetching window title.
