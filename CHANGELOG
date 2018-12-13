@@ -1,3 +1,8 @@
+3.3
+
+* [Bryan Christ] Fixed a SEGV caused by massive ICH moves.
+  Implemented as a workaround.  Full fix later.
+
 3.2
 
 * [Bryan Christ] Fixed a SEGV caused by high-velocity applications
