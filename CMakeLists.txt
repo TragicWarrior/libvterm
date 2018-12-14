@@ -18,8 +18,10 @@ add_definitions("-D_REENTRANT")
 #add_definitions("-D_POSIX_C_SOURCE=200112L")
 add_definitions("-D_POSIX_C_SOURCE=200809L")
 
-
+# set these before running the find_package directive for Curses
 set(CURSES_NEED_NCURSES "TRUE")
+set(CURSES_NEED_WIDE "TRUE")
+
 find_package(Curses)
 
 if (!DEFINE_CURSES)
