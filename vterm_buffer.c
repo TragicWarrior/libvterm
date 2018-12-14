@@ -20,6 +20,7 @@
 */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/ioctl.h>
 
@@ -59,6 +60,70 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 }
 
 void
+vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
+{
+    vterm_desc_t    *v_desc;
+    int             delta_y = 0;
+    int             delta_x = 0;
+    int             start_x = 0;
+    uint16_t        i;
+    uint16_t        j;
+
+    if(vterm == NULL) return;
+    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+
+    if(width == 0 || height == 0) return;
+
+    // set the vterm description buffer selector
+    v_desc = &vterm->vterm_desc[idx];
+
+    delta_y = height - v_desc->rows;
+    delta_x = width - v_desc->cols;
+
+    // realloc to accomodate the new matrix size
+    v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
+        sizeof(vterm_cell_t*) * height);
+
+    for(i = 0; i < height; i++)
+    {
+        // when adding new rows, we can just calloc() them.
+        if((delta_y > 0) && (i > (v_desc->rows - 1)))
+        {
+            v_desc->cells[i] =
+                (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
+
+            // fill new row with blanks
+            for(j = 0; j < width; j++)
+            {
+                v_desc->cells[i][j].ch = ' ';
+            }
+
+            continue;
+        }
+
+        // this handles existing rows
+        v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
+            sizeof(vterm_cell_t) * width);
+
+        // fill new row with blanks
+        start_x = v_desc->cols - 1;
+        for(j = start_x; j < width; j++)
+        {
+            v_desc->cells[i][j].ch = ' ';
+            v_desc->cells[i][j].attr = 0;
+        }
+    }
+
+    v_desc->rows = height;
+    v_desc->cols = width;
+
+    v_desc->scroll_max = height - 1;
+
+    return;
+}
+
+
+void
 vterm_dealloc_buffer(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc;
@@ -92,6 +157,8 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     struct winsize  ws = {.ws_xpixel = 0, .ws_ypixel = 0};
     int             width;
     int             height;
+    int             std_width, std_height;
+    int             curr_width, curr_height;
 
     if(vterm == NULL) return -1;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return -1;
@@ -119,17 +186,36 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     if(idx == VTERM_BUFFER_STD)
     {
         /*
-            if the current buffer was the ALT buffer, we need to tear it
-            it down befor switching.
+            if the current buffer not the STD buffer, we need to handle
+            a few housekeeping items and then tear down the other
+            buffer before switching.
         */
-        if(curr_idx == VTERM_BUFFER_ALT)
+        if(curr_idx != VTERM_BUFFER_STD)
         {
-            vterm_dealloc_buffer(vterm, VTERM_BUFFER_ALT);
+            // check to see if a resize happened
+            std_width = vterm->vterm_desc[VTERM_BUFFER_STD].cols;
+            std_height = vterm->vterm_desc[VTERM_BUFFER_STD].rows;
+            curr_width = vterm->vterm_desc[curr_idx].cols;
+            curr_height = vterm->vterm_desc[curr_idx].rows;
+
+            if(std_height != curr_height || std_width != curr_width)
+            {
+                vterm_realloc_buffer(vterm, VTERM_BUFFER_STD,
+                    curr_width, curr_height);
+            }
+
+            vterm_dealloc_buffer(vterm, curr_idx);
         }
     }
-    else
+
+    /*
+        given the above conditional, this could have been an if-else.
+        however, this is more readable and it should optimize
+        about the same.
+    */
+    if(idx != VTERM_BUFFER_STD)
     {
-        vterm_alloc_buffer(vterm, VTERM_BUFFER_ALT, width, height);
+        vterm_alloc_buffer(vterm, idx, width, height);
         v_desc = &vterm->vterm_desc[idx];
 
         // copy some defaults from standard buffer

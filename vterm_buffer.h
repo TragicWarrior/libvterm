@@ -38,6 +38,8 @@ enum
 
 void    vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height);
 
+void    vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height);
+
 void    vterm_dealloc_buffer(vterm_t *vterm, int idx);
 
 int     vterm_set_active_buffer(vterm_t *vterm, int idx);

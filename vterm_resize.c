@@ -39,7 +39,6 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
 {
     vterm_desc_t    *v_desc = NULL;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
-    uint16_t        i;
     int             delta_x;
     int             delta_y;
     int             start_x;
@@ -64,21 +63,8 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     start_x = v_desc->cols;
     start_y = v_desc->rows;
 
-    // realloc to accomodat the new matrix size
-    v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
-        sizeof(vterm_cell_t*) * height);
-
-    for(i = 0;i < height;i++)
-    {
-        // realloc() does not initlize new elements
-        if((delta_y > 0) && (i > (v_desc->rows - 1))) v_desc->cells[i] = NULL;
-
-        v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
-            sizeof(vterm_cell_t) * width);
-    }
-
-    v_desc->rows = height;
-    v_desc->cols = width;
+    // realloc to accomodate the new matrix size
+    vterm_realloc_buffer(vterm, idx, width, height);
 
     if(!(v_desc->buffer_state & STATE_SCROLL_SHORT))
     {
