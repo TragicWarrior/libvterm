@@ -1,4 +1,4 @@
-** API Doc 1.0 **
+** API Doc 3.0 **
 
 This is really rough.  Feel free to make it pretty and email changes
 to bryan.christ@gmail.com
@@ -22,7 +22,7 @@ the exposed interfaces in this manual.
 Constructors/Destructors
 ------------------------
 
-   vterm_t* vterm_create(guint width,guint height,guint flags);
+   vterm_t* vterm_create(int width, int height, int flags);
 
 Creates an instance a vterm_t of the designated width and height.
 By default, the library emulates rxvt which is basically VT100 with color.
@@ -42,7 +42,7 @@ Process Management
 Fetch the PID of the terminal.  Typically this is either the shell PID or
 the PID of the foreground application.
 
-   gint vterm_get_pty_fd(vterm_t *vterm);
+   int vterm_get_pty_fd(vterm_t *vterm);
 
 Fetch the file descriptor for the I/O pipe.  This is useful if you want to
 drive create an event driven terminal emulator using SIGIO.
@@ -58,14 +58,14 @@ If a critical error occurred or the shell has exited -1 is returned.  This
 function should be called frequently (or upon arrival of SIGIO) to keep the
 pipe from filling up.
 
-   void vterm_write_pipe(vterm_t *vterm,guint32 keycode);
+   void vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
 Writes a keycode to the terminal.  Special keys such as the F(x) keys are
 translated into the escape sequences expected by the shell.  If you wish
 to write raw data to the receiving process, do not use this function.  Use
 the file descriptor with write().
 
-   const gchar* vterm_get_ttyname(vterm_t *vterm);
+   const char* vterm_get_ttyname(vterm_t *vterm);
 
 Returns the name of the current terminal associated with the pipe.  The
 name is identical to what is returned by ttyname() with the expetion
@@ -75,9 +75,9 @@ that the re-entrant ttyname_r() is called with fixed buffer size of 96 bytes.
 WINDOW Functions
 ----------------
 
-   void vterm_wnd_set(vterm_t *vterm,WINDOW *window);
+   void vterm_wnd_set(vterm_t *vterm, WINDOW *window);
 
-Sets the output canvas to the curses WINDOW designated.  Although libvterm
+Sets the output canvas to the designated ncurses WINDOW.  Although libvterm
 will continue to process pipe data nothing will be visible until this is set.
 
    WINDOW* vterm_wnd_get(vterm_t *vterm);
@@ -91,7 +91,7 @@ by vterm_wnd_set().  It is typically called when vterm_read_pipe() returns
 a postive value indicating that data was processed.  If there is no active
 window, this function silently fails.
 
-   int vterm_set_colors(vterm_t *vterm,short fg,short bg);
+   int vterm_set_colors(vterm_t *vterm, short fg, short bg);
 
 Sets the default cell color to the specified foregreound (fg) and
 background (bg) colors.  Keep in mind that all cells are subject to the
@@ -109,21 +109,23 @@ Erases the entire offscreen buffer by placing blanks in each cell.  All
 extended attributes are turned off (set to A_NORMAL) and the color scheme is
 set to that which was last designated by vterm_set_colors().
 
-   void vterm_erase_row(vterm_t *vterm,gint row);
+   void vterm_erase_row(vterm_t *vterm, int row);
 
-Erases a single row.
+Erases a single row.  The value of row is a zero-based index.
 
-   void vterm_erase_rows(vterm_t *vterm,gint start_row);
+   void vterm_erase_rows(vterm_t *vterm, int start_row);
 
-Erases all the rows including and after start_row.
+Erases all the rows including and after start_row.  The value of start_row
+is a zero-based index.
 
-   void vterm_erase_col(vterm_t *vterm,gint col);
+   void vterm_erase_col(vterm_t *vterm, int col);
 
-Erases a single column.
+Erases a single column.  The value of col is a zero-based index.
 
-   void vterm_erase_cols(vterm_t *vterm,gint start_col);
+   void vterm_erase_cols(vterm_t *vterm, int start_col);
 
-Erases all the columns including and after start_col.
+Erases all the columns including and after start_col.  The value of start_col
+is a zero-based index.
 
    void vterm_scroll_up(vterm_t *vterm);
 
@@ -135,7 +137,7 @@ and a blank line is inserted at the bottom.
 This function moves all lines down by one so that the bottom row is discarded
 and a blank line is inserted at the top.
 
-   void vterm_resize(vterm_t *vterm,guint width,guint height);
+   void vterm_resize(vterm_t *vterm, uint width, uint height);
 
 This function resizes the offscreen buffer.  It DOES NOT resize the associated
 curses WINDOW.  After all of the internal data structures are updated, the

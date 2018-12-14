@@ -82,17 +82,24 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 
 #define LIBVTERM_VERSION       "3.5"
 
-#define VTERM_FLAG_RXVT        0                       // default
+#define VTERM_FLAG_RXVT        0            // default
 #define VTERM_FLAG_VT100       (1 << 1)
-#define VTERM_FLAG_NOPTY       (1 << 2)  // skip all the fd and pty stuff - just render input args bytestream to a buffer
-#define VTERM_FLAG_NOCURSES    (1 << 3)  // skip the curses WINDOW stuff - return the char cell array if required
+#define VTERM_FLAG_NOPTY       (1 << 2)     // skip all the fd and pty stuff.
+                                            // just render input args byte
+                                            // stream to a buffer
 
-#define VTERM_FLAG_DUMP        (1 << 8)  // tell libvterm to write stream data to a dump file for debugging
+#define VTERM_FLAG_NOCURSES    (1 << 3)     // skip the curses WINDOW stuff.
+                                            // return the char cell array if
+                                            // required
+
+#define VTERM_FLAG_DUMP        (1 << 8)     // tell libvterm to write
+                                            // stream data to a dump file
+                                            // for debugging
 
 // Need this to be public if we want to expose the buffer to callers.
 struct _vterm_cell_s
 {
-   chtype         ch;                           // cell data
+   chtype         ch;                         // cell data
    int          attr;                         // cell attributes
 };
 
@@ -101,78 +108,153 @@ typedef struct _vterm_cell_s vterm_cell_t;
 typedef struct _vterm_s         vterm_t;
 
 /*
-    alloc a raw terminal object
+    alloc a raw terminal object.
+
+    @return:        a handle to a alloc'd vterm object.
 */
 vterm_t*        vterm_alloc(void);
 
 /*
     init a terminal object with a known height and width and alloc object
     if need be.
+
+    @params:
+        vterm       handle an already alloc'd vterm object
+        width       desired width
+        height      desired height
+        flags       defined above as VTERM_FLAG_*
+
+    @return:        a handle to a newly alloc'd vterm object if not provided.
 */
 vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     unsigned int flags);
 
 /*
     convenience macro for alloc-ing a ready to use terminal object.
+
+    @params:
+        width       desired width
+        height      desired height
+        flags       defined above as VTERM_FLAG_*
+
+    @return:        a handle to a newly alloc'd vterm object initialized using
+                    the specified values.
 */
 #define         vterm_create(width, height, flags) \
                     vterm_init(NULL, width, height, flags)
 
 /*
     destroy a terminal object.
+
+    @params:
+        vterm       a valid vterm object handle.
 */
 void            vterm_destroy(vterm_t *vterm);
 
 /*
     fetch the process id (pid) of the terminal.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        the process id of the terminal.
 */
 pid_t           vterm_get_pid(vterm_t *vterm);
 
-
 /*
     get the file descriptor of the pty.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        the file descriptor of the terminal.
+
 */
 int             vterm_get_pty_fd(vterm_t *vterm);
 
 /*
     get the name of the tty.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        the name of the tty.  it should be copied elsewhere
+                    if intended to be used longterm.
 */
 const char*     vterm_get_ttyname(vterm_t *vterm);
 
 /*
     get the name of the window title (if set by OSC command)
-*/
 
+    @params:
+        vterm       a valid vterm object handle.
+        buf         a buffer provided by the caller which the window
+                    title will be copied into.
+        buf_sz      the size of the caller provided buffer.  the
+                    usable space will be buf_sz - 1 for null termination.
+*/
 void            vterm_get_title(vterm_t *vterm, char *buf, int buf_sz);
 
 /*
     set a binary and args to launch instead of a shell.
+
+    @params:
+        vterm       a valid vterm object handle.
+        path        the complete path to the binary (including the binary
+                    itself.
+        argv        a null-terminated vector of arguments to pass to the
+                    binary.
 */
 void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);
 
 /*
     read bytes from the terminal.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        the amount of bytes read from running program output.
+                    this is somewhat analogous to stdout.  returns -1
+                    on error.
 */
 ssize_t         vterm_read_pipe(vterm_t *vterm);
 
 /*
     write a keystroke to the terminal.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        returns 0 on success and -1 on error.
 */
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
 #ifndef NOCURSES
 /*
     set the WINDOW * to that the terminal will use for output.
+
+    @params:
+        vterm       a valid vterm object handle.
+        window      a ncurses WINDOW to use as a rendering surface
 */
 void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
 
 /*
-    get the WINDOW * that the terminal is using.
+    get the WINDOW* that the terminal is using.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        a pointer to the WINDOW which is set as a rendering
+                    surface.  returns null if none is set.
 */
 WINDOW*         vterm_wnd_get(vterm_t *vterm);
 
 /*
-    cause updates to the terminal to be blitted
+    cause updates to the terminal to be rendered
+
+    @params:
+        vterm       a valid vterm object handle.
 */
 void            vterm_wnd_update(vterm_t *vterm);
 #endif
@@ -180,52 +262,92 @@ void            vterm_wnd_update(vterm_t *vterm);
 /*
     set the foreground and bakground colors that will be used by
     default on erase operations.
+
+    @params:
+        vterm       a valid vterm object handle.
+        fg          the default foreground color for the terminal.
+        bg          the default background color for the terminal.
+
+    @return:        returns 0 on success and -1 upon error.
 */
 int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
 
 /*
-    get the color pair number of the current fg/bg combination.
+    get the color pair number of the default fg/bg combination.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        returns the color pair index set as the default
+                    fg/bg color combination.  returns -1 upon error.
 */
 short           vterm_get_colors(vterm_t *vterm);
 
 /*
     erase the contents of the terminal.
+
     @params:
-        vterm   - handle to a vterm object
-        idx     - index of the buffer or -1 for current 
+        vterm       handle to a vterm object
+        idx         index of the buffer or -1 for current
 */
 void            vterm_erase(vterm_t *vterm, int idx);
 
 /*
     erase the specified row of the terminal.
+
+    @params:
+        vterm       handle to a vterm object
+        row         zero-based index of the row to delete.  specifying
+                    a value of -1 indicates current row.
 */
-void            vterm_erase_row(vterm_t *vterm,int row);
+void            vterm_erase_row(vterm_t *vterm, int row);
 
 /*
     erase the terminal beginning at a certain row and toward the bottom
     margin.
+
+    @params:
+        vterm       handle to a vterm object
+        start_row   zero-based index of the row and subsequent rows below
+                    to erase.
 */
-void            vterm_erase_rows(vterm_t *vterm,int start_row);
+void            vterm_erase_rows(vterm_t *vterm, int start_row);
 
 /*
     erase the specified column of the terminal.
+
+    @params:
+        vterm       handle to a vterm object
+        col         zero-based index of the column to delete.  specifying
+                    a value of -1 indicates current column.
 */
-void            vterm_erase_col(vterm_t *vterm,int col);
+void            vterm_erase_col(vterm_t *vterm, int col);
 
 /*
     erase the terminal at a specific column and toward the right margin.
+
+    @params:
+        vterm       handle to a vterm object
+        start_col   zero-based index of the column and subsequent columns
+                    to the right to erase.
 */
-void            vterm_erase_cols(vterm_t *vterm,int start_cols);
+void            vterm_erase_cols(vterm_t *vterm, int start_col);
 
 /*
     cause the terminal to be scrolled up by one row and placing an empty
     row at the bottom.
+
+    @params:
+        vterm       handle to a vterm object
 */
 void            vterm_scroll_up(vterm_t *vterm);
 
 /*
     cause the termianl to be scrolled down by one row and placing an
     empty row at the top.
+
+    @params:
+        vterm       handle to a vterm object
 */
 void            vterm_scroll_down(vterm_t *vterm);
 
@@ -233,6 +355,11 @@ void            vterm_scroll_down(vterm_t *vterm);
     this is a convenience macro to keep original behavior intact for
     applications that just don't care.  it assumes resize occurs from
     the bottom right origin.
+
+    @params:
+        vterm       handle to a vterm object
+        width       new width of terminal to resize to
+        height      new height of terminal to resize to
 */
 #define         vterm_resize(vterm, width, height)  \
                     vterm_resize_full(vterm, width, height, 0, 0, 1, 1)
@@ -243,6 +370,15 @@ void            vterm_scroll_down(vterm_t *vterm);
     are originating from.
 
     this API is typically used in reponse to a SIGWINCH signal.
+
+    @params:
+        vterm       handle to a vterm object
+        width       new width of terminal to resize to
+        height      new height of terminal to resize to
+        grip_top    unused
+        grip_left   unused
+        grip_right  unused
+        grip_bottom unused
 */
 void            vterm_resize_full(vterm_t *vterm,
                     uint16_t width, uint16_t height,
@@ -250,12 +386,26 @@ void            vterm_resize_full(vterm_t *vterm,
                     int grip_right, int grip_bottom);
 
 /*
-    needed to allow an app to see what's on screen right now.
+    pushes new data into the interpreter.  if a WINDOW has been
+    associated with the vterm object, the WINDOW contents are also
+    updated.
+
+    @params:
+        vterm       handle to a vterm object
+        data        data to push throug the intepreter.  typically this
+                    comes from vterm_read_pipe().
+        len         the length of the data being pushed into the
+                    intepreter.
 */
-void            vterm_render(vterm_t *, const char *data, int len);
+void            vterm_render(vterm_t *vterm, const char *data, int len);
 
 /*
-    populate width and height with the current terminal dimentions.
+    fetches the width and height of the current terminal dimentions.
+
+    @params:
+        vterm       handle to a vterm object
+        width       a pointer to an integer where the width will be stored
+        height      a pointer to an integer where the height will be stored
 */
 void            vterm_get_size(vterm_t *vterm, int *width, int *height);
 
