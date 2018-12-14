@@ -1,3 +1,7 @@
+3.5
+
+* [Bryan Christ] Make ICH CSI behave correctly.
+
 3.4
 
 * [Bryan Christ] If the terminal was resized while in alternate
