@@ -1,3 +1,9 @@
+3.4
+
+* [Bryan Christ] If the terminal was resized while in alternate
+  buffer mode, the standard buffer needs to be resized
+  accordingly when alternate mode terminates.
+
 3.3
 
 * [Bryan Christ] Fixed a SEGV caused by massive ICH moves.

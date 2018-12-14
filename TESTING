@@ -1,0 +1,32 @@
+The following programs have been tested with libvterm.  The score
+indicates the level of rendering fidelity.  If you've tested
+other programs with libvterm, feel free to update this list.
+
+Fidelity score: 5 = excellent, 1 = poor
+
+5 - hexedit
+5 - cdw
+5 - htop
+5 - apt
+5 - bastet
+5 - myman
+5 - last file manager
+5 - ranger
+5 - midnight commander
+5 - nano
+4 - links
+5 - lynx
+4 - finch
+4 - network manager (nmtui)
+4 - alsamixer
+5 - cmatrix
+5 - aewan
+4 - cboard (large board, utf-8 disabled)
+5 - dstat
+5 - ninvaders
+5 - mutt
+5 - weechat
+5 - tig
+5 - iptraf-ng
+5 - aaxine
+3 - cacaxine
