@@ -33,6 +33,7 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     int             i;
     int             n = 1;
     int             idx;
+    int             max_stride;
 
     // set the vterm desciption selector
     idx = vterm_get_active_buffer(vterm);
@@ -40,13 +41,9 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 
     if(pcount && param[0] > 0) n = param[0];
 
-    /*
-        todo:  these are safety checks to prevent a SEGV, but this
-        should be handled more gracefully.  it should be treated as
-        a block move using some complex calculations.
-    */
-    if(v_desc->cols - n < 0) return;
-    if(v_desc->ccol + n > v_desc->cols) return; 
+    // ICH has no effect beyond the edge
+    max_stride = v_desc->cols - v_desc->ccol;
+    if(n > max_stride) n = max_stride;
 
     for(i = v_desc->cols - 1; i >= v_desc->ccol + n; i--)
     {
@@ -62,3 +59,5 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 
     return;
 }
+
+
