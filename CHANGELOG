@@ -1,3 +1,14 @@
+3.7
+
+  [Bryan Christ] added a hook system for programs that need to
+  know when certain events have transpired and need to take
+  action.
+  [Bryan Christ] copied in some color routines into demo
+  program to make it easier to use and more educational for
+  the reader.
+  [Bryan Christ] some code to use new hook system in
+  demo program.
+
 3.6
 
   [Bryan Christ] mimic unicode "middle-tee" with ACS_PLUS.
