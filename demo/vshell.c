@@ -26,12 +26,9 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <locale.h>
 #include <string.h>
 #include <stdlib.h>
-// #include <limits.h>
 
 #include "../vterm.h"
 #include "../strings.h"
-
-int screen_w, screen_h;
 
 typedef struct
 {
@@ -39,18 +36,35 @@ typedef struct
 }
 testwin_t;
 
-#define VWINDOW(x)  (*(WINDOW**)x)
+struct _color_mtx_s
+{
+    int     fg;
+    int     bg;
+};
 
-WINDOW  *screen_wnd;
+typedef struct _color_mtx_s     color_mtx_t;
 
 // prototypes
 void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
+void    vshell_hook(vterm_t *vterm, int event, void *anything);
+void    vshell_color_init(void);
+short   vshell_color_pair(short fg, short bg);
+
+// macros
+#define VWINDOW(x)  (*(WINDOW**)x)
+
+// globals
+WINDOW          *screen_wnd;
+int             screen_w, screen_h;
+int             frame_colors;
+color_mtx_t     *color_mtx;
+
 
 int main(int argc, char **argv)
 {
     vterm_t     *vterm;
-    int 		i, j, ch;
+    int 		i, ch;
     ssize_t     bytes;
     int         flags = 0;
     testwin_t   *twin;
@@ -62,7 +76,6 @@ int main(int argc, char **argv)
 
     screen_wnd = initscr();
     noecho();
-    start_color();
     raw();
     nodelay(stdscr, TRUE);              /*
                                            prevents getch() from blocking;
@@ -121,28 +134,10 @@ int main(int argc, char **argv)
         }
     }
 
+    vshell_color_init();
 
-    /*
-        initialize the color pairs the way rote_vt_draw expects it. You might
-        initialize them differently, but in that case you would need
-        to supply a custom conversion function for rote_vt_draw to
-        call when setting attributes. The idea of this "default" mapping
-        is to map (fg,bg) to the color pair bg * 8 + 7 - fg. This way,
-        the pair (white,black) ends up mapped to 0, which means that
-        it does not need a color pair (since it is the default). Since
-        there are only 63 available color pairs (and 64 possible fg/bg
-        combinations), we really have to save 1 pair by assigning no pair
-        to the combination white/black.
-    */
-    for (i = 0; i < 8; i++)
-    {
-        for (j = 0; j < 8; j++)
-        {
-            if (i != 7 || j != 0) init_pair(j*8+7-i, i, j);
-        }
-    }
-
-    // paint the screen blue
+    // set default frame color
+    frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
 
     // VWINDOW(twin) = newwin(25,80,1,4);
@@ -164,8 +159,9 @@ int main(int argc, char **argv)
         vterm = vterm_create(screen_w - 2, screen_h - 2, flags);
     }
 
-    vterm_set_colors(vterm,COLOR_WHITE,COLOR_BLACK);
+    vterm_set_colors(vterm, COLOR_WHITE, COLOR_BLACK);
     vterm_wnd_set(vterm, VWINDOW(twin));
+    vterm_install_hook(vterm, vshell_hook);
 
     /*
         keep reading keypresses from the user and passing them to
@@ -215,8 +211,7 @@ vshell_paint_screen(vterm_t *vterm)
     int             offset;
 
     // paint the screen blue
-    // attrset(COLOR_PAIR(5));  // green on black
-    attrset(COLOR_PAIR(32));    // white on blue
+    attrset(COLOR_PAIR(frame_colors));    // white on blue
     box(screen_wnd, 0, 0);
 
     // quick computer of title location
@@ -243,8 +238,6 @@ vshell_paint_screen(vterm_t *vterm)
 int
 vshell_resize(testwin_t *twin, vterm_t * vterm)
 {
-    // pid_t   child = 0;
-
     getmaxyx(stdscr, screen_h, screen_w);
 
     vshell_paint_screen(vterm);
@@ -258,5 +251,113 @@ vshell_resize(testwin_t *twin, vterm_t * vterm)
     refresh();
 
     return 0;
+}
+
+void
+vshell_hook(vterm_t *vterm, int event, void *anything)
+{
+    extern int  frame_colors;
+    int         idx;
+
+    if(vterm == NULL) return;       // something went horribly wrong
+
+    switch(event)
+    {
+        case VTERM_HOOK_BUFFER_ACTIVATED:
+        {
+            idx = *(int *)anything;
+
+            if(idx == 0)
+                frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_BLUE);
+            else
+                frame_colors = vshell_color_pair(COLOR_BLACK, COLOR_RED);
+
+            vshell_paint_screen(vterm);
+            break;
+        }
+    }
+
+    return;
+}
+
+void
+vshell_color_init(void)
+{
+    extern color_mtx_t  *color_mtx;
+    short               color_table[] =
+                            {   COLOR_BLACK, COLOR_RED, COLOR_GREEN,
+                                COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA,
+                                COLOR_CYAN, COLOR_WHITE };
+    int                 color_count;
+    short               fg,bg;
+    int                 i;
+    int                 max_colors;
+    int                 hard_pair = -1;
+
+    start_color();
+    color_count = sizeof(color_table) / sizeof(color_table[0]);
+
+    /*
+        calculate the size of the matrix.  this is necessary because
+        some terminals support 256 colors and we don't want to deal
+        with that.
+    */
+    max_colors = color_count * color_count;
+
+    color_mtx  = (color_mtx_t *)calloc(1, max_colors * sizeof(color_mtx_t));
+
+    for(i = 0;i < max_colors; i++)
+    {
+        fg = i / color_count;
+        bg = color_count - (i % color_count) - 1;
+
+        color_mtx[i].bg = fg;
+        color_mtx[i].fg = bg;
+
+        /*
+            according to ncurses documentation, color pair 0 is assumed to
+            be WHITE foreground on BLACK background.  when we discover this
+            pair, we need to make sure it gets swapped into index 0 and
+            whatever is in index 0 gets put into this location.
+        */
+        if(color_mtx[i].fg == COLOR_WHITE && color_mtx[i].bg == COLOR_BLACK)
+            hard_pair = i;
+    }
+
+    /*
+        if hard_pair is no longer -1 then we found the "hard pair"
+        during our enumeration process and we need to do the swap.
+    */
+    if(hard_pair != -1)
+    {
+        fg = color_mtx[0].fg;
+        bg = color_mtx[0].bg;
+        color_mtx[hard_pair].fg = fg;
+        color_mtx[hard_pair].bg = bg;
+    }
+
+    for(i = 1; i < max_colors; i++)
+    {
+        init_pair(i, color_mtx[i].fg, color_mtx[i].bg);
+    }
+
+    return;
+}
+
+inline short
+vshell_color_pair(short fg, short bg)
+{
+    extern color_mtx_t  *color_mtx;
+    int                 i = 0;
+
+    if(fg == COLOR_WHITE && bg == COLOR_BLACK) return 0;
+
+    while(TRUE)
+    {
+        if(color_mtx[i].fg == fg && color_mtx[i].bg == bg) break;
+        i++;
+    }
+
+    return i;
 }
 

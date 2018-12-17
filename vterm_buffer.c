@@ -204,6 +204,13 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
                     curr_width, curr_height);
             }
 
+            // run the event hook if installed
+            if(vterm->event_hook != NULL)
+            {
+                vterm->event_hook(vterm, VTERM_HOOK_BUFFER_DEACTIVATED,
+                    (void *)&curr_idx);
+            }
+
             vterm_dealloc_buffer(vterm, curr_idx);
         }
     }
@@ -225,9 +232,15 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
         vterm_erase(vterm, idx);
     }
 
-
     // update the vterm buffer desc index
     vterm->vterm_desc_idx = idx;
+
+    // run the event hook if installed
+    if(vterm->event_hook != NULL)
+    {
+        vterm->event_hook(vterm, VTERM_HOOK_BUFFER_ACTIVATED,
+            (void *)&idx);
+    }
 
     return 0;
 }
