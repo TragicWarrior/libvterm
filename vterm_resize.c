@@ -83,5 +83,12 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     ioctl(vterm->pty_fd, TIOCSWINSZ, &ws);
     kill(vterm->child_pid, SIGWINCH);
 
+    // fire off the event hook if it's been set
+    if(vterm->event_hook != NULL)
+    {
+        vterm->event_hook(vterm,
+            VTERM_HOOK_TERM_RESIZED, (void *)&ws);
+    }
+
     return;
 }

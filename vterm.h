@@ -80,7 +80,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
   #include <curses.h>
 #endif
 
-#define LIBVTERM_VERSION       "3.6"
+#define LIBVTERM_VERSION       "3.5"
 
 #define VTERM_FLAG_RXVT        0            // default
 #define VTERM_FLAG_VT100       (1 << 1)
@@ -96,6 +96,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
                                             // stream data to a dump file
                                             // for debugging
 
+
 // Need this to be public if we want to expose the buffer to callers.
 struct _vterm_cell_s
 {
@@ -103,9 +104,39 @@ struct _vterm_cell_s
    int          attr;                         // cell attributes
 };
 
-typedef struct _vterm_cell_s vterm_cell_t;
+typedef struct _vterm_cell_s    vterm_cell_t;
 
 typedef struct _vterm_s         vterm_t;
+
+/*
+    certain events will trigger a callback if it's installed.  the
+    callback "hook" is installed via the vterm_install_hook() API.
+
+    the callback is invoked by the library, it supplies 3 arguements...
+    a pointer to the vterm object, the event (an integer id), and
+    an 'anything' data pointer.  the contents of 'anything' are
+    dictated by the type of event and described as following:
+
+    Event                           void *anything
+    -----                           --------------
+    VTERM_HOOK_BUFFER_ACTIVATED     index of buffer as int*
+    VTERM_HOOK_BUFFER_DEACTIVATED   index of buffer as int*
+    VTERM_HOOK_PIPE_READ            bytes read as ssize_t*
+    VTERM_HOOK_PIPE_WRITTEN         unused
+    VTERM_HOOK_TERM_RESIZED         size as struct winsize*
+*/
+
+typedef void (*vterm_hook_t)(vterm_t *vterm, int event, void *anything);
+
+enum
+{
+    VTERM_HOOK_BUFFER_ACTIVATED     =   0x10,
+    VTERM_HOOK_BUFFER_DEACTIVATED,
+    VTERM_HOOK_PIPE_READ,
+    VTERM_HOOK_PIPE_WRITTEN,
+    VTERM_HOOK_TERM_RESIZED
+};
+
 
 /*
     alloc a raw terminal object.
@@ -228,6 +259,15 @@ ssize_t         vterm_read_pipe(vterm_t *vterm);
     @return:        returns 0 on success and -1 on error.
 */
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
+
+/*
+    installs an event hook.
+
+    @params:
+        vterm       a valid vterm object handle.
+        hook        a hook that will be invoked by certain events.
+*/
+void            vterm_install_hook(vterm_t *vterm, vterm_hook_t hook);
 
 #ifndef NOCURSES
 /*

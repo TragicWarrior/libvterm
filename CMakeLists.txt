@@ -53,6 +53,7 @@ add_library(vterm-static STATIC
     vterm_dec_SM.c
     vterm_erase.c
     vterm_escape.c
+    vterm_hook.c
     vterm_misc.c
     vterm_osc.c
     vterm_read.c
@@ -88,6 +89,7 @@ add_library(vterm.o OBJECT
     vterm_dec_SM.c
     vterm_erase.c
     vterm_escape.c
+    vterm_hook.c
     vterm_misc.c
     vterm_osc.c
     vterm_read.c

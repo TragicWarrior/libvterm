@@ -119,10 +119,11 @@ struct _vterm_s
     char            *debug_filepath;
     int             debug_fd;
 
-    int             (*write)        (vterm_t*,uint32_t);
+    int             (*write)        (vterm_t*, uint32_t);
     int             (*esc_handler)  (vterm_t*);
+    void            (*event_hook)   (vterm_t*, int, void *);
 };
 
-#define VTERM_CELL(vterm_ptr,x,y)               ((y * vterm_ptr->cols) + x)
+#define VTERM_CELL(vterm_ptr,x,y)   ((y * vterm_ptr->cols) + x)
 
 #endif
