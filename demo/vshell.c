@@ -30,11 +30,18 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "../vterm.h"
 #include "../strings.h"
 
+/*
+    packing the WINDOW * inside another structure can be useful when
+    passing data around in a real program.
+*/
 typedef struct
 {
     WINDOW  *term_win;
 }
 testwin_t;
+
+#define VWINDOW(x)  (*(WINDOW**)x)
+
 
 struct _color_mtx_s
 {
@@ -50,9 +57,6 @@ int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
 void    vshell_color_init(void);
 short   vshell_color_pair(short fg, short bg);
-
-// macros
-#define VWINDOW(x)  (*(WINDOW**)x)
 
 // globals
 WINDOW          *screen_wnd;
@@ -140,14 +144,12 @@ int main(int argc, char **argv)
     frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
 
-    // VWINDOW(twin) = newwin(25,80,1,4);
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
 
     wattrset(VWINDOW(twin), COLOR_PAIR(7*8+7-0));        // black over white
     wrefresh(VWINDOW(twin));
 
     // create the terminal and have it run bash
-
     if(exec_path != NULL)
     {
         vterm = vterm_alloc();
@@ -161,6 +163,8 @@ int main(int argc, char **argv)
 
     vterm_set_colors(vterm, COLOR_WHITE, COLOR_BLACK);
     vterm_wnd_set(vterm, VWINDOW(twin));
+
+    // this illustrates how to install an event hook
     vterm_install_hook(vterm, vshell_hook);
 
     /*
@@ -196,8 +200,6 @@ int main(int argc, char **argv)
 
     endwin();
 
-    // printf("Pipe buffer size was %d\n\r", PIPE_BUF);
-
     return 0;
 }
 
@@ -222,6 +224,8 @@ vshell_paint_screen(vterm_t *vterm)
     }
 
     len = strlen(title);
+
+    // a right shift is the same as divide by 2 but quicker
     offset = (screen_w >> 1) - (len >> 1);
     mvprintw(0, offset, title);
 
@@ -253,6 +257,11 @@ vshell_resize(testwin_t *twin, vterm_t * vterm)
     return 0;
 }
 
+/*
+    this illustarates a callback "event hook".  a simple switch
+    statement is all that is needed to "listen" for the event
+    you want to trigger on.
+*/
 void
 vshell_hook(vterm_t *vterm, int event, void *anything)
 {
@@ -270,7 +279,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             if(idx == 0)
                 frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_BLUE);
             else
-                frame_colors = vshell_color_pair(COLOR_BLACK, COLOR_RED);
+                frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_RED);
 
             vshell_paint_screen(vterm);
             break;

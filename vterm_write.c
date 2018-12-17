@@ -30,13 +30,18 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_write.h"
 
 int
-vterm_write_pipe(vterm_t *vterm,uint32_t keycode)
+vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
 {
     int     retval;
 
     if(vterm == NULL) return -1;
 
     retval = vterm->write(vterm, keycode);
+
+    if(vterm->event_hook != NULL)
+    {
+        vterm->event_hook(vterm, VTERM_HOOK_PIPE_WRITTEN, NULL);
+    }
 
     return retval;
 }
