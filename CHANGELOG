@@ -1,3 +1,8 @@
+3.10
+
+  [Bryan Christ] make the utf8 decoder more robust,
+  easier to read, an possibly a little bit faster.
+
 3.9
 
   [Bryan Christ] map utf8 double line drawing codes to
