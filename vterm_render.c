@@ -63,7 +63,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             }
         }
 
-        // the non-ascii code points for utf start at 0x80
+        // the code points for utf start at 0x80
         if((unsigned int)*data > 0x7F)
         {
             if(!IS_MODE_UTF8(vterm))

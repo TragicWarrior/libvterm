@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     char        **exec_argv = NULL;
     int         count = 1;
 
-	setlocale(LC_ALL,"UTF-8");
+	setlocale(LC_ALL, "UTF-8");
 
     screen_wnd = initscr();
     noecho();

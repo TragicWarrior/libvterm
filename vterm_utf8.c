@@ -30,12 +30,14 @@ Copyright (c) 2017 Bryan Christ
     off, and count, in order to know how many bytes are in the code
     sequence.
 */
-#define UTF8_BIT_MASK       0x80        // binary 10000000
+#define UTF8_2BYTES         0xC0        // binary 11000000
+#define UTF8_3BYTES         0xE0        // binary 11100000
+#define UTF8_4BYTES         0xF0        // binary 11110000
+#define UTF8_MASK           0xF0        // binary 11110000
 
 void
 vterm_utf8_start(vterm_t *vterm)
 {
-    // v_desc->buffer_state |= STATE_UTF8_MODE;
     vterm->internal_state |= STATE_UTF8_MODE;
 
     // zero out the utf-8 buffer just in case
@@ -48,7 +50,6 @@ vterm_utf8_start(vterm_t *vterm)
 void
 vterm_utf8_cancel(vterm_t *vterm)
 {
-    // v_desc->buffer_state &= ~STATE_UTF8_MODE;
     vterm->internal_state &= ~STATE_UTF8_MODE;
 
     // zero out the utf-8 buffer for the next run
@@ -68,25 +69,31 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
 
     first_byte = (uint8_t)vterm->utf8_buf[0];
 
-    while (first_byte & UTF8_BIT_MASK)
+    /*
+        in UTF8, the high order bits in the first byte
+        are actually the total number of bytes to expect.
+    */
+    switch(first_byte & UTF8_MASK)
     {
-        byte_count++;
-        first_byte = first_byte << 1;
+        case UTF8_2BYTES:       byte_count = 2;     break;
+        case UTF8_3BYTES:       byte_count = 3;     break;
+        case UTF8_4BYTES:       byte_count = 4;     break;
     }
 
     // too early to decode.  return back for more reading.
     if (vterm->utf8_buf_len < byte_count) return -1;
 
-    // TODO:  this is a band-aid
+    // store first byte in the sequence
+    utf8_code = (uint32_t)first_byte;
 
-    for (i = 0; i < byte_count; i++)
+    // push in the rest of the bytes
+    for (i = 1; i < byte_count; i++)
     {
-        utf8_code |= (uint8_t)vterm->utf8_buf[i];
-
-        // don't shift on last byte
-        if (i + 1 >= byte_count) break;
-
+        // make room for the next byte
         utf8_code = utf8_code << 8;
+
+        // OR it in
+        utf8_code |= (uint8_t)vterm->utf8_buf[i];
     }
 
     switch (utf8_code)
@@ -206,16 +213,17 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
         default:            { *utf8_char = ' ';                 break;}
     }
 
+
 /*
     {
         FILE *f;
         f = fopen("value.dump", "a");
-        fprintf(f, "%02x %02x %02x %02x\n",
-            vterm->utf8_buf[0], vterm->utf8_buf[1],
-            vterm->utf8_buf[2], vterm->utf8_buf[3]);
+        fprintf(f, "first byte: %02x, byte count: 0%d\n",
+            first_byte, byte_count);
         fprintf(f, "utf-8 char: %08x\n", utf8_code);
         fclose(f);
     }
 */
+
     return byte_count;
 }
