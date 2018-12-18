@@ -237,6 +237,14 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
                     continue;
                 }
 
+                /*
+                    bash seems to set this everytime he becomes the foreground
+                    process.  it could prove misguided, but we'll use this as
+                    a clue that we need to make sure we're in normal buffer
+                    mode.
+                */
+                vterm_set_active_buffer(vterm, VTERM_BUFFER_STD);
+
                 break;
             }
 
