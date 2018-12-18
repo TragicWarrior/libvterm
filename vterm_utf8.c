@@ -112,22 +112,59 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
         case 0x00E28094:
         case 0x00E28095:    { *utf8_char = ACS_HLINE;           break;}
 
+        // double line and single line (heavy and light) horizontal line
+        case 0x00E29590:
         case 0x00E29480:
         case 0x00E29481:    { *utf8_char = ACS_HLINE;           break;}
 
+        // double line and single line (heavy and light) vertical line
+        case 0x00E29591:
         case 0x00E29482:
         case 0x00E29483:    { *utf8_char = ACS_VLINE;           break;}
 
+        // double line and single line upper-left corner
+        case 0x00E29594:
         case 0x00E2948C:    { *utf8_char = ACS_ULCORNER;        break;}
+
+        // double line and single line upper-right corner
+        case 0x00E29597:
         case 0x00E29490:    { *utf8_char = ACS_URCORNER;        break;}
+
+        // double line and single line lower-left corner
+        case 0x00E2959A:
         case 0x00E29494:    { *utf8_char = ACS_LLCORNER;        break;}
+
+        // double line and single line lower-right corner
+        case 0x00E2959D:
         case 0x00E29498:    { *utf8_char = ACS_LRCORNER;        break;}
 
+        // variations of double and single line top tees
+        case 0x00E2959E:
+        case 0x00E2959F:
+        case 0x00E295A0:
         case 0x00E2949C:    { *utf8_char = ACS_LTEE;            break;}
+
+        case 0x00E295A1:
+        case 0x00E295A2:
+        case 0x00E295A3:
         case 0x00E294A4:    { *utf8_char = ACS_RTEE;            break;}
+
+        // variations of double and single line top tees
+        case 0x00E295A4:
+        case 0x00E295A5:
+        case 0x00E295A6:
         case 0x00E294AC:	{ *utf8_char = ACS_TTEE;            break;}
+
+        // variations of double and single line bottom tees
+        case 0x00E295A7:
+        case 0x00E295A8:
+        case 0x00E295A9:
         case 0x00E294B4:    { *utf8_char = ACS_BTEE;            break;}
 
+        // variations of double and single line 4-way tees
+        case 0x00E295AA:
+        case 0x00E295AB:
+        case 0x00E295AC:
         case 0x00E294BC:    { *utf8_char = ACS_PLUS;            break;}
         case 0x00E2958B:    { *utf8_char = ACS_PLUS;            break;}
 
