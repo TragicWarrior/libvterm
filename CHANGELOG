@@ -1,3 +1,8 @@
+3.8
+
+  [Bryan Christ] use clues from Bash to detect and handle if
+  a program crashes while in alternate buffer mode.
+
 3.7
 
   [Bryan Christ] added a hook system for programs that need to
