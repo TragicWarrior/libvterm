@@ -1,3 +1,8 @@
+3.9
+
+  [Bryan Christ] map utf8 double line drawing codes to
+  ACS similars.
+
 3.8
 
   [Bryan Christ] use clues from Bash to detect and handle if
