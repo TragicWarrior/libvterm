@@ -101,21 +101,22 @@ typedef chtype          attr_t;
 #define VCELL_TYPE_SIMPLE       0
 #define VCELL_TYPE_WIDE         1
 
+
 // legacy data type
 typedef struct _schar_s
 {
     chtype          ch;                     // cell data
-    // unsigned int    attr;                   // cell attributes
     attr_t          attr;
 }
 schar_t;
 
 typedef union _cdata_u
 {
-    schar_t     sch;
-    cchar_t     wch;
+    schar_t         sch;
+    cchar_t         uch;
 }
 cdata_t;
+
 
 // Need this to be public if we want to expose the buffer to callers.
 struct _vterm_cell_s

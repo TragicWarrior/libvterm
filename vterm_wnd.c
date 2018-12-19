@@ -49,7 +49,7 @@ vterm_wnd_update(vterm_t *vterm)
     int             x,y;
     int             cell_count;
     int             idx;
-    chtype          ch;
+    chtype          sch;
     unsigned int    attr;
 
     if(vterm == NULL) return;
@@ -66,12 +66,12 @@ vterm_wnd_update(vterm_t *vterm)
         x = i % v_desc->cols;
         y = (int)(i / v_desc->cols);
 
-        VCELL_GET_CHAR(v_desc->cells[y][x], &ch);
+        VCELL_GET_CHAR(v_desc->cells[y][x], &sch);
         VCELL_GET_ATTR(v_desc->cells[y][x], &attr);
 
         wattrset(vterm->window, attr);
         wmove(vterm->window, y, x);
-        waddch(vterm->window, ch);
+        waddch(vterm->window, sch);
     }
 
     if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
