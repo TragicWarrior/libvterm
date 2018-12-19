@@ -77,7 +77,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
   #define KEY_F(n)      ((n)>0 && (n)<50)?(n)+264:0
 
 #else
-  #include <curses.h>
+  #include <ncursesw/curses.h>
 #endif
 
 #define LIBVTERM_VERSION       "3.11"
