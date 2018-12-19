@@ -80,7 +80,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
   #include <ncursesw/curses.h>
 #endif
 
-#define LIBVTERM_VERSION       "3.11"
+#define LIBVTERM_VERSION       "3.12"
 
 #define VTERM_FLAG_RXVT        0            // default
 #define VTERM_FLAG_VT100       (1 << 1)

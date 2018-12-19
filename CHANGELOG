@@ -1,3 +1,9 @@
+3.12
+
+  [Bryan Christ] make libvterm build and link against
+  the wide version of ncurses (ncursesw.h) as a step
+  toward full utf8 support.
+
 3.11
 
   [Bryan Christ] make read size a multiple of PIPE_BUF
