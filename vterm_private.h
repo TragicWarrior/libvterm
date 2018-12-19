@@ -28,7 +28,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <sys/types.h>
 
 #ifndef NOCURSES
-#  include <curses.h>
+#  include <ncursesw/curses.h>
 #endif
 
 #define ESEQ_BUF_SIZE           128         // size of escape sequence buffer

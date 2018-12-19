@@ -22,7 +22,7 @@ Copyright (c) 2004 Bruno T. C. de Oliveira
 */
 
 #ifndef NOCURSES
-#  include <curses.h>
+#  include <ncursesw/curses.h>
 #endif
 
 #include "vterm.h"

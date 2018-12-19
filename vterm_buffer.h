@@ -24,10 +24,6 @@
 #ifndef _VTERM_BUFFER_H_
 #define _VTERM_BUFFER_H_
 
-#ifndef NOCURSES
-#  include <curses.h>
-#endif
-
 #include "vterm.h"
 
 enum
