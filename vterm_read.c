@@ -37,6 +37,15 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_private.h"
 #include "vterm_render.h"
 
+/*
+    PIPE_BUF is defined as the maximum number of bytes that can be
+    written to a pipe atomically.  On many systems, this value
+    is relatively low (around 4KB).  We'll set our read size to
+    a multiple of this to prevent blocking in the child
+    process.
+*/
+#define MAX_PIPE_READ   (PIPE_BUF * 4)
+
 ssize_t
 vterm_read_pipe(vterm_t *vterm)
 {
@@ -96,8 +105,9 @@ vterm_read_pipe(vterm_t *vterm)
 	if(bytes_peek == 0) return 0;
 
     bytes_waiting = bytes_peek;
-    // if(bytes_waiting > SSIZE_MAX) bytes_waiting = SSIZE_MAX;
-    if(bytes_waiting > PIPE_BUF) bytes_waiting = PIPE_BUF;
+
+    // see notes at top of file regarding MAX_PIPE_READ and PIPE_BUF
+    if(bytes_waiting > MAX_PIPE_READ) bytes_waiting = MAX_PIPE_READ;
     bytes_remaining = bytes_waiting;
 
 	// 10 byte padding
