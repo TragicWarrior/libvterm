@@ -50,20 +50,16 @@ int     vterm_get_active_buffer(vterm_t *vterm);
             { memset(&_cell, 0, sizeof(_cell)); }
 
 #define VCELL_SET_CHAR(_cell, _ch) \
-            if(_cell.type == VCELL_TYPE_SIMPLE) \
-            { _cell.cdata.sch.ch = _ch; }
+            { _cell.sch.ch = _ch; }
 
 #define VCELL_SET_ATTR(_cell, _attr) \
-            if(_cell.type == VCELL_TYPE_SIMPLE) \
-            { _cell.cdata.sch.attr = _attr; }
+            { _cell.sch.attr = _attr; }
 
 #define VCELL_GET_CHAR(_cell, _ch_ptr) \
-            if(_cell.type == VCELL_TYPE_SIMPLE) \
-            { *_ch_ptr = _cell.cdata.sch.ch; }
+            { *_ch_ptr = _cell.sch.ch; }
 
 #define VCELL_GET_ATTR(_cell, _attr_ptr) \
-            if(_cell.type == VCELL_TYPE_SIMPLE) \
-            { *_attr_ptr = _cell.cdata.sch.attr; }
+            { *_attr_ptr = _cell.sch.attr; }
 
 #endif
 

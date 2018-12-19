@@ -110,19 +110,12 @@ typedef struct _schar_s
 }
 schar_t;
 
-typedef union _cdata_u
-{
-    schar_t         sch;
-    cchar_t         uch;
-}
-cdata_t;
-
-
 // Need this to be public if we want to expose the buffer to callers.
 struct _vterm_cell_s
 {
     int             type;                   // indicates which type we use
-    cdata_t         cdata;
+    schar_t         sch;
+    cchar_t         uch;
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;
