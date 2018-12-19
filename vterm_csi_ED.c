@@ -67,10 +67,10 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
         for(c = start_col; c <= end_col; c++)
         {
             // erase with blanks.
-            v_desc->cells[r][c].ch = 0x20;
+            VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
 
             // set to current attributes.
-            v_desc->cells[r][c].attr = v_desc->curattr;
+            VCELL_SET_ATTR(v_desc->cells[r][c], v_desc->curattr);
         }
     }
 }

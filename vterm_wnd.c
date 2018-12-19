@@ -66,8 +66,8 @@ vterm_wnd_update(vterm_t *vterm)
         x = i % v_desc->cols;
         y = (int)(i / v_desc->cols);
 
-        ch = v_desc->cells[y][x].ch;
-        attr = v_desc->cells[y][x].attr;
+        VCELL_GET_CHAR(v_desc->cells[y][x], &ch);
+        VCELL_GET_ATTR(v_desc->cells[y][x], &attr);
 
         wattrset(vterm->window, attr);
         wmove(vterm->window, y, x);

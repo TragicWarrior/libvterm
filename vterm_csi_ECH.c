@@ -44,8 +44,8 @@ interpret_csi_ECH(vterm_t *vterm, int param[], int pcount)
     {
         if(i >= v_desc->cols) break;
 
-        v_desc->cells[v_desc->crow][i].ch = 0x20;
-        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+        VCELL_SET_CHAR(v_desc->cells[v_desc->crow][i], ' ');
+        VCELL_SET_ATTR(v_desc->cells[v_desc->crow][i], v_desc->curattr);
     }
 
     return;

@@ -46,7 +46,7 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 
     for(i = 0;i < height;i++)
     {
-        v_desc->cells[i] = 
+        v_desc->cells[i] =
             (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
     }
 
@@ -64,7 +64,6 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
     int             delta_y = 0;
-    // int             delta_x = 0;
     int             start_x = 0;
     uint16_t        i;
     uint16_t        j;
@@ -78,7 +77,6 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
     v_desc = &vterm->vterm_desc[idx];
 
     delta_y = height - v_desc->rows;
-    // delta_x = width - v_desc->cols;
 
     // realloc to accomodate the new matrix size
     v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
@@ -95,7 +93,7 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
             // fill new row with blanks
             for(j = 0; j < width; j++)
             {
-                v_desc->cells[i][j].ch = ' ';
+                VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
             }
 
             continue;
@@ -105,12 +103,12 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
         v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
             sizeof(vterm_cell_t) * width);
 
-        // fill new row with blanks
+        // fill new cols with blanks
         start_x = v_desc->cols - 1;
         for(j = start_x; j < width; j++)
         {
-            v_desc->cells[i][j].ch = ' ';
-            v_desc->cells[i][j].attr = 0;
+            VCELL_ZERO_ALL(v_desc->cells[i][j]);
+            VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
         }
     }
 

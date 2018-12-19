@@ -64,8 +64,9 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 
     for(i = erase_start; i <= erase_end; i++)
     {
-        v_desc->cells[v_desc->crow][i].ch = 0x20;
-        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+        // VCELL_ZERO_ALL(v_desc->cells[v_desc->crow][i]);
+        VCELL_SET_CHAR(v_desc->cells[v_desc->crow][i], ' ');
+        VCELL_SET_ATTR(v_desc->cells[v_desc->crow][i], v_desc->curattr);
     }
 
     return;

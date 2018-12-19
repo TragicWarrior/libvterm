@@ -80,28 +80,46 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
   #include <ncursesw/curses.h>
 #endif
 
-#define LIBVTERM_VERSION       "3.12"
+#define LIBVTERM_VERSION        "3.12"
 
-#define VTERM_FLAG_RXVT        0            // default
-#define VTERM_FLAG_VT100       (1 << 1)
-#define VTERM_FLAG_NOPTY       (1 << 2)     // skip all the fd and pty stuff.
+#define VTERM_FLAG_RXVT         0           // default
+#define VTERM_FLAG_VT100        (1 << 1)
+#define VTERM_FLAG_NOPTY        (1 << 2)    // skip all the fd and pty stuff.
                                             // just render input args byte
                                             // stream to a buffer
 
-#define VTERM_FLAG_NOCURSES    (1 << 3)     // skip the curses WINDOW stuff.
+#define VTERM_FLAG_NOCURSES     (1 << 3)    // skip the curses WINDOW stuff.
                                             // return the char cell array if
                                             // required
 
-#define VTERM_FLAG_DUMP        (1 << 8)     // tell libvterm to write
+#define VTERM_FLAG_DUMP         (1 << 8)    // tell libvterm to write
                                             // stream data to a dump file
                                             // for debugging
 
 
+#define VCELL_TYPE_SIMPLE       0
+#define VCELL_TYPE_WIDE         1
+
+// legacy data type
+typedef struct _schar_s
+{
+    chtype          ch;                     // cell data
+    unsigned int    attr;                   // cell attributes
+}
+schar_t;
+
+typedef union _cdata_u
+{
+    schar_t     sch;
+    cchar_t     wch;
+}
+cdata_t;
+
 // Need this to be public if we want to expose the buffer to callers.
 struct _vterm_cell_s
 {
-   chtype         ch;                         // cell data
-   int          attr;                         // cell attributes
+    int             type;                   // indicates which type we use
+    cdata_t         cdata;
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;

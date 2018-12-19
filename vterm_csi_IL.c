@@ -52,8 +52,8 @@ interpret_csi_IL(vterm_t *vterm,int param[],int pcount)
 
         for(j = 0;j < v_desc->cols; j++)
         {
-            v_desc->cells[i][j].ch = 0x20;
-            v_desc->cells[i][j].attr = v_desc->curattr;
+            VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
+            VCELL_SET_ATTR(v_desc->cells[i][j], v_desc->curattr);
         }
     }
 

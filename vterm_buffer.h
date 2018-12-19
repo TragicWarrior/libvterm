@@ -24,6 +24,8 @@
 #ifndef _VTERM_BUFFER_H_
 #define _VTERM_BUFFER_H_
 
+#include <string.h>
+
 #include "vterm.h"
 
 enum
@@ -41,6 +43,27 @@ void    vterm_dealloc_buffer(vterm_t *vterm, int idx);
 int     vterm_set_active_buffer(vterm_t *vterm, int idx);
 
 int     vterm_get_active_buffer(vterm_t *vterm);
+
+// todo:  fix this up later to implement getcchar() and setcchar()
+
+#define VCELL_ZERO_ALL(_cell) \
+            { memset(&_cell, 0, sizeof(_cell)); }
+
+#define VCELL_SET_CHAR(_cell, _ch) \
+            if(_cell.type == VCELL_TYPE_SIMPLE) \
+            { _cell.cdata.sch.ch = _ch; }
+
+#define VCELL_SET_ATTR(_cell, _attr) \
+            if(_cell.type == VCELL_TYPE_SIMPLE) \
+            { _cell.cdata.sch.attr = _attr; }
+
+#define VCELL_GET_CHAR(_cell, _ch_ptr) \
+            if(_cell.type == VCELL_TYPE_SIMPLE) \
+            { *_ch_ptr = _cell.cdata.sch.ch; }
+
+#define VCELL_GET_ATTR(_cell, _attr_ptr) \
+            if(_cell.type == VCELL_TYPE_SIMPLE) \
+            { *_attr_ptr = _cell.cdata.sch.attr; }
 
 #endif
 

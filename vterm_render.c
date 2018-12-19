@@ -155,7 +155,7 @@ vterm_put_char(vterm_t *vterm, chtype c)
         {
             if((char)c == *pos)
             {
-                v_desc->cells[v_desc->crow][v_desc->ccol].ch = NCURSES_ACS(c);
+                VCELL_SET_CHAR(v_desc->cells[v_desc->crow][v_desc->ccol], NCURSES_ACS(c));
             }
 
             pos++;
@@ -163,10 +163,10 @@ vterm_put_char(vterm_t *vterm, chtype c)
     }
     else
     {
-        v_desc->cells[v_desc->crow][v_desc->ccol].ch = c;
+        VCELL_SET_CHAR(v_desc->cells[v_desc->crow][v_desc->ccol], c);
     }
 
-    v_desc->cells[v_desc->crow][v_desc->ccol].attr = v_desc->curattr;
+    VCELL_SET_ATTR(v_desc->cells[v_desc->crow][v_desc->ccol], v_desc->curattr);
     v_desc->ccol++;
 
     return;
