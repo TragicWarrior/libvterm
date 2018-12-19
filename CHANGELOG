@@ -1,3 +1,8 @@
+3.11
+
+  [Bryan Christ] make read size a multiple of PIPE_BUF
+  to minimize child process blocking.
+
 3.10
 
   [Bryan Christ] make the utf8 decoder more robust,
