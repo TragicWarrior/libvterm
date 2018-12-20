@@ -54,7 +54,7 @@ struct _vterm_desc_s
 
     unsigned int    buffer_state;               //  internal state control
 
-    int             curattr;                    // current attribute set
+    attr_t          curattr;                    // current attribute set
     int             crow, ccol;                 // current cursor column & row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region

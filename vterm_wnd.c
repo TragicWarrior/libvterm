@@ -23,6 +23,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
+#include "vterm_colors.h"
 
 #ifndef NOCURSES
 void
@@ -44,13 +45,16 @@ vterm_wnd_get(vterm_t *vterm)
 void
 vterm_wnd_update(vterm_t *vterm)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             i;
     int             x,y;
     int             cell_count;
     int             idx;
-    chtype          sch;
-    unsigned int    attr;
+    chtype          ch;
+    attr_t          attrs;
+    short           color_pair;
+    wchar_t         wch[CCHARW_MAX];
 
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;
@@ -66,12 +70,24 @@ vterm_wnd_update(vterm_t *vterm)
         x = i % v_desc->cols;
         y = (int)(i / v_desc->cols);
 
-        VCELL_GET_CHAR(v_desc->cells[y][x], &sch);
-        VCELL_GET_ATTR(v_desc->cells[y][x], &attr);
+        /*
+            store cell address to avoid future scalar look-ups
+        */
+        vcell = &v_desc->cells[y][x];
 
-        wattrset(vterm->window, attr);
-        wmove(vterm->window, y, x);
-        waddch(vterm->window, sch);
+        // get character from wide storage
+        getcchar(&vcell->uch, wch, &attrs, &color_pair, NULL);
+
+        VCELL_GET_CHAR((*vcell), &ch);
+        VCELL_GET_ATTR((*vcell), &attrs);
+
+        // color_pair = find_color_pair(vterm, v_desc->fg, v_desc->bg);
+        // setcchar(&vcell->uch, wch, attrs, color_pair, NULL); 
+
+        wattrset(vterm->window, attrs);
+        // wmove(vterm->window, y, x);
+        // waddch(vterm->window, ch);
+        mvwadd_wch(vterm->window, y, x, &vcell->uch);
     }
 
     if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))

@@ -29,6 +29,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             erase_start, erase_end, i;
     int             cmd = 0;
@@ -64,9 +65,13 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 
     for(i = erase_start; i <= erase_end; i++)
     {
+        vcell = &v_desc->cells[v_desc->crow][i];
+        // swprintf(wch, CCHARW_MAX, L" ");
+        // setcchar(&vcell->uch, wch, 0, 0, NULL);
+
         // VCELL_ZERO_ALL(v_desc->cells[v_desc->crow][i]);
-        VCELL_SET_CHAR(v_desc->cells[v_desc->crow][i], ' ');
-        VCELL_SET_ATTR(v_desc->cells[v_desc->crow][i], v_desc->curattr);
+        VCELL_SET_CHAR((*vcell), ' ');
+        VCELL_SET_ATTR((*vcell), v_desc->curattr);
     }
 
     return;

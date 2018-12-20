@@ -50,7 +50,12 @@ int     vterm_get_active_buffer(vterm_t *vterm);
             { memset(&_cell, 0, sizeof(_cell)); }
 
 #define VCELL_SET_CHAR(_cell, _ch) \
-            { _cell.sch.ch = _ch; }
+            { \
+                wchar_t             _wch[CCHARW_MAX]; \
+                _cell.sch.ch = _ch; \
+                swprintf(_wch, CCHARW_MAX, L"%c", _ch); \
+                setcchar(&_cell.uch, _wch, 0, 0, NULL); \
+            } \
 
 #define VCELL_SET_ATTR(_cell, _attr) \
             { _cell.sch.attr = _attr; }
