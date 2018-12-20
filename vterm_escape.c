@@ -60,7 +60,6 @@ validate_scs_escape_suffix(char c);
 void
 vterm_escape_start(vterm_t *vterm)
 {
-    // v_desc->buffer_state |= STATE_ESCAPE_MODE;
     vterm->internal_state |= STATE_ESCAPE_MODE;
 
     // zero out the escape buffer just in case
@@ -75,7 +74,6 @@ vterm_escape_start(vterm_t *vterm)
 void
 vterm_escape_cancel(vterm_t *vterm)
 {
-    // v_desc->buffer_state &= ~STATE_ESCAPE_MODE;
     vterm->internal_state &= ~STATE_ESCAPE_MODE;
 
     // zero out the escape buffer for the next run
@@ -243,7 +241,7 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
                     a clue that we need to make sure we're in normal buffer
                     mode.
                 */
-                vterm_set_active_buffer(vterm, VTERM_BUFFER_STD);
+                vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
 
                 break;
             }

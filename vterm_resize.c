@@ -55,7 +55,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     if(width == 0 || height == 0) return;
 
     // set the vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     delta_x = width - v_desc->cols;
@@ -64,7 +64,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     start_y = v_desc->rows;
 
     // realloc to accomodate the new matrix size
-    vterm_realloc_buffer(vterm, idx, width, height);
+    vterm_buffer_realloc(vterm, idx, width, height);
 
     if(!(v_desc->buffer_state & STATE_SCROLL_SHORT))
     {

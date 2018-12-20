@@ -29,6 +29,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             i;
     int             n = 1;
@@ -36,7 +37,7 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     int             max_stride;
 
     // set the vterm desciption selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(pcount && param[0] > 0) n = param[0];
@@ -53,8 +54,11 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 
     for(i = v_desc->ccol; i < v_desc->ccol + n; i++)
     {
-        VCELL_SET_CHAR(v_desc->cells[v_desc->crow][i], ' ');
-        VCELL_SET_ATTR(v_desc->cells[v_desc->crow][i], v_desc->curattr);
+        // store cell addres to reduce scalar look-ups
+        vcell = &v_desc->cells[v_desc->crow][i];
+
+        VCELL_SET_CHAR((*vcell), ' ');
+        VCELL_SET_ATTR((*vcell), v_desc->curattr);
     }
 
     return;

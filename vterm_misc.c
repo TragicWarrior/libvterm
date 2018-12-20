@@ -32,7 +32,7 @@ clamp_cursor_to_bounds(vterm_t *vterm)
     int             idx;
 
     // set vterm description buffer seletor
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(v_desc->crow < 0) v_desc->crow = 0;

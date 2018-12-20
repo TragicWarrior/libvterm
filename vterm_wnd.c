@@ -60,7 +60,7 @@ vterm_wnd_update(vterm_t *vterm)
     if(vterm->window == NULL) return;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     cell_count = v_desc->rows * v_desc->cols;

@@ -29,7 +29,7 @@
 #include "vterm_buffer.h"
 
 void
-vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
+vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
     int             i;
@@ -60,7 +60,7 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 }
 
 void
-vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
+vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
     int             delta_y = 0;
@@ -122,7 +122,7 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
 
 
 void
-vterm_dealloc_buffer(vterm_t *vterm, int idx)
+vterm_buffer_dealloc(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc;
     int             i;
@@ -148,7 +148,7 @@ vterm_dealloc_buffer(vterm_t *vterm, int idx)
 }
 
 int
-vterm_set_active_buffer(vterm_t *vterm, int idx)
+vterm_buffer_set_active(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc = NULL;
     int             curr_idx;
@@ -161,7 +161,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     if(vterm == NULL) return -1;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return -1;
 
-    curr_idx = vterm_get_active_buffer(vterm);
+    curr_idx = vterm_buffer_get_active(vterm);
 
     /*
         check to see if current buffer index is the same as the
@@ -198,7 +198,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
 
             if(std_height != curr_height || std_width != curr_width)
             {
-                vterm_realloc_buffer(vterm, VTERM_BUFFER_STD,
+                vterm_buffer_realloc(vterm, VTERM_BUFFER_STD,
                     curr_width, curr_height);
             }
 
@@ -209,7 +209,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
                     (void *)&curr_idx);
             }
 
-            vterm_dealloc_buffer(vterm, curr_idx);
+            vterm_buffer_dealloc(vterm, curr_idx);
         }
     }
 
@@ -220,7 +220,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     */
     if(idx != VTERM_BUFFER_STD)
     {
-        vterm_alloc_buffer(vterm, idx, width, height);
+        vterm_buffer_alloc(vterm, idx, width, height);
         v_desc = &vterm->vterm_desc[idx];
 
         // copy some defaults from standard buffer
@@ -244,7 +244,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
 }
 
 int
-vterm_get_active_buffer(vterm_t *vterm)
+vterm_buffer_get_active(vterm_t *vterm)
 {
     if(vterm == NULL) return -1;
 

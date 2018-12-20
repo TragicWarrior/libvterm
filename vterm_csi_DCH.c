@@ -30,6 +30,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             i;
     int             n = 1;
@@ -38,7 +39,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     if(pcount && param[0] > 0) n = param[0];
 
     // select the correct desc
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     for(i = v_desc->ccol; i < v_desc->cols; i++)
@@ -49,8 +50,11 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
         }
         else
         {
-            VCELL_SET_CHAR(v_desc->cells[v_desc->crow][i], ' ');
-            VCELL_SET_ATTR(v_desc->cells[v_desc->crow][i], v_desc->curattr);
+            // store cell address to reduce scalar look-ups
+            vcell = &v_desc->cells[v_desc->crow][i];
+
+            VCELL_SET_CHAR((*vcell), ' ');
+            VCELL_SET_ATTR((*vcell), v_desc->curattr);
         }
     }
 }

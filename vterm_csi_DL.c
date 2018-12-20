@@ -31,13 +31,14 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             i, j;
     int             n = 1;
     int             idx;
 
     // set selector for buffer description
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(pcount && param[0] > 0) n = param[0];
@@ -53,8 +54,11 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
         {
             for(j = 0; j < v_desc->cols; j++)
             {
-                VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
-                VCELL_SET_ATTR(v_desc->cells[i][j], v_desc->curattr);
+                // store the cell address to reduce scalar look-ups
+                vcell = &v_desc->cells[i][j];
+
+                VCELL_SET_CHAR((*vcell), ' ');
+                VCELL_SET_ATTR((*vcell), v_desc->curattr);
             }
         }
     }

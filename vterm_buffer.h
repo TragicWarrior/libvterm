@@ -34,20 +34,22 @@ enum
     VTERM_BUFFER_ALT,
 };
 
-void    vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height);
+void    vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height);
 
-void    vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height);
+void    vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height);
 
-void    vterm_dealloc_buffer(vterm_t *vterm, int idx);
+void    vterm_buffer_dealloc(vterm_t *vterm, int idx);
 
-int     vterm_set_active_buffer(vterm_t *vterm, int idx);
+int     vterm_buffer_set_active(vterm_t *vterm, int idx);
 
-int     vterm_get_active_buffer(vterm_t *vterm);
+int     vterm_buffer_get_active(vterm_t *vterm);
+
 
 // todo:  fix this up later to implement getcchar() and setcchar()
 
 #define VCELL_ZERO_ALL(_cell) \
             { memset(&_cell, 0, sizeof(_cell)); }
+
 
 #define VCELL_SET_CHAR(_cell, _ch) \
             { \
@@ -56,6 +58,7 @@ int     vterm_get_active_buffer(vterm_t *vterm);
                 swprintf(_wch, CCHARW_MAX, L"%c", _ch); \
                 setcchar(&_cell.uch, _wch, 0, 0, NULL); \
             } \
+
 
 #define VCELL_SET_ATTR(_cell, _attr) \
             { _cell.sch.attr = _attr; }

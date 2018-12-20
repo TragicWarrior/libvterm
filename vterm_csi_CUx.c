@@ -37,7 +37,7 @@ void interpret_csi_CUx(vterm_t *vterm,char verb,int param[],int pcount)
     if(pcount && param[0] > 0) n = param[0];
 
     // set active vterm description selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     switch (verb)
@@ -70,16 +70,3 @@ void interpret_csi_CUx(vterm_t *vterm,char verb,int param[],int pcount)
     return;
 }
 
-/*
-// DEBUG code
-void _write_row_forward(vterm_t *vterm, int len)
-{
-    int i = 0;
-
-    for(i = 0; i < len; i++)
-    {
-        vterm->cells[vterm->crow][i].ch = 'b';
-        vterm->cells[vterm->crow][i].attr = vterm->curattr;
-    }
-}
-*/

@@ -133,16 +133,13 @@ vterm_put_char(vterm_t *vterm, chtype c)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell = NULL;
-    // wchar_t         wch[CCHARW_MAX];
-    // attr_t          attrs = 0;
-    // int             colors = 0;
     static char     vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
     static char     *end = vt100_acs + ARRAY_SZ(vt100_acs);
     char            *pos = NULL;
     int             idx;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(v_desc->ccol >= v_desc->cols)
@@ -157,9 +154,6 @@ vterm_put_char(vterm_t *vterm, chtype c)
     */
     vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
-    // colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
-    // attrs = v_desc->curattr;
-
     if(IS_MODE_ACS(vterm))
     {
         pos = vt100_acs;
@@ -169,8 +163,6 @@ vterm_put_char(vterm_t *vterm, chtype c)
         {
             if((char)c == *pos)
             {
-                // VCELL_SET_CHAR(v_desc->cells[v_desc->crow][v_desc->ccol], NCURSES_ACS(c));
-                // setcchar(&vcell->uch, NCURSES_WACS(c), NULL, NULL, NULL);
                 VCELL_SET_CHAR((*vcell), NCURSES_ACS(c));
                 memcpy(&vcell->uch, NCURSES_WACS(c), sizeof(cchar_t));
             }
@@ -180,14 +172,9 @@ vterm_put_char(vterm_t *vterm, chtype c)
     else
     {
         VCELL_SET_CHAR((*vcell), c);
-
-        // memset(wch, 0, sizeof(wch));
-        // swprintf(wch, CCHARW_MAX, L"%c", c);
-        // setcchar(&vcell->uch, wch, 0, 0, NULL); 
     }
 
     VCELL_SET_ATTR((*vcell), v_desc->curattr);
-    // setcchar(&vcell->uch, NCURSES_WACS(c), attrs, colors, NULL);
 
     v_desc->ccol++;
 
@@ -201,7 +188,7 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
     int             idx;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     switch(c)
@@ -285,7 +272,7 @@ vterm_get_size( vterm_t *vterm, int *width, int *height )
         return;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     *width = v_desc->cols;
@@ -303,7 +290,7 @@ vterm_get_buffer( vterm_t *vterm )
     if(vterm == NULL) return NULL;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     return v_desc->cells;

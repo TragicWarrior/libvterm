@@ -65,20 +65,20 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     if (depth > 6) return;
 
     // set vterm_desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(pcount == 0)
     {
-        v_desc->curattr = A_NORMAL;                      // reset attributes
+        v_desc->curattr = A_NORMAL;         // reset attributes
         return;
     }
 
     for(i = 0;i < pcount;i++)
     {
-        if(param[i] == 0)                               // reset attributes
+        if(param[i] == 0)
         {
-            v_desc->curattr = A_NORMAL;
+            v_desc->curattr = A_NORMAL;     // reset attributes
 
             // attribute reset is an implicit color reset too so we'll
             // do a nested call to handle it.

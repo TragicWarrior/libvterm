@@ -40,7 +40,7 @@ vterm_scroll_down(vterm_t *vterm)
     int             i;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     v_desc->crow++;
@@ -73,7 +73,7 @@ vterm_scroll_up(vterm_t *vterm)
     int             i;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     v_desc->crow--;
