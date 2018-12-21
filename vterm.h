@@ -101,21 +101,17 @@ typedef chtype          attr_t;
 #define VCELL_TYPE_SIMPLE       0
 #define VCELL_TYPE_WIDE         1
 
+/*
+    Need this to be public if we want to expose the buffer to callers.
 
-// legacy data type
-typedef struct _schar_s
-{
-    chtype          ch;                     // cell data
-    attr_t          attr;
-}
-schar_t;
-
-// Need this to be public if we want to expose the buffer to callers.
+    The ncurses implementation of cchar_t internally packs an attr_t.
+    However, the only portable way to access that is via getcchar()
+    and setcchar() which are a bit clumsy in their operation.
+*/
 struct _vterm_cell_s
 {
-    int             type;                   // indicates which type we use
-    schar_t         sch;
     cchar_t         uch;
+    attr_t          attr;
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;

@@ -51,7 +51,6 @@ vterm_wnd_update(vterm_t *vterm)
     int             x,y;
     int             cell_count;
     int             idx;
-    chtype          ch;
     attr_t          attrs;
     short           color_pair;
     wchar_t         wch[CCHARW_MAX];
@@ -78,15 +77,11 @@ vterm_wnd_update(vterm_t *vterm)
         // get character from wide storage
         getcchar(&vcell->uch, wch, &attrs, &color_pair, NULL);
 
-        VCELL_GET_CHAR((*vcell), &ch);
+        // VCELL_GET_CHAR((*vcell), &ch);
         VCELL_GET_ATTR((*vcell), &attrs);
 
-        // color_pair = find_color_pair(vterm, v_desc->fg, v_desc->bg);
-        // setcchar(&vcell->uch, wch, attrs, color_pair, NULL); 
-
         wattrset(vterm->window, attrs);
-        // wmove(vterm->window, y, x);
-        // waddch(vterm->window, ch);
+        wmove(vterm->window, y, x);
         mvwadd_wch(vterm->window, y, x, &vcell->uch);
     }
 

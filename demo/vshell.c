@@ -74,9 +74,13 @@ int main(int argc, char **argv)
     testwin_t   *twin;
     char        *exec_path = NULL;
     char        **exec_argv = NULL;
+    char        *locale;
     int         count = 1;
 
-	setlocale(LC_ALL, "UTF-8");
+    locale = getenv("LANG");
+    if(locale == NULL) locale = "en_US.UTF-8";
+
+	setlocale(LC_ALL, locale);
 
     screen_wnd = initscr();
     noecho();

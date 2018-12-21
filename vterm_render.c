@@ -23,6 +23,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -40,13 +41,14 @@ static void
 vterm_render_ctrl_char(vterm_t *vterm,char c);
 
 static void
-vterm_put_char(vterm_t *vterm,chtype c);
+vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch);
 
 
 void
 vterm_render(vterm_t *vterm, const char *data, int len)
 {
     chtype          utf8_char;
+    wchar_t         wch[CCHARW_MAX];
     int             bytes = -1;
     int             i;
 
@@ -59,12 +61,12 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         {
             if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
             {
-                vterm_render_ctrl_char(vterm,*data);
+                vterm_render_ctrl_char(vterm, *data);
                 continue;
             }
         }
 
-        // the code points for utf start at 0x80
+        // UTF-8 encoding is indicated by a bit at 0x80
         if((unsigned int)*data > 0x7F)
         {
             if(!IS_MODE_UTF8(vterm))
@@ -89,12 +91,14 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             vterm->utf8_buf[vterm->utf8_buf_len] = 0;
 
             // we're in UTF-8 mode... do this
-            bytes = vterm_utf8_decode(vterm, &utf8_char);
+            memset(wch, 0, sizeof(wch));
+            bytes = vterm_utf8_decode(vterm, &utf8_char, wch);
 
             // we're done
-            if (bytes > 0)
+            if(bytes > 0)
             {
-                vterm_put_char(vterm, utf8_char);
+                vterm_put_char(vterm, *data, wch);
+                // vterm_put_char(vterm, NULL, wch);
                 vterm_utf8_cancel(vterm);
             }
 
@@ -121,15 +125,19 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         }
         else
         {
-            vterm_put_char(vterm, *data);
+            vterm_put_char(vterm, *data, NULL);
         }
     }
 
     return;
 }
 
+/*
+    if wch is not NULL, then 'c' should be ignored in this
+    function.
+*/
 void
-vterm_put_char(vterm_t *vterm, chtype c)
+vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell = NULL;
@@ -154,7 +162,8 @@ vterm_put_char(vterm_t *vterm, chtype c)
     */
     vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
-    if(IS_MODE_ACS(vterm))
+    // if(IS_MODE_ACS(vterm))
+    if(IS_MODE_ACS(vterm) && wch == NULL)
     {
         pos = vt100_acs;
 
@@ -163,19 +172,34 @@ vterm_put_char(vterm_t *vterm, chtype c)
         {
             if((char)c == *pos)
             {
-                VCELL_SET_CHAR((*vcell), NCURSES_ACS(c));
+                // VCELL_SET_CHAR((*vcell), NCURSES_ACS(c));
                 memcpy(&vcell->uch, NCURSES_WACS(c), sizeof(cchar_t));
             }
             pos++;
         }
+
+        VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        v_desc->ccol++;
+
+        return;
     }
-    else
+
+    if(wch == NULL)
     {
         VCELL_SET_CHAR((*vcell), c);
+        VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        v_desc->ccol++;
+
+        return;
+    }
+
+    // if constructing the cchar_t fails, use a blank
+    if(setcchar(&vcell->uch, wch, 0, 0, NULL) == ERR)
+    {
+        VCELL_SET_CHAR((*vcell), ' ');
     }
 
     VCELL_SET_ATTR((*vcell), v_desc->curattr);
-
     v_desc->ccol++;
 
     return;
@@ -217,7 +241,8 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // tab
         case '\t':
         {
-            while(v_desc->ccol % 8) vterm_put_char(vterm,' ');
+            while(v_desc->ccol % 8)
+                vterm_put_char(vterm, ' ', NULL);
             break;
         }
 

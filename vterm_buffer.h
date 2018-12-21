@@ -44,30 +44,21 @@ int     vterm_buffer_set_active(vterm_t *vterm, int idx);
 
 int     vterm_buffer_get_active(vterm_t *vterm);
 
-
-// todo:  fix this up later to implement getcchar() and setcchar()
-
 #define VCELL_ZERO_ALL(_cell) \
             { memset(&_cell, 0, sizeof(_cell)); }
-
 
 #define VCELL_SET_CHAR(_cell, _ch) \
             { \
                 wchar_t             _wch[CCHARW_MAX]; \
-                _cell.sch.ch = _ch; \
                 swprintf(_wch, CCHARW_MAX, L"%c", _ch); \
                 setcchar(&_cell.uch, _wch, 0, 0, NULL); \
             } \
 
-
 #define VCELL_SET_ATTR(_cell, _attr) \
-            { _cell.sch.attr = _attr; }
-
-#define VCELL_GET_CHAR(_cell, _ch_ptr) \
-            { *_ch_ptr = _cell.sch.ch; }
+                { _cell.attr = _attr; }
 
 #define VCELL_GET_ATTR(_cell, _attr_ptr) \
-            { *_attr_ptr = _cell.sch.attr; }
+                { *_attr_ptr = _cell.attr; }
 
 #endif
 
