@@ -36,7 +36,7 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
     if(pcount == 0) return;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     for(i = 0; i < pcount; i++)
@@ -51,7 +51,7 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
             // check to see if we're already using the ALT buffer
             if(idx == VTERM_BUFFER_STD) continue;
 
-            vterm_set_active_buffer(vterm, VTERM_BUFFER_STD);
+            vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
             continue;
         }
     }

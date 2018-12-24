@@ -20,6 +20,7 @@ Copyright (c) 2017 Bryan Christ
 
 #include <string.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 #include "vterm.h"
 #include "vterm_private.h"
@@ -34,6 +35,10 @@ Copyright (c) 2017 Bryan Christ
 #define UTF8_3BYTES         0xE0        // binary 11100000
 #define UTF8_4BYTES         0xF0        // binary 11110000
 #define UTF8_MASK           0xF0        // binary 11110000
+
+
+void utf8_str_to_wchar(wchar_t *wch, const char *str, int max);
+
 
 void
 vterm_utf8_start(vterm_t *vterm)
@@ -60,7 +65,7 @@ vterm_utf8_cancel(vterm_t *vterm)
 }
 
 int
-vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
+vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
 {
     uint32_t            utf8_code = 0;
     uint8_t             first_byte = 0;
@@ -96,6 +101,10 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
         utf8_code |= (uint8_t)vterm->utf8_buf[i];
     }
 
+    /*
+        this is for legacy mode.  it will probably be removed in
+        the future.
+    */
     switch (utf8_code)
     {
         /*
@@ -213,6 +222,7 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
         default:            { *utf8_char = ' ';                 break;}
     }
 
+    utf8_str_to_wchar(wch, vterm->utf8_buf, CCHARW_MAX);
 
 /*
     {
@@ -226,4 +236,25 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char)
 */
 
     return byte_count;
+}
+
+// function "borrowed" from "cboard" chess program
+inline void
+utf8_str_to_wchar(wchar_t *wch, const char *str, int max)
+{
+    mbstate_t       ps;
+    const char      *p = str;
+    size_t          len = max;
+
+    memset(wch, 0, max);
+
+    memset(&ps, 0, sizeof (mbstate_t));
+    if(!len)
+        len = mbsrtowcs(NULL, &p, 0, &ps);
+
+    p = str;
+    memset (&ps, 0, sizeof (mbstate_t));
+    len = mbsrtowcs(wch, &p, len - 1, &ps);
+
+    return;
 }

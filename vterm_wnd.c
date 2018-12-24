@@ -23,6 +23,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
+#include "vterm_colors.h"
 
 #ifndef NOCURSES
 void
@@ -44,19 +45,21 @@ vterm_wnd_get(vterm_t *vterm)
 void
 vterm_wnd_update(vterm_t *vterm)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             i;
     int             x,y;
     int             cell_count;
     int             idx;
-    chtype          ch;
-    unsigned int    attr;
+    attr_t          attrs;
+    short           color_pair;
+    wchar_t         wch[CCHARW_MAX];
 
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;
 
     // set vterm desc buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     cell_count = v_desc->rows * v_desc->cols;
@@ -66,12 +69,20 @@ vterm_wnd_update(vterm_t *vterm)
         x = i % v_desc->cols;
         y = (int)(i / v_desc->cols);
 
-        ch = v_desc->cells[y][x].ch;
-        attr = v_desc->cells[y][x].attr;
+        /*
+            store cell address to avoid future scalar look-ups
+        */
+        vcell = &v_desc->cells[y][x];
 
-        wattrset(vterm->window, attr);
+        // get character from wide storage
+        getcchar(&vcell->uch, wch, &attrs, &color_pair, NULL);
+
+        // VCELL_GET_CHAR((*vcell), &ch);
+        VCELL_GET_ATTR((*vcell), &attrs);
+
+        wattrset(vterm->window, attrs);
         wmove(vterm->window, y, x);
-        waddch(vterm->window, ch);
+        mvwadd_wch(vterm->window, y, x, &vcell->uch);
     }
 
     if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))

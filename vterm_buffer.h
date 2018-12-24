@@ -24,6 +24,8 @@
 #ifndef _VTERM_BUFFER_H_
 #define _VTERM_BUFFER_H_
 
+#include <string.h>
+
 #include "vterm.h"
 
 enum
@@ -32,15 +34,31 @@ enum
     VTERM_BUFFER_ALT,
 };
 
-void    vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height);
+void    vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height);
 
-void    vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height);
+void    vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height);
 
-void    vterm_dealloc_buffer(vterm_t *vterm, int idx);
+void    vterm_buffer_dealloc(vterm_t *vterm, int idx);
 
-int     vterm_set_active_buffer(vterm_t *vterm, int idx);
+int     vterm_buffer_set_active(vterm_t *vterm, int idx);
 
-int     vterm_get_active_buffer(vterm_t *vterm);
+int     vterm_buffer_get_active(vterm_t *vterm);
+
+#define VCELL_ZERO_ALL(_cell) \
+            { memset(&_cell, 0, sizeof(_cell)); }
+
+#define VCELL_SET_CHAR(_cell, _ch) \
+            { \
+                wchar_t             _wch[CCHARW_MAX]; \
+                swprintf(_wch, CCHARW_MAX, L"%c", _ch); \
+                setcchar(&_cell.uch, _wch, 0, 0, NULL); \
+            } \
+
+#define VCELL_SET_ATTR(_cell, _attr) \
+                { _cell.attr = _attr; }
+
+#define VCELL_GET_ATTR(_cell, _attr_ptr) \
+                { *_attr_ptr = _cell.attr; }
 
 #endif
 

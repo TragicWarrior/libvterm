@@ -29,13 +29,14 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             erase_start, erase_end, i;
     int             cmd = 0;
     int             idx;
 
     // set the vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(pcount > 0) cmd = param[0];
@@ -64,8 +65,10 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 
     for(i = erase_start; i <= erase_end; i++)
     {
-        v_desc->cells[v_desc->crow][i].ch = 0x20;
-        v_desc->cells[v_desc->crow][i].attr = v_desc->curattr;
+        vcell = &v_desc->cells[v_desc->crow][i];
+
+        VCELL_SET_CHAR((*vcell), ' ');
+        VCELL_SET_ATTR((*vcell), v_desc->curattr);
     }
 
     return;

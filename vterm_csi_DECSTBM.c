@@ -36,7 +36,7 @@ interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
     int             idx;
 
     // set the vterm description selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(!pcount)

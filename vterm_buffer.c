@@ -29,7 +29,7 @@
 #include "vterm_buffer.h"
 
 void
-vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
+vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
     int             i;
@@ -46,7 +46,7 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 
     for(i = 0;i < height;i++)
     {
-        v_desc->cells[i] = 
+        v_desc->cells[i] =
             (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
     }
 
@@ -60,11 +60,10 @@ vterm_alloc_buffer(vterm_t *vterm, int idx, int width, int height)
 }
 
 void
-vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
+vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
     int             delta_y = 0;
-    // int             delta_x = 0;
     int             start_x = 0;
     uint16_t        i;
     uint16_t        j;
@@ -78,7 +77,6 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
     v_desc = &vterm->vterm_desc[idx];
 
     delta_y = height - v_desc->rows;
-    // delta_x = width - v_desc->cols;
 
     // realloc to accomodate the new matrix size
     v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
@@ -95,7 +93,7 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
             // fill new row with blanks
             for(j = 0; j < width; j++)
             {
-                v_desc->cells[i][j].ch = ' ';
+                VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
             }
 
             continue;
@@ -105,12 +103,12 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
         v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
             sizeof(vterm_cell_t) * width);
 
-        // fill new row with blanks
+        // fill new cols with blanks
         start_x = v_desc->cols - 1;
         for(j = start_x; j < width; j++)
         {
-            v_desc->cells[i][j].ch = ' ';
-            v_desc->cells[i][j].attr = 0;
+            VCELL_ZERO_ALL(v_desc->cells[i][j]);
+            VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
         }
     }
 
@@ -124,7 +122,7 @@ vterm_realloc_buffer(vterm_t *vterm, int idx, int width, int height)
 
 
 void
-vterm_dealloc_buffer(vterm_t *vterm, int idx)
+vterm_buffer_dealloc(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc;
     int             i;
@@ -150,7 +148,7 @@ vterm_dealloc_buffer(vterm_t *vterm, int idx)
 }
 
 int
-vterm_set_active_buffer(vterm_t *vterm, int idx)
+vterm_buffer_set_active(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc = NULL;
     int             curr_idx;
@@ -163,7 +161,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     if(vterm == NULL) return -1;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return -1;
 
-    curr_idx = vterm_get_active_buffer(vterm);
+    curr_idx = vterm_buffer_get_active(vterm);
 
     /*
         check to see if current buffer index is the same as the
@@ -200,7 +198,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
 
             if(std_height != curr_height || std_width != curr_width)
             {
-                vterm_realloc_buffer(vterm, VTERM_BUFFER_STD,
+                vterm_buffer_realloc(vterm, VTERM_BUFFER_STD,
                     curr_width, curr_height);
             }
 
@@ -211,7 +209,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
                     (void *)&curr_idx);
             }
 
-            vterm_dealloc_buffer(vterm, curr_idx);
+            vterm_buffer_dealloc(vterm, curr_idx);
         }
     }
 
@@ -222,7 +220,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
     */
     if(idx != VTERM_BUFFER_STD)
     {
-        vterm_alloc_buffer(vterm, idx, width, height);
+        vterm_buffer_alloc(vterm, idx, width, height);
         v_desc = &vterm->vterm_desc[idx];
 
         // copy some defaults from standard buffer
@@ -246,7 +244,7 @@ vterm_set_active_buffer(vterm_t *vterm, int idx)
 }
 
 int
-vterm_get_active_buffer(vterm_t *vterm)
+vterm_buffer_get_active(vterm_t *vterm)
 {
     if(vterm == NULL) return -1;
 

@@ -29,13 +29,14 @@ Copyright (c) 2004 Bruno T. C. de Oliveira
 void
 interpret_csi_IL(vterm_t *vterm,int param[],int pcount)
 {
+    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             i, j;
     int             n = 1;
     int             idx;
 
     // set vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(pcount && param[0] > 0) n = param[0];
@@ -52,8 +53,11 @@ interpret_csi_IL(vterm_t *vterm,int param[],int pcount)
 
         for(j = 0;j < v_desc->cols; j++)
         {
-            v_desc->cells[i][j].ch = 0x20;
-            v_desc->cells[i][j].attr = v_desc->curattr;
+            // store cell location so to miminize scalar look-ups
+            vcell = &v_desc->cells[i][j];
+
+            VCELL_SET_CHAR((*vcell), ' ');
+            VCELL_SET_ATTR((*vcell), v_desc->curattr);
         }
     }
 

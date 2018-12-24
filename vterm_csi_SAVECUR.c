@@ -32,7 +32,7 @@ interpret_csi_SAVECUR(vterm_t *vterm,int param[],int pcount)
     int             idx;
 
     // set vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     v_desc->saved_x = v_desc->ccol;

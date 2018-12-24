@@ -155,7 +155,7 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     if(vterm == NULL) return -1;
 
     // set vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
@@ -191,7 +191,7 @@ vterm_get_colors(vterm_t *vterm)
     if(vterm == NULL) return -1;
 
     // set vterm description buffer selector
-    idx = vterm_get_active_buffer(vterm);
+    idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses

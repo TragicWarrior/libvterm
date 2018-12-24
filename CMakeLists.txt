@@ -4,7 +4,7 @@ project(libvterm)
 
 option(DEFINE_CURSES "Build with curses" ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -Wall -fPIC")
 set(PROJECT_DESCRIPTION "A rxvt/vt100 terminal emulator library written in C.")
 
 if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.0)))
@@ -15,8 +15,11 @@ endif()
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
 
 add_definitions("-D_REENTRANT")
-#add_definitions("-D_POSIX_C_SOURCE=200112L")
 add_definitions("-D_POSIX_C_SOURCE=200809L")
+
+# needed for cchar_t definition and turn on "wide support"
+add_definitions("-D_XOPEN_SOURCE_EXTENDED")
+
 
 # set these before running the find_package directive for Curses
 set(CURSES_NEED_NCURSES "TRUE")

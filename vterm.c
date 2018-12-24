@@ -70,7 +70,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
         vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
     // allocate a the buffer (a matrix of cells)
-    vterm_alloc_buffer(vterm, VTERM_BUFFER_STD, width, height);
+    vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
@@ -188,7 +188,7 @@ vterm_destroy(vterm_t *vterm)
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)
     {
-        vterm_dealloc_buffer(vterm, i);
+        vterm_buffer_dealloc(vterm, i);
     }
 
     free(vterm);
