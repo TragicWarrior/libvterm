@@ -1,3 +1,7 @@
+4.0
+
+  [Bryan Christ] Full support for UTF-8 encoded Unicode.
+
 3.12
 
   [Bryan Christ] make libvterm build and link against
