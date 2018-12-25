@@ -323,7 +323,7 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     {
         case 'm':
         {
-            interpret_csi_SGR(vterm,csiparam,param_count);
+            interpret_csi_SGR(vterm, csiparam, param_count);
             break;
         }
 
@@ -341,14 +341,19 @@ vterm_interpret_esc_normal(vterm_t *vterm)
 
         case 'J':
         {
-            interpret_csi_ED(vterm,csiparam,param_count);
+            interpret_csi_ED(vterm, csiparam, param_count);
             break;
         }
 
         case 'H':
+        {
+            interpret_csi_CUx(vterm, verb, csiparam, param_count);
+            break;
+        }
+
         case 'f':
         {
-            interpret_csi_CUP(vterm,csiparam,param_count);
+            interpret_csi_CUP(vterm, csiparam, param_count);
             break;
         }
 
