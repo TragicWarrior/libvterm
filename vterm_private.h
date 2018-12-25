@@ -47,6 +47,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
 #define IS_MODE_UTF8(x)         (x->internal_state & STATE_UTF8_MODE)
 
+
 struct _vterm_desc_s
 {
     int             rows,cols;                  // terminal height & width
@@ -103,6 +104,13 @@ struct _vterm_s
                                                 */
 
     int             utf8_buf_len;               //  number of utf8 bytes
+
+    char            *reset_rs1;                 /*
+                                                    rxvt emits a nasty long
+                                                    series of control codes
+                                                    instead of a single code
+                                                    to indicate a rs1 reset.
+                                                */
 
     int             pty_fd;                     /*
                                                     file descriptor for the pty

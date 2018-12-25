@@ -241,7 +241,7 @@ vterm_interpret_esc_xterm_osc(vterm_t *vterm)
                     a clue that we need to make sure we're in normal buffer
                     mode.
                 */
-                vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+                // vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
 
                 break;
             }
