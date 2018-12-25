@@ -1,3 +1,8 @@
+4.2
+
+  [Bryan Christ] Handle csi for absolute cursor address
+  movement.
+
 4.1
 
   [Bryan Christ] Properly handle crazy RS1 reset sequence
