@@ -94,6 +94,9 @@ int main(int argc, char **argv)
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
 
+    // endwin();
+    // exit(0);
+
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
     if (argc > 1)
@@ -203,6 +206,16 @@ int main(int argc, char **argv)
     }
 
     endwin();
+
+    {
+        FILE    *f;
+        char    *termcap;
+
+        termcap = tigetstr("rmul");
+        f = fopen("value.dump", "a");
+        fprintf(f, "termcap: %s\n\r", termcap);
+        fclose(f);
+    }
 
     return 0;
 }

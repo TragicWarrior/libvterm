@@ -57,6 +57,9 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         // completely ignore NUL
         if(*data == 0) continue;
 
+        // special processing looking for reset sequence
+        interpret_csi_RS1(vterm, (char *)data);
+
         if(!IS_MODE_ESCAPED(vterm))
         {
             if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
@@ -141,7 +144,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell = NULL;
-    static char     vt100_acs[]="`afgjklmnopqrstuvwxyz{|}~,+-.";
+    static char     vt100_acs[] = "`afgjklmnopqrstuvwxyz{|}~,+-.";
     static char     *end = vt100_acs + ARRAY_SZ(vt100_acs);
     char            *pos = NULL;
     int             idx;

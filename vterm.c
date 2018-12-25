@@ -24,7 +24,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include <pty.h>
 #include <stdio.h>
 #include <string.h>
-// #include <pwd.h>
+#include <term.h>
 #include <utmp.h>
 #include <termios.h>
 #include <signal.h>
@@ -40,6 +40,14 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_write.h"
 #include "vterm_exec.h"
 #include "vterm_buffer.h"
+
+/*
+    this string is emitted by for resetting an RXVT terminal (RS1).
+    xterm is far more sane using a single \Ec control code to perform
+    the same termcap operation.  the sequence is codified in terminfo
+    database.  this can be inspected with the infocmp tool.
+*/
+#define RXVT_RS1    "\e>\e[1;3;4;5;6l\e[?7h\em\er\e[2J\e[H"
 
 vterm_t*
 vterm_alloc(void)
@@ -117,9 +125,18 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
 
     vterm->flags = flags;
 
-    memset(&ws,0,sizeof(ws));
+    memset(&ws, 0, sizeof(ws));
     ws.ws_row = height;
     ws.ws_col = width;
+
+    if(flags & VTERM_FLAG_VT100)
+    {
+        vterm->reset_rs1 = NULL;
+    }
+    else
+    {
+        vterm->reset_rs1 = RXVT_RS1;
+    }
 
     if(flags & VTERM_FLAG_NOPTY)
     { // skip all the child process and fd stuff.
@@ -137,7 +154,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
 
         if(child_pid == 0)
         {
-            signal(SIGINT,SIG_DFL);
+            signal(SIGINT, SIG_DFL);
 
             // default is rxvt emulation
             setenv("TERM", "rxvt", 1);
@@ -146,7 +163,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
             if(flags & VTERM_FLAG_VT100)
             {
                 setenv("TERM", "vt100", 1);
-                // setenv("COLORTERM", "vt100", 1);
                 unsetenv("COLORTERM");
             }
 
