@@ -1,3 +1,8 @@
+4.1
+
+  [Bryan Christ] Properly handle crazy RS1 reset sequence
+  emitted by rxvt.
+
 4.0
 
   [Bryan Christ] Full support for UTF-8 encoded Unicode.
