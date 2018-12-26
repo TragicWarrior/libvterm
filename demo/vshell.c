@@ -207,6 +207,7 @@ int main(int argc, char **argv)
 
     endwin();
 
+/*
     {
         FILE    *f;
         char    *termcap;
@@ -216,6 +217,7 @@ int main(int argc, char **argv)
         fprintf(f, "termcap: %s\n\r", termcap);
         fclose(f);
     }
+*/
 
     return 0;
 }
