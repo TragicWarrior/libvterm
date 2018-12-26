@@ -25,6 +25,26 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 
+
+/*
+    From VT100 User Guide
+
+    ESC [ Ps K
+
+    default value: 0
+    Erases some or all characters in the active line
+    according to the parameter. Editor Function
+    Parameter Parameter Meaning
+
+    0   Erase from the active position to the end of the
+        line, inclusive (default)
+
+    1   Erase from the start of the screen to the active
+        position, inclusive
+
+    2   Erase all of the line, inclusive
+*/
+
 /* Interpret the 'erase line' escape sequence */
 void
 interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
@@ -49,16 +69,19 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
             erase_end = v_desc->ccol;
             break;
         }
+
         case 2:
         {
             erase_start = 0;
             erase_end = v_desc->cols - 1;
             break;
         }
+
+        case 0:
         default:
         {
             erase_start = v_desc->ccol;
-            erase_end = v_desc->cols-1;
+            erase_end = v_desc->cols - 1;
             break;
         }
     }
