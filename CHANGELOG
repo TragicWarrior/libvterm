@@ -1,3 +1,8 @@
+4.3
+
+  [Bryan Christ] Add TERM PRESIZE event hook to signal
+  when the terminal is about to be resized.
+
 4.2
 
   [Bryan Christ] Handle csi for absolute cursor address
