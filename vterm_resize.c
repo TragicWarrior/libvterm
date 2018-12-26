@@ -63,6 +63,13 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     start_x = v_desc->cols;
     start_y = v_desc->rows;
 
+    // fire off the TERM RESIZED event hook if it's been set
+    if(vterm->event_hook != NULL)
+    {
+        vterm->event_hook(vterm,
+            VTERM_HOOK_TERM_PRESIZE, (void *)NULL);
+    }
+
     // realloc to accomodate the new matrix size
     vterm_buffer_realloc(vterm, idx, width, height);
 
@@ -83,7 +90,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     ioctl(vterm->pty_fd, TIOCSWINSZ, &ws);
     kill(vterm->child_pid, SIGWINCH);
 
-    // fire off the event hook if it's been set
+    // fire off the TERM RESIZED event hook if it's been set
     if(vterm->event_hook != NULL)
     {
         vterm->event_hook(vterm,
