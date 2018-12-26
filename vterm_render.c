@@ -212,6 +212,7 @@ void
 vterm_render_ctrl_char(vterm_t *vterm, char c)
 {
     vterm_desc_t    *v_desc = NULL;
+    int             tab_sz;
     int             idx;
 
     // set vterm desc buffer selector
@@ -244,7 +245,8 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // tab
         case '\t':
         {
-            v_desc->ccol += 8;
+            tab_sz = 8 - (v_desc->ccol % 8);
+            v_desc->ccol += tab_sz;
             break;
         }
 
