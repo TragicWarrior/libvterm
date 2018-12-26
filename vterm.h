@@ -133,6 +133,7 @@ typedef struct _vterm_s         vterm_t;
     VTERM_HOOK_BUFFER_DEACTIVATED   index of buffer as int*
     VTERM_HOOK_PIPE_READ            bytes read as ssize_t*
     VTERM_HOOK_PIPE_WRITTEN         unused
+    VTERM_HOOK_TERM_PRESIZE         unused
     VTERM_HOOK_TERM_RESIZED         size as struct winsize*
 */
 
@@ -144,6 +145,7 @@ enum
     VTERM_HOOK_BUFFER_DEACTIVATED,
     VTERM_HOOK_PIPE_READ,
     VTERM_HOOK_PIPE_WRITTEN,
+    VTERM_HOOK_TERM_PRESIZE,
     VTERM_HOOK_TERM_RESIZED
 };
 
