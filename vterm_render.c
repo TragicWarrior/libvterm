@@ -244,8 +244,9 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // tab
         case '\t':
         {
-            while(v_desc->ccol % 8) v_desc->ccol++;
+            // while(v_desc->ccol % 8) v_desc->ccol++;
                 // vterm_put_char(vterm, ' ', NULL);
+            v_desc->ccol += 8;
             break;
         }
 
