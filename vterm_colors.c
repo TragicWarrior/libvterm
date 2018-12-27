@@ -90,11 +90,13 @@ free_color_space()
     palette_size = 0;
 }
 
-int
-find_color_pair_simple(int fg, int bg)
+short
+find_color_pair_simple(vterm_t *vterm, short fg, short bg)
 {
     my_color_pair_t *cp;
     int i = 0;
+
+    (void)vterm;            // for later use.  suppress warnings for now
 
     if(color_palette == NULL)
     {
@@ -145,7 +147,7 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
 
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-        colors = (short)find_color_pair_simple(fg, bg);
+        colors = (short)find_color_pair_simple(vterm, fg, bg);
         if(colors == -1) colors = 0;
         v_desc->colors = colors;
     }
@@ -199,7 +201,7 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-        return find_color_pair_simple(fg, bg);
+        return find_color_pair_simple(vterm, fg, bg);
     }
     else // ncurses
     {

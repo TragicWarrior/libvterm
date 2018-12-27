@@ -85,7 +85,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     // it is just a bit mask/shift operation.
     if(flags & VTERM_FLAG_NOCURSES)
     {
-        int colorIndex = find_color_pair_simple( COLOR_WHITE, COLOR_BLACK );
+        int colorIndex = find_color_pair_simple(vterm,
+            COLOR_WHITE, COLOR_BLACK);
+
         if( colorIndex < 0 || colorIndex > 255 )
             colorIndex = 0;
         vterm->vterm_desc[0].curattr = (colorIndex & 0xff) << 8;

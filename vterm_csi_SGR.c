@@ -162,7 +162,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             v_desc->fg = param[i] - 30;
 
             if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-                colors = find_color_pair_simple(v_desc->fg, v_desc->bg );
+                colors = find_color_pair_simple(vterm, v_desc->fg, v_desc->bg);
             else
                 colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
 
@@ -189,7 +189,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             v_desc->bg = param[i]-40;
             if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
-                colors = find_color_pair_simple(v_desc->fg, v_desc->bg);
+                colors = find_color_pair_simple(vterm, v_desc->fg, v_desc->bg);
             else
                 colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
 
@@ -220,7 +220,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg) ==0)
                 {
                     v_desc->fg = fg;
-                    colors = find_color_pair_simple(v_desc->fg, v_desc->bg);
+                    colors = find_color_pair_simple(vterm,
+                        v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -262,7 +263,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg) == 0)
                 {
                     v_desc->bg = bg;
-                    colors = find_color_pair_simple(v_desc->fg, v_desc->bg);
+                    colors = find_color_pair_simple(vterm,
+                        v_desc->fg, v_desc->bg);
                 }
                 else
                 {

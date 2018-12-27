@@ -470,7 +470,7 @@ vterm_cell_t**  vterm_get_buffer(vterm_t *vterm);
 
 /* Needed if we don't use curses */
 int             GetFGBGFromColorIndex( int index, int* fg, int* bg );
-int             find_color_pair_simple(int fg, int bg);
+short           find_color_pair_simple(vterm_t *vterm, short fg, short bg);
 
 #endif
 
