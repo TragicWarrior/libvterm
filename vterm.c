@@ -84,9 +84,11 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
 
     // setup the default color key
 #ifndef NOCURSES
-    vterm->color_key = find_color_pair;
+    vterm->pair_select = find_color_pair;
+    vterm->pair_split = _native_pair_splitter_1;
 #else
-    vterm->color_key = find_color_pair_simple;
+    vterm->pair_select = find_color_pair_simple;
+    vterm->pair_split = _native_pair_splitter_2;
 #endif
 
     // default active colors
@@ -94,9 +96,10 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     // it is just a bit mask/shift operation.
     if(flags & VTERM_FLAG_NOCURSES)
     {
-        vterm->color_key = find_color_pair_simple;
+        vterm->pair_select = find_color_pair_simple;
+        vterm->pair_split = _native_pair_splitter_2;
 
-        int colorIndex = vterm->color_key(vterm, COLOR_WHITE, COLOR_BLACK);
+        int colorIndex = vterm->pair_select(vterm, COLOR_WHITE, COLOR_BLACK);
 
         if( colorIndex < 0 || colorIndex > 255 )
             colorIndex = 0;

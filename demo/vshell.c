@@ -65,7 +65,8 @@ void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
 void    vshell_color_init(void);
-short   vshell_color_pair(vterm_t *vterm, short fg, short bg);
+short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
+int     vshell_pair_splitter(vterm_t *vterm, short pair, short *fg, short *bg);
 
 // globals
 WINDOW          *screen_wnd;
@@ -154,7 +155,7 @@ int main(int argc, char **argv)
     vshell_color_init();
 
     // set default frame color
-    frame_colors = vshell_color_pair(NULL, COLOR_WHITE, COLOR_BLUE);
+    frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
 
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
@@ -166,14 +167,19 @@ int main(int argc, char **argv)
     if(exec_path != NULL)
     {
         vterm = vterm_alloc();
-        vterm_set_color_key(vterm, vshell_color_pair); 
+        vterm_set_pair_selector(vterm, vshell_pair_selector);
+        vterm_set_pair_splitter(vterm, vshell_pair_splitter);
         vterm_set_exec(vterm, exec_path, exec_argv);
+
         vterm_init(vterm, 80, 25, flags);
     }
     else
     {
         vterm = vterm_create(screen_w - 2, screen_h - 2, flags);
     }
+
+    vterm_set_pair_selector(vterm, vshell_pair_selector);
+    vterm_set_pair_splitter(vterm, vshell_pair_splitter);
 
     vterm_set_colors(vterm, COLOR_WHITE, COLOR_BLACK);
     vterm_wnd_set(vterm, VWINDOW(twin));
@@ -303,10 +309,10 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             idx = *(int *)anything;
 
             if(idx == 0)
-                frame_colors = vshell_color_pair(NULL,
+                frame_colors = vshell_pair_selector(NULL,
                     COLOR_WHITE, COLOR_BLUE);
             else
-                frame_colors = vshell_color_pair(NULL,
+                frame_colors = vshell_pair_selector(NULL,
                     COLOR_WHITE, COLOR_RED);
 
             vshell_paint_screen(vterm);
@@ -378,9 +384,9 @@ vshell_color_init(void)
 }
 
 short
-vshell_color_pair(vterm_t *vterm, short fg, short bg)
+vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 {
-    extern color_mtx_t  *color_mtx;
+    // extern color_mtx_t  *color_mtx;
     extern short        color_table[];
     extern int          color_count;
     int                 i = 0;
@@ -394,3 +400,23 @@ vshell_color_pair(vterm_t *vterm, short fg, short bg)
     return i;
 }
 
+int
+vshell_pair_splitter(vterm_t *vterm, short pair, short *fg, short *bg)
+{
+    extern int      color_count;
+
+    (void)vterm;    // make compiler happy
+
+    if(pair == 0)
+    {
+        *fg = COLOR_WHITE;
+        *bg = COLOR_BLACK;
+
+        return 0;
+    }
+
+    *bg = (int)(pair / color_count);
+    *fg = (color_count - pair) - (pair % color_count);
+
+    return 0;
+}
