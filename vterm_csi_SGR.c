@@ -159,7 +159,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             v_desc->fg = param[i] - 30;
 
-            colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
+            colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
 
             if(colors == -1)
                 colors = 0;
@@ -184,7 +184,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             v_desc->bg = param[i]-40;
 
-            colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
+            colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
 
             if(colors == -1)
                 colors = 0;
@@ -209,11 +209,11 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
             {
-                int fg, bg;
-                if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg) ==0)
+                short fg, bg;
+                if(vterm->pair_split(vterm, v_desc->colors, &fg, &bg) ==0)
                 {
                     v_desc->fg = fg;
-                    colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
+                    colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -228,9 +228,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 colors = -1;
 #else
                 short default_fg, default_bg;
-                pair_content(v_desc->colors, &default_fg, &default_bg);
+                vterm->pair_split(vterm, v_desc->colors,
+                    &default_fg, &default_bg);
                 v_desc->fg = default_fg;
-                colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
+                colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
 #endif
             }
             if(colors == -1) colors = 0;
@@ -251,11 +252,11 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
             {
-                int fg, bg;
-                if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg) == 0)
+                short fg, bg;
+                if(vterm->pair_split(vterm, v_desc->colors, &fg, &bg) == 0)
                 {
                     v_desc->bg = bg;
-                    colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
+                    colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -270,9 +271,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 colors = -1;
 #else
                 short default_fg, default_bg;
-                pair_content(v_desc->colors, &default_fg, &default_bg);
+                vterm->pair_split(vterm, v_desc->colors,
+                    &default_fg, &default_bg);
                 v_desc->bg = default_bg;
-                colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
+                colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
 #endif
             }
             if(colors == -1) colors = 0;

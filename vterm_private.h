@@ -130,7 +130,8 @@ struct _vterm_s
     int             (*write)            (vterm_t *, uint32_t);
     int             (*esc_handler)      (vterm_t *);
     void            (*event_hook)       (vterm_t *, int, void *);
-    short           (*color_key)        (vterm_t *, short fg, short bg);
+    short           (*pair_select)      (vterm_t *, short, short);
+    int             (*pair_split)       (vterm_t *, short, short *, short *);
 };
 
 #define VTERM_CELL(vterm_ptr,x,y)   ((y * vterm_ptr->cols) + x)

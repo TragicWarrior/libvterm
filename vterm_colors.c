@@ -116,33 +116,18 @@ find_color_pair_simple(vterm_t *vterm, short fg, short bg)
     return -1;
 }
 
-int
-GetFGBGFromColorIndex(int index,int* fg, int* bg )
-{
-    if(color_palette == NULL || index >= palette_size || index < 0)
-    {
-        *fg = 0;
-        *bg = 0;
-        return -1;
-    }
-
-    *fg = color_palette[index].fg;
-    *bg = color_palette[index].bg;
-
-    return 0;
-}
 
 void
-vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key)
+vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps)
 {
     int     default_color = 0;
 
     if(vterm == NULL) return;
 
     // todo:  in the future, make a NULL value revert to defaults
-    if(color_key == NULL) return;
+    if(ps == NULL) return;
 
-    vterm->color_key = color_key;
+    vterm->pair_select = ps;
 
     /*
         if the user has specified NOCURSES, we need to use the 
@@ -150,13 +135,25 @@ vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key)
     */
     if(vterm->flags & VTERM_FLAG_NOCURSES)
     {
-        default_color = vterm->color_key(vterm, COLOR_WHITE, COLOR_BLACK);
+        default_color = vterm->pair_select(vterm, COLOR_WHITE, COLOR_BLACK);
 
         if(default_color < 0 || default_color > 255)
             default_color = 0;
 
         vterm->vterm_desc[0].curattr = (default_color & 0xff) << 8;
     }
+
+    return;
+}
+
+void
+vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps)
+{
+    if(vterm == NULL) return;
+
+    if(ps == NULL) return;
+
+    vterm->pair_split = ps;
 
     return;
 }
@@ -178,7 +175,7 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     if(has_colors() == FALSE) return -1;
 #endif
 
-    colors = vterm->color_key(vterm, fg, bg);
+    colors = vterm->pair_select(vterm, fg, bg);
     if(colors == -1) colors = 0;
 
     v_desc->colors = colors;
@@ -231,7 +228,7 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 
         for(i = 1; i < COLOR_PAIRS; i++)
         {
-            pair_content(i, &fg_color, &bg_color);
+            vterm->pair_split(vterm, i, &fg_color, &bg_color);
             if(fg_color == fg && bg_color == bg) break;
         }
 
@@ -241,4 +238,37 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
     }
 
     return i;
+}
+
+/*
+    this is a wrapper for pair_content() which can be really
+    inefficient.  applications using libvterm should supply a different
+    function through vterm_set_pair_splitter() for better performance.
+*/
+int
+_native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
+{
+    (void)vterm;        // make compiler happy
+
+    pair_content(pair, fg, bg);
+
+    return 0;
+}
+
+int
+_native_pair_splitter_2(vterm_t *vterm, short pair, short *fg, short *bg)
+{
+    (void)vterm;        // make compiler happy
+
+    if(color_palette == NULL || pair >= palette_size || pair < 0)
+    {
+        *fg = 0;
+        *bg = 0;
+        return -1;
+    }
+
+    *fg = color_palette[pair].fg;
+    *bg = color_palette[pair].bg;
+
+    return 0;
 }

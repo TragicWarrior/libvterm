@@ -118,6 +118,15 @@ typedef struct _vterm_cell_s    vterm_cell_t;
 
 typedef struct _vterm_s         vterm_t;
 
+typedef short (*VtermPairSelect) \
+                    (vterm_t *vterm, short fg, short bg);
+
+typedef int (*VtermPairSplit) \
+                    (vterm_t *vterm, short pair, short *fg, short *bg);
+
+typedef void (*VtermEventHook) \
+                    (vterm_t *vterm, int event, void *anything);
+
 /*
     certain events will trigger a callback if it's installed.  the
     callback "hook" is installed via the vterm_install_hook() API.
@@ -136,10 +145,6 @@ typedef struct _vterm_s         vterm_t;
     VTERM_HOOK_TERM_PRESIZE         unused
     VTERM_HOOK_TERM_RESIZED         size as struct winsize*
 */
-
-typedef void (*VtermEventHook)  (vterm_t *vterm, int event, void *anything);
-
-typedef short (*VtermColorKey)  (vterm_t *vterm, short fg, short bg);
 
 enum
 {
@@ -197,11 +202,13 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
 
     @params:
         vterm       handle an already alloc'd vterm object
-        color_key   a callback which returns the index of a defined
+        ps          a callback which returns the index of a defined
                     color pair.
 
 */
-void            vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key);
+void            vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps);
+
+void            vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps);
 
 /*
     destroy a terminal object.
@@ -484,8 +491,7 @@ void            vterm_get_size(vterm_t *vterm, int *width, int *height);
 vterm_cell_t**  vterm_get_buffer(vterm_t *vterm);
 
 /* Needed if we don't use curses */
-int             GetFGBGFromColorIndex( int index, int* fg, int* bg );
-short           find_color_pair_simple(vterm_t *vterm, short fg, short bg);
+// int             GetFGBGFromColorIndex( int index, int* fg, int* bg );
 
 #endif
 
