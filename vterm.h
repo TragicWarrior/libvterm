@@ -137,7 +137,7 @@ typedef struct _vterm_s         vterm_t;
     VTERM_HOOK_TERM_RESIZED         size as struct winsize*
 */
 
-typedef void (*vterm_hook_t)(vterm_t *vterm, int event, void *anything);
+typedef void (*VtermEventHook)  (vterm_t *vterm, int event, void *anything);
 
 typedef short (*VtermColorKey)  (vterm_t *vterm, short fg, short bg);
 
@@ -294,9 +294,9 @@ int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
     @params:
         vterm       a valid vterm object handle.
-        hook        a hook that will be invoked by certain events.
+        hook        a callback that will be invoked by certain events.
 */
-void            vterm_install_hook(vterm_t *vterm, vterm_hook_t hook);
+void            vterm_install_hook(vterm_t *vterm, VtermEventHook hook);
 
 #ifndef NOCURSES
 /*

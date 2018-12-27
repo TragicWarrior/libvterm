@@ -22,7 +22,7 @@ Copyright (c) 2009 Bryan Christ
 #include "vterm_private.h"
 
 void
-vterm_install_hook(vterm_t *vterm, vterm_hook_t hook)
+vterm_install_hook(vterm_t *vterm, VtermEventHook hook)
 {
     if(vterm == NULL) return;
 
