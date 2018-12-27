@@ -132,6 +132,35 @@ GetFGBGFromColorIndex(int index,int* fg, int* bg )
     return 0;
 }
 
+void
+vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key)
+{
+    int     default_color = 0;
+
+    if(vterm == NULL) return;
+
+    // todo:  in the future, make a NULL value revert to defaults
+    if(color_key == NULL) return;
+
+    vterm->color_key = color_key;
+
+    /*
+        if the user has specified NOCURSES, we need to use the 
+        new routine to locate the white on black color pair.
+    */
+    if(vterm->flags & VTERM_FLAG_NOCURSES)
+    {
+        default_color = vterm->color_key(vterm, COLOR_WHITE, COLOR_BLACK);
+
+        if(default_color < 0 || default_color > 255)
+            default_color = 0;
+
+        vterm->vterm_desc[0].curattr = (default_color & 0xff) << 8;
+    }
+
+    return;
+}
+
 int
 vterm_set_colors(vterm_t *vterm, short fg, short bg)
 {
@@ -145,26 +174,14 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-    {
-        colors = vterm->color_key(vterm, fg, bg);
-        if(colors == -1) colors = 0;
-        v_desc->colors = colors;
-    }
-    else // ncurses
-    {
 #ifdef NOCURSES
-        colors = vterm->color_key(fg, bg);
-#else
-        if(has_colors() == FALSE)
-            return -1;
-
-        colors = vterm->color_key(vterm, fg, bg);
+    if(has_colors() == FALSE) return -1;
 #endif
-        if(colors == -1) colors = 0;
 
-        v_desc->colors = colors;
-    }
+    colors = vterm->color_key(vterm, fg, bg);
+    if(colors == -1) colors = 0;
+
+    v_desc->colors = colors;
 
     return 0;
 }
