@@ -1,3 +1,10 @@
+4.7
+
+  [Bryan Christ] Make color pair extraction more
+  opaque and give more control to caller.  This also
+  fixes a performance problem seen on Fedora 29 where ncursesw
+  pair_content() is about 7x slower.
+
 4.6
 
   [Bryan Christ] Make color indexing more opaque and
