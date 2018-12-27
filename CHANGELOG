@@ -1,3 +1,10 @@
+4.6
+
+  [Bryan Christ] Make color indexing more opaque and
+  give more control to caller.  Results in about a 
+  10 percent performance gain over the default functions
+  when used correctly.
+
 4.5
 
   [Bryan Christ} Make writes to wnd from matrix faster.
