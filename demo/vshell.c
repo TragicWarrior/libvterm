@@ -42,6 +42,15 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
+short   color_table[] =
+            {
+                COLOR_BLACK, COLOR_RED, COLOR_GREEN,
+                COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA,
+                COLOR_CYAN, COLOR_WHITE
+            };
+
+int      color_count = sizeof(color_table) / sizeof(color_table[0]);
+
 
 struct _color_mtx_s
 {
@@ -93,9 +102,6 @@ int main(int argc, char **argv)
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
-
-    // endwin();
-    // exit(0);
 
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
@@ -312,18 +318,14 @@ void
 vshell_color_init(void)
 {
     extern color_mtx_t  *color_mtx;
-    short               color_table[] =
-                            {   COLOR_BLACK, COLOR_RED, COLOR_GREEN,
-                                COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA,
-                                COLOR_CYAN, COLOR_WHITE };
-    int                 color_count;
-    short               fg,bg;
+    extern short        color_table[];
+    extern int          color_count;
+    short               fg, bg;
     int                 i;
     int                 max_colors;
     int                 hard_pair = -1;
 
     start_color();
-    color_count = sizeof(color_table) / sizeof(color_table[0]);
 
     /*
         calculate the size of the matrix.  this is necessary because
@@ -376,15 +378,13 @@ inline short
 vshell_color_pair(short fg, short bg)
 {
     extern color_mtx_t  *color_mtx;
+    extern short        color_table[];
+    extern int          color_count;
     int                 i = 0;
 
     if(fg == COLOR_WHITE && bg == COLOR_BLACK) return 0;
 
-    while(TRUE)
-    {
-        if(color_mtx[i].fg == fg && color_mtx[i].bg == bg) break;
-        i++;
-    }
+    i = (bg * color_count) + ((color_count - 1) - fg);
 
     return i;
 }
