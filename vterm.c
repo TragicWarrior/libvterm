@@ -40,6 +40,7 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_write.h"
 #include "vterm_exec.h"
 #include "vterm_buffer.h"
+#include "vterm_colors.h"
 
 /*
     this string is emitted by for resetting an RXVT terminal (RS1).
@@ -74,19 +75,28 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
 
     if(height <= 0 || width <= 0) return NULL;
 
+    // a new instance
     if(vterm == NULL)
         vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
+    // setup the default color key
+#ifndef NOCURSES
+    vterm->color_key = find_color_pair;
+#else
+    vterm->color_key = find_color_pair_simple;
+#endif
+
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
     // it is just a bit mask/shift operation.
     if(flags & VTERM_FLAG_NOCURSES)
     {
-        int colorIndex = find_color_pair_simple(vterm,
-            COLOR_WHITE, COLOR_BLACK);
+        vterm->color_key = find_color_pair_simple;
+
+        int colorIndex = vterm->color_key(vterm, COLOR_WHITE, COLOR_BLACK);
 
         if( colorIndex < 0 || colorIndex > 255 )
             colorIndex = 0;

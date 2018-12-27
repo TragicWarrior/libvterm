@@ -189,6 +189,21 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     vterm_init(NULL, width, height, flags)
 
 /*
+    it's impossible for vterm to have insight into the color map because it
+    is setup by the caller outside of the library.  therefore, the default
+    function does an expensive iteration through all of the color pairs
+    looking for a match everytime it's needed.  the caller probably knows
+    a better way so this interface allows a different function to be set.
+
+    @params:
+        vterm       handle an already alloc'd vterm object
+        color_key   a callback which returns the index of a defined
+                    color pair.
+
+*/
+void            vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key);
+
+/*
     destroy a terminal object.
 
     @params:

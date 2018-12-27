@@ -147,19 +147,19 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
 
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-        colors = (short)find_color_pair_simple(vterm, fg, bg);
+        colors = vterm->color_key(vterm, fg, bg);
         if(colors == -1) colors = 0;
         v_desc->colors = colors;
     }
     else // ncurses
     {
 #ifdef NOCURSES
-        colors = find_color_pair(fg, bg);
+        colors = vterm->color_key(fg, bg);
 #else
         if(has_colors() == FALSE)
             return -1;
 
-        colors = find_color_pair(vterm, fg, bg);
+        colors = vterm->color_key(vterm, fg, bg);
 #endif
         if(colors == -1) colors = 0;
 
