@@ -139,6 +139,8 @@ typedef struct _vterm_s         vterm_t;
 
 typedef void (*vterm_hook_t)(vterm_t *vterm, int event, void *anything);
 
+typedef short (*VtermColorKey)  (vterm_t *vterm, short fg, short bg);
+
 enum
 {
     VTERM_HOOK_BUFFER_ACTIVATED     =   0x10,
