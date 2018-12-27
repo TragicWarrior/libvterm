@@ -47,9 +47,7 @@ vterm_wnd_update(vterm_t *vterm)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             i;
-    int             x,y;
-    int             cell_count;
+    int             r, c;
     int             idx;
     attr_t          attrs;
     short           color_pair;
@@ -62,27 +60,23 @@ vterm_wnd_update(vterm_t *vterm)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    cell_count = v_desc->rows * v_desc->cols;
-
-    for(i = 0; i < cell_count; i++)
+    for(r = 0; r < v_desc->rows; r++)
     {
-        x = i % v_desc->cols;
-        y = (int)(i / v_desc->cols);
+        // start at the beginning of the row
+        vcell = &v_desc->cells[r][0];
 
-        /*
-            store cell address to avoid future scalar look-ups
-        */
-        vcell = &v_desc->cells[y][x];
+        for(c = 0; c < v_desc->cols; c++)
+        {
+            // get character from wide storage
+            getcchar(&vcell->uch, wch, &attrs, &color_pair, NULL);
 
-        // get character from wide storage
-        getcchar(&vcell->uch, wch, &attrs, &color_pair, NULL);
+            VCELL_GET_ATTR((*vcell), &attrs);
 
-        // VCELL_GET_CHAR((*vcell), &ch);
-        VCELL_GET_ATTR((*vcell), &attrs);
+            wattrset(vterm->window, attrs);
+            mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
-        wattrset(vterm->window, attrs);
-        wmove(vterm->window, y, x);
-        mvwadd_wch(vterm->window, y, x, &vcell->uch);
+            vcell++;
+        }
     }
 
     if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
