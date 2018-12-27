@@ -23,25 +23,25 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 /*
    VT100 SGR documentation
    From http://vt100.net/docs/vt510-rm/SGR table 5-16
-   0  All attributes off
-   1  Bold
-   4  Underline
-   5  Blinking
-   7  Negative image
-   8  Invisible image
-   10    The ASCII character set is the current 7-bit
-         display character set (default) - SCO Console only.
-   11    Map Hex 00-7F of the PC character set codes
-         to the current 7-bit display character set
-         - SCO Console only.
-   12    Map Hex 80-FF of the current character set to
-         the current 7-bit display character set - SCO
-         Console only.
-   22    Bold off
-   24    Underline off
-   25    Blinking off
-   27    Negative image off
-   28    Invisible image off
+   0    All attributes off
+   1    Bold
+   4    Underline
+   5    Blinking
+   7    Negative image
+   8    Invisible image
+   10   The ASCII character set is the current 7-bit
+        display character set (default) - SCO Console only.
+   11   Map Hex 00-7F of the PC character set codes
+        to the current 7-bit display character set
+        - SCO Console only.
+   12   Map Hex 80-FF of the current character set to
+        the current 7-bit display character set - SCO
+        Console only.
+   22   Bold off
+   24   Underline off
+   25   Blinking off
+   27   Negative image off
+   28   Invisible image off
 */
 
 #include "vterm.h"
@@ -125,14 +125,12 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         if(param[i] == 10)                                // rmacs
         {
-            // v_desc->buffer_state &= ~STATE_ALT_CHARSET;
             vterm->internal_state &= ~STATE_ALT_CHARSET;
             continue;
         }
 
 		if(param[i] == 11)                                // smacs
         {
-            // v_desc->buffer_state |= STATE_ALT_CHARSET;
             vterm->internal_state |= STATE_ALT_CHARSET;
             continue;
         }
@@ -161,10 +159,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             v_desc->fg = param[i] - 30;
 
-            if( vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-                colors = FindColorPair(v_desc->fg, v_desc->bg );
-            else
-                colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
+            colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
 
             if(colors == -1)
                 colors = 0;
@@ -188,10 +183,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             int  attr_saved = 0;
 
             v_desc->bg = param[i]-40;
-            if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
-                colors = FindColorPair(v_desc->fg, v_desc->bg);
-            else
-                colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
+
+            colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
 
             if(colors == -1)
                 colors = 0;
@@ -217,10 +210,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
             {
                 int fg, bg;
-                if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg )==0 )
+                if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg) ==0)
                 {
                     v_desc->fg = fg;
-                    colors = FindColorPair(v_desc->fg, v_desc->bg );
+                    colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -237,7 +230,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 short default_fg, default_bg;
                 pair_content(v_desc->colors, &default_fg, &default_bg);
                 v_desc->fg = default_fg;
-                colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
+                colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
 #endif
             }
             if(colors == -1) colors = 0;
@@ -262,7 +255,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 if(GetFGBGFromColorIndex(v_desc->colors, &fg, &bg) == 0)
                 {
                     v_desc->bg = bg;
-                    colors = FindColorPair(v_desc->fg, v_desc->bg );
+                    colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -279,7 +272,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 short default_fg, default_bg;
                 pair_content(v_desc->colors, &default_fg, &default_bg);
                 v_desc->bg = default_bg;
-                colors = find_color_pair(vterm, v_desc->fg, v_desc->bg);
+                colors = vterm->color_key(vterm, v_desc->fg, v_desc->bg);
 #endif
             }
             if(colors == -1) colors = 0;

@@ -139,6 +139,8 @@ typedef struct _vterm_s         vterm_t;
 
 typedef void (*vterm_hook_t)(vterm_t *vterm, int event, void *anything);
 
+typedef short (*VtermColorKey)  (vterm_t *vterm, short fg, short bg);
+
 enum
 {
     VTERM_HOOK_BUFFER_ACTIVATED     =   0x10,
@@ -185,6 +187,21 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
 */
 #define         vterm_create(width, height, flags) \
                     vterm_init(NULL, width, height, flags)
+
+/*
+    it's impossible for vterm to have insight into the color map because it
+    is setup by the caller outside of the library.  therefore, the default
+    function does an expensive iteration through all of the color pairs
+    looking for a match everytime it's needed.  the caller probably knows
+    a better way so this interface allows a different function to be set.
+
+    @params:
+        vterm       handle an already alloc'd vterm object
+        color_key   a callback which returns the index of a defined
+                    color pair.
+
+*/
+void            vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key);
 
 /*
     destroy a terminal object.
@@ -468,7 +485,7 @@ vterm_cell_t**  vterm_get_buffer(vterm_t *vterm);
 
 /* Needed if we don't use curses */
 int             GetFGBGFromColorIndex( int index, int* fg, int* bg );
-int             FindColorPair( int fg, int bg );
+short           find_color_pair_simple(vterm_t *vterm, short fg, short bg);
 
 #endif
 

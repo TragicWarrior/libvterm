@@ -42,6 +42,15 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
+short   color_table[] =
+            {
+                COLOR_BLACK, COLOR_RED, COLOR_GREEN,
+                COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA,
+                COLOR_CYAN, COLOR_WHITE
+            };
+
+int      color_count = sizeof(color_table) / sizeof(color_table[0]);
+
 
 struct _color_mtx_s
 {
@@ -56,7 +65,7 @@ void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
 void    vshell_color_init(void);
-short   vshell_color_pair(short fg, short bg);
+short   vshell_color_pair(vterm_t *vterm, short fg, short bg);
 
 // globals
 WINDOW          *screen_wnd;
@@ -93,9 +102,6 @@ int main(int argc, char **argv)
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
-
-    // endwin();
-    // exit(0);
 
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
@@ -148,7 +154,7 @@ int main(int argc, char **argv)
     vshell_color_init();
 
     // set default frame color
-    frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_BLUE);
+    frame_colors = vshell_color_pair(NULL, COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
 
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
@@ -160,6 +166,7 @@ int main(int argc, char **argv)
     if(exec_path != NULL)
     {
         vterm = vterm_alloc();
+        vterm_set_color_key(vterm, vshell_color_pair); 
         vterm_set_exec(vterm, exec_path, exec_argv);
         vterm_init(vterm, 80, 25, flags);
     }
@@ -296,9 +303,11 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             idx = *(int *)anything;
 
             if(idx == 0)
-                frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_BLUE);
+                frame_colors = vshell_color_pair(NULL,
+                    COLOR_WHITE, COLOR_BLUE);
             else
-                frame_colors = vshell_color_pair(COLOR_WHITE, COLOR_RED);
+                frame_colors = vshell_color_pair(NULL,
+                    COLOR_WHITE, COLOR_RED);
 
             vshell_paint_screen(vterm);
             break;
@@ -312,18 +321,14 @@ void
 vshell_color_init(void)
 {
     extern color_mtx_t  *color_mtx;
-    short               color_table[] =
-                            {   COLOR_BLACK, COLOR_RED, COLOR_GREEN,
-                                COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA,
-                                COLOR_CYAN, COLOR_WHITE };
-    int                 color_count;
-    short               fg,bg;
+    extern short        color_table[];
+    extern int          color_count;
+    short               fg, bg;
     int                 i;
     int                 max_colors;
     int                 hard_pair = -1;
 
     start_color();
-    color_count = sizeof(color_table) / sizeof(color_table[0]);
 
     /*
         calculate the size of the matrix.  this is necessary because
@@ -372,19 +377,19 @@ vshell_color_init(void)
     return;
 }
 
-inline short
-vshell_color_pair(short fg, short bg)
+short
+vshell_color_pair(vterm_t *vterm, short fg, short bg)
 {
     extern color_mtx_t  *color_mtx;
+    extern short        color_table[];
+    extern int          color_count;
     int                 i = 0;
+
+    (void)vterm;        // make compiler happy
 
     if(fg == COLOR_WHITE && bg == COLOR_BLACK) return 0;
 
-    while(TRUE)
-    {
-        if(color_mtx[i].fg == fg && color_mtx[i].bg == bg) break;
-        i++;
-    }
+    i = (bg * color_count) + ((color_count - 1) - fg);
 
     return i;
 }

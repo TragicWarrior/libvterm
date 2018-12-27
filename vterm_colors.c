@@ -28,122 +28,138 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 #include "vterm_colors.h"
 #include "vterm_buffer.h"
 
-struct _my_color_pair
+struct _my_color_pair_s
 {
     short fg;
     short bg;
 };
 
-typedef struct _my_color_pair MY_COLOR_PAIR;
+typedef struct _my_color_pair_s my_color_pair_t;
 
 #define MAX_COLOR_PAIRS 512
 
-MY_COLOR_PAIR *colorPalette = NULL;
-int paletteSize = 0;
+my_color_pair_t *color_palette = NULL;
+int palette_size = 0;
 
-void InitColorSpace()
-  {
-  int i,j,n;
+void
+init_color_space()
+{
+    int i, j, n;
 
-  if( colorPalette==NULL )
+    if(color_palette == NULL)
     {
-    colorPalette = calloc( MAX_COLOR_PAIRS, sizeof( MY_COLOR_PAIR ) );
-    if( colorPalette==NULL )
-      {
-      fprintf(stderr, "ERROR: cannot allocate color palette!\n");
-      exit(1);
-      }
-    }
+        color_palette = calloc(MAX_COLOR_PAIRS, sizeof(my_color_pair_t));
 
-//  for( i = 0; i < 8; i++ )
-//    {
-//    for( j = 0; j < 8; j++ )
-//      {
-//      if (i != 7 || j != 0)
-//        {
-//        n = j*8+7-i;
-//        if( n>=MAX_COLOR_PAIRS )
-//          {
-//          fprintf(stderr, "ERROR: cannot set color pair %d!\n", n);
-//          exit(1);
-//          }
-//        colorPalette[n].fg = i;
-//        colorPalette[n].bg = j;
-//        if( n+1>paletteSize )
-//          {
-//          paletteSize = n+1;
-//          }
-//        }
-//      }
-//    }
-
-  for( i = 0; i < 8; i++ )
-    {
-    for( j = 0; j < 8; j++ )
-      {
+        if(color_palette == NULL)
         {
-        n = i*8+j;
-        if( n>=MAX_COLOR_PAIRS )
-          {
-          fprintf(stderr, "ERROR: cannot set color pair %d!\n", n);
-          exit(1);
-          }
-        colorPalette[n].fg = 7-i;
-        colorPalette[n].bg = j;
-        if( n+1>paletteSize )
-          {
-          paletteSize = n+1;
-          }
+            fprintf(stderr, "ERROR: cannot allocate color palette!\n");
+            exit(1);
         }
-      }
-    }
-  }
-
-void FreeColorSpace()
-  {
-  if( colorPalette == NULL )
-      return;
-
-  free( colorPalette );
-  colorPalette = NULL;
-  paletteSize = 0;
-  }
-
-int FindColorPair( int fg, int bg )
-  {
-  int i=0;
-
-  if( colorPalette==NULL )
-    {
-    InitColorSpace();
     }
 
-  for( i=0; i<paletteSize; ++i )
+    for(i = 0; i < 8; i++)
     {
-    MY_COLOR_PAIR* cp = colorPalette + i;
-    if( cp->fg==fg && cp->bg==bg )
-      {
-      return i;
-      }
+        for(j = 0; j < 8; j++)
+        {
+            n = i * 8 + j;
+
+            if(n >= MAX_COLOR_PAIRS)
+            {
+                fprintf(stderr, "ERROR: cannot set color pair %d!\n", n);
+                exit(1);
+            }
+
+            color_palette[n].fg = 7 - i;
+            color_palette[n].bg = j;
+
+            if(n + 1 > palette_size )
+            {
+                palette_size = n + 1;
+            }
+        }
+    }
+}
+
+void
+free_color_space()
+{
+    if(color_palette == NULL) return;
+
+    free(color_palette);
+    color_palette = NULL;
+    palette_size = 0;
+}
+
+short
+find_color_pair_simple(vterm_t *vterm, short fg, short bg)
+{
+    my_color_pair_t *cp;
+    int i = 0;
+
+    (void)vterm;            // for later use.  suppress warnings for now
+
+    if(color_palette == NULL)
+    {
+        init_color_space();
     }
 
-  return -1;
-  }
-
-int GetFGBGFromColorIndex( int index, int* fg, int* bg )
-  {
-  if( colorPalette==NULL || index >= paletteSize || index<0 )
+    for(i = 0; i < palette_size; ++i)
     {
-    *fg = 0;
-    *bg = 0;
+        cp = color_palette + i;
+
+        if(cp->fg == fg && cp->bg == bg)
+        {
+            return i;
+        }
+    }
+
     return -1;
+}
+
+int
+GetFGBGFromColorIndex(int index,int* fg, int* bg )
+{
+    if(color_palette == NULL || index >= palette_size || index < 0)
+    {
+        *fg = 0;
+        *bg = 0;
+        return -1;
     }
 
-  *fg = colorPalette[index].fg;
-  *bg = colorPalette[index].bg;
+    *fg = color_palette[index].fg;
+    *bg = color_palette[index].bg;
 
-  return 0;
-  }
+    return 0;
+}
+
+void
+vterm_set_color_key(vterm_t *vterm, VtermColorKey color_key)
+{
+    int     default_color = 0;
+
+    if(vterm == NULL) return;
+
+    // todo:  in the future, make a NULL value revert to defaults
+    if(color_key == NULL) return;
+
+    vterm->color_key = color_key;
+
+    /*
+        if the user has specified NOCURSES, we need to use the 
+        new routine to locate the white on black color pair.
+    */
+    if(vterm->flags & VTERM_FLAG_NOCURSES)
+    {
+        default_color = vterm->color_key(vterm, COLOR_WHITE, COLOR_BLACK);
+
+        if(default_color < 0 || default_color > 255)
+            default_color = 0;
+
+        vterm->vterm_desc[0].curattr = (default_color & 0xff) << 8;
+    }
+
+    return;
+}
 
 int
 vterm_set_colors(vterm_t *vterm, short fg, short bg)
@@ -158,26 +174,14 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-    {
-        colors = (short)FindColorPair( fg, bg );
-        if(colors == -1) colors = 0;
-        v_desc->colors = colors;
-    }
-    else // ncurses
-    {
 #ifdef NOCURSES
-        colors = FindColorPair(fg, bg);
-#else
-        if(has_colors() == FALSE)
-            return -1;
-
-        colors = find_color_pair(vterm, fg, bg);
+    if(has_colors() == FALSE) return -1;
 #endif
-        if(colors == -1) colors = 0;
 
-        v_desc->colors = colors;
-    }
+    colors = vterm->color_key(vterm, fg, bg);
+    if(colors == -1) colors = 0;
+
+    v_desc->colors = colors;
 
     return 0;
 }
@@ -214,7 +218,7 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-        return FindColorPair(fg, bg);
+        return find_color_pair_simple(vterm, fg, bg);
     }
     else // ncurses
     {
