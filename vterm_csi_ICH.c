@@ -77,7 +77,7 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
         vcell_old--;
     }
 
-    vcell_new = &v_desc->cells[v_desc->crow][0];
+    vcell_new = &v_desc->cells[v_desc->crow][v_desc->ccol];
     for(c = v_desc->ccol; c < max_col; c++)
     {
         VCELL_SET_CHAR((*vcell_new), ' ');
