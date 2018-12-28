@@ -51,6 +51,11 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
         {
             vcell_old = vcell_new + n;
 
+            /*
+                this is a shallow struct copy.  if a vterm_cell_t ever becomes
+                packed with heap data referenced by pointer, it could
+                be problematic.
+            */
             *vcell_new = *vcell_old;
         }
         else
