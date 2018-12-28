@@ -146,6 +146,14 @@ vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps)
     return;
 }
 
+VtermPairSelect
+vterm_get_pair_selector(vterm_t *vterm)
+{
+    if(vterm == NULL) return NULL;
+
+    return vterm->pair_select;
+}
+
 void
 vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps)
 {
@@ -156,6 +164,14 @@ vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps)
     vterm->pair_split = ps;
 
     return;
+}
+
+VtermPairSplit
+vterm_get_pair_splitter(vterm_t *vterm)
+{
+    if(vterm == NULL) return NULL;
+
+    return vterm->pair_split;
 }
 
 int

@@ -208,7 +208,40 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
 */
 void            vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps);
 
+/*
+    returns a callback interface of the current color pair selector.  the
+    default is basically a wrapper which leverages pair_content().
+
+    @params:
+        vterm       handle an already alloc'd vterm object
+
+    @return:        a function pointer of the type VtermPairSelect
+*/
+VtermPairSelect vterm_get_pair_selector(vterm_t *vterm);
+
+/*
+    see note on vterm_set_pair_selector for rationale behind this API.
+    this inteface provides the caller an oppurtunity to provide a more
+    efficient means of unpacking a color index into it's respective
+    foreground and background colors.
+
+    @params:
+        vterm       handle an already alloc'd vterm object
+        ps          a callback which splits a color pair into its
+                    respective foreground and background colorsl
+*/
 void            vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps);
+
+/*
+    returns a callback interface of the current color pair splitter.  the
+    default is basically a wrapper for pair_content().
+
+    @params:
+        vterm       handle an already alloc'd vterm object
+
+    @return:        a function pointer of the type VtermPairSplit
+*/
+VtermPairSplit  vterm_get_pair_splitter(vterm_t *vterm);
 
 /*
     destroy a terminal object.
@@ -235,7 +268,6 @@ pid_t           vterm_get_pid(vterm_t *vterm);
         vterm       a valid vterm object handle.
 
     @return:        the file descriptor of the terminal.
-
 */
 int             vterm_get_pty_fd(vterm_t *vterm);
 
@@ -489,9 +521,6 @@ void            vterm_get_size(vterm_t *vterm, int *width, int *height);
     raw access to the screen matrix which is current ncurses 'chtype'.
 */
 vterm_cell_t**  vterm_get_buffer(vterm_t *vterm);
-
-/* Needed if we don't use curses */
-// int             GetFGBGFromColorIndex( int index, int* fg, int* bg );
 
 #endif
 
