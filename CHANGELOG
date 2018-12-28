@@ -1,3 +1,8 @@
+4.8
+
+  [Bryan Christ] Add APIs to externalize color mapping
+  interfaces so that external programs can access them.
+
 4.7
 
   [Bryan Christ] Make color pair extraction more
