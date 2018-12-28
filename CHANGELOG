@@ -1,94 +1,100 @@
+4.10
+
+* [Bryan Christ] Make csi DL faster.
+* [Bryan Christ] Fix bug with csi IL introduced on previous
+  version.  
+
 4.9
 
-  [Bryan Christ] Make csi IL faster.
+* [Bryan Christ] Make csi IL faster.
 
 4.8
 
-  [Bryan Christ] Add APIs to externalize color mapping
+* [Bryan Christ] Add APIs to externalize color mapping
   interfaces so that external programs can access them.
 
 4.7
 
-  [Bryan Christ] Make color pair extraction more
+* [Bryan Christ] Make color pair extraction more
   opaque and give more control to caller.  This also
   fixes a performance problem seen on Fedora 29 where ncursesw
   pair_content() is about 7x slower.
 
 4.6
 
-  [Bryan Christ] Make color indexing more opaque and
+* [Bryan Christ] Make color indexing more opaque and
   give more control to caller.  Results in about a 
   10 percent performance gain over the default functions
   when used correctly.
 
 4.5
 
-  [Bryan Christ} Make writes to wnd from matrix faster.
+* [Bryan Christ} Make writes to wnd from matrix faster.
 
 4.4
 
-  [Bryan Christ] Handle control character for tab stops
+* [Bryan Christ] Handle control character for tab stops
   correctly.
 
 4.3
 
-  [Bryan Christ] Add TERM PRESIZE event hook to signal
+* [Bryan Christ] Add TERM PRESIZE event hook to signal
   when the terminal is about to be resized.
 
 4.2
 
-  [Bryan Christ] Handle csi for absolute cursor address
+* [Bryan Christ] Handle csi for absolute cursor address
   movement.
 
 4.1
 
-  [Bryan Christ] Properly handle crazy RS1 reset sequence
+* [Bryan Christ] Properly handle crazy RS1 reset sequence
   emitted by rxvt.
 
 4.0
 
-  [Bryan Christ] Full support for UTF-8 encoded Unicode.
+* [Bryan Christ] Full support for UTF-8 encoded Unicode.
 
 3.12
 
-  [Bryan Christ] make libvterm build and link against
+* [Bryan Christ] make libvterm build and link against
   the wide version of ncurses (ncursesw.h) as a step
   toward full utf8 support.
 
 3.11
 
-  [Bryan Christ] make read size a multiple of PIPE_BUF
+* [Bryan Christ] make read size a multiple of PIPE_BUF
   to minimize child process blocking.
 
 3.10
 
-  [Bryan Christ] make the utf8 decoder more robust,
+* [Bryan Christ] make the utf8 decoder more robust,
   easier to read, an possibly a little bit faster.
 
 3.9
 
-  [Bryan Christ] map utf8 double line drawing codes to
+* [Bryan Christ] map utf8 double line drawing codes to
   ACS similars.
 
 3.8
 
-  [Bryan Christ] use clues from Bash to detect and handle if
+* [Bryan Christ] use clues from Bash to detect and handle if
   a program crashes while in alternate buffer mode.
 
 3.7
 
-  [Bryan Christ] added a hook system for programs that need to
+* [Bryan Christ] added a hook system for programs that need to
   know when certain events have transpired and need to take
   action.
-  [Bryan Christ] copied in some color routines into demo
+* [Bryan Christ] copied in some color routines into demo
   program to make it easier to use and more educational for
   the reader.
-  [Bryan Christ] some code to use new hook system in
+* [Bryan Christ] some code to use new hook system in
   demo program.
 
 3.6
 
-  [Bryan Christ] mimic unicode "middle-tee" with ACS_PLUS.
+* [Bryan Christ] mimic unicode "middle-tee" with ACS_PLUS.
 
 3.5
 
