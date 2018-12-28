@@ -29,9 +29,7 @@ vterm_erase(vterm_t *vterm, int idx)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             cell_count;
-    int             x, y;
-    int             i;
+    int             r, c;
 
     if(vterm == NULL) return;
 
@@ -44,18 +42,17 @@ vterm_erase(vterm_t *vterm, int idx)
 
     v_desc = &vterm->vterm_desc[idx];
 
-    cell_count = v_desc-> rows * v_desc->cols;
-
-    for(i = 0;i < cell_count; i++)
+    for(r = 0;r < v_desc->rows; r++)
     {
-        x = i % v_desc->cols;
-        y = (int)(i / v_desc->cols);
+        vcell = &v_desc->cells[r][0];
 
-        // store address of cell to reduce scalar look-ups
-        vcell = &v_desc->cells[y][x];
+        for(c = 0; c < v_desc->cols; c++)
+        {
+            VCELL_SET_CHAR((*vcell), ' ');
+            VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->colors)));
 
-        VCELL_SET_CHAR((*vcell), ' ');
-        VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->colors)));
+            vcell++;
+        }
     }
 
     return;
@@ -66,7 +63,7 @@ vterm_erase_row(vterm_t *vterm, int row)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             i;
+    int             c;
     int             idx;
 
     if(vterm == NULL) return;
@@ -76,14 +73,14 @@ vterm_erase_row(vterm_t *vterm, int row)
     v_desc = &vterm->vterm_desc[idx];
 
     if(row == -1) row = v_desc->crow;
+    vcell = &v_desc->cells[row][0];
 
-    for(i = 0;i < v_desc->cols; i++)
+    for(c = 0;c < v_desc->cols; c++)
     {
-        // store the cell address to reduce scalar look-ups
-        vcell = &v_desc->cells[row][i];
-
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->colors)));
+
+        vcell++;
     }
 
     return;
@@ -104,7 +101,7 @@ vterm_erase_rows(vterm_t *vterm, int start_row)
 
     while(start_row < v_desc->rows)
     {
-        vterm_erase_row(vterm,start_row);
+        vterm_erase_row(vterm, start_row);
         start_row++;
     }
 
@@ -117,7 +114,7 @@ vterm_erase_col(vterm_t *vterm, int col)
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             idx;
-    int             i;
+    int             r;
 
     if(vterm == NULL) return;
 
@@ -127,10 +124,10 @@ vterm_erase_col(vterm_t *vterm, int col)
 
     if(col == -1) col = v_desc->ccol;
 
-    for(i = 0;i < v_desc->rows; i++)
+    for(r = 0; r < v_desc->rows; r++)
     {
         // store the cell address to reduce scalar look-ups
-        vcell = &v_desc->cells[i][col];
+        vcell = &v_desc->cells[r][col];
 
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->colors)));
