@@ -33,7 +33,7 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             i, j;
+    int             c, r;
     int             n = 1;
     int             idx;
 
@@ -43,22 +43,23 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 
     if(pcount && param[0] > 0) n = param[0];
 
-    for(i = v_desc->crow; i <= v_desc->scroll_max; i++)
+    for(r = v_desc->crow; r <= v_desc->scroll_max; r++)
     {
-        if(i + n <= v_desc->scroll_max)
+        vcell = &v_desc->cells[r][0];
+
+        if(r + n <= v_desc->scroll_max)
         {
-            memcpy(v_desc->cells[i], v_desc->cells[i + n],
+            memcpy(v_desc->cells[r], v_desc->cells[r + n],
                 sizeof(vterm_cell_t) * v_desc->cols);
         }
         else
         {
-            for(j = 0; j < v_desc->cols; j++)
+            for(c = 0; c < v_desc->cols; c++)
             {
-                // store the cell address to reduce scalar look-ups
-                vcell = &v_desc->cells[i][j];
-
                 VCELL_SET_CHAR((*vcell), ' ');
                 VCELL_SET_ATTR((*vcell), v_desc->curattr);
+
+                vcell++;
             }
         }
     }
