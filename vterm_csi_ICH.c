@@ -29,7 +29,8 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 {
-    vterm_cell_t    *vcell;
+    vterm_cell_t    *vcell_new;
+    vterm_cell_t    *vcell_old;
     vterm_desc_t    *v_desc = NULL;
     int             c;
     int             n = 1;
@@ -60,18 +61,29 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     // zero-based index of last column of the screen
     scr_end = v_desc->cols - 1;
 
+    vcell_new = &v_desc->cells[v_desc->crow][scr_end];
+    vcell_old = &v_desc->cells[v_desc->crow][scr_end - n];
+
     for(c = scr_end; c >= max_col; c--)
     {
-        v_desc->cells[v_desc->crow][c] = v_desc->cells[v_desc->crow][c - n];
+        /*
+            this is a shallow struct copy.  if a vterm_cell_t ever becomes
+            packed with heap data referenced by pointer, it could
+            be problematic.
+        */
+        *vcell_new = *vcell_old;
+
+        vcell_new--;
+        vcell_old--;
     }
 
-    vcell = &v_desc->cells[v_desc->crow][0];
+    vcell_new = &v_desc->cells[v_desc->crow][0];
     for(c = v_desc->ccol; c < max_col; c++)
     {
-        VCELL_SET_CHAR((*vcell), ' ');
-        VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        VCELL_SET_CHAR((*vcell_new), ' ');
+        VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
 
-        vcell++;
+        vcell_new++;
     }
 
     return;
