@@ -60,6 +60,9 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     short           colors;
     static int      depth = 0;
     int             idx;
+    int             attr_saved = 0;
+    short           fg, bg;
+    int             retval;
 
     // this depth counter prevents a recursion bomb.  depth limit is arbitary.
     if (depth > 6) return;
@@ -205,9 +208,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         if(param[i] == 39)                                // reset fg color
         {
-            int     attr_saved = 0;
-            short   fg, bg;
-            int     retval;
 
             retval = vterm->pair_split(vterm, v_desc->colors, &fg, &bg);
             if(retval != -1)
@@ -241,35 +241,24 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         if(param[i] == 49)                                // reset bg color
         {
-            int  attr_saved = 0;
-
-            if(vterm->flags & VTERM_FLAG_NOCURSES) // no ncurses
+            retval = vterm->pair_split(vterm, v_desc->colors, &fg, &bg);
+            if(retval != -1)
             {
-                short fg, bg;
-                if(vterm->pair_split(vterm, v_desc->colors, &fg, &bg) == 0)
-                {
-                    v_desc->bg = bg;
-                    colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
-                }
-                else
-                {
-                    colors = -1;
-                }
+                v_desc->bg = bg;
+                colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
             }
             else
             {
-#ifdef NOCURSES
-                // should not ever execute - bad combination of flags and
-                // #define's.
-                colors = -1;
-#else
-                short default_fg, default_bg;
-                vterm->pair_split(vterm, v_desc->colors,
-                    &default_fg, &default_bg);
-                v_desc->bg = default_bg;
-                colors = vterm->pair_select(vterm, v_desc->fg, v_desc->bg);
-#endif
+                colors = 0;
             }
+
+#ifdef NOCURSES
+            // should not ever execute - bad combination of flags and
+            // #define's.
+            colors = 0;
+#endif
+
+            // one addtl safeguard
             if(colors == -1) colors = 0;
 
             if (v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
