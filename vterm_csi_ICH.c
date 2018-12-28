@@ -36,6 +36,7 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     int             idx;
     int             max_stride;
     int             max_col;
+    int             scr_end;
 
     // set the vterm desciption selector
     idx = vterm_buffer_get_active(vterm);
@@ -43,15 +44,24 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 
     if(pcount && param[0] > 0) n = param[0];
 
-    // ICH has no effect beyond the edge
+    /*
+        ICH has no effect beyond the edge so calculate the maximum stride
+        possible and clamp 'n' to that value if ncessary.
+    */
     max_stride = v_desc->cols - v_desc->ccol;
     if(n > max_stride) n = max_stride;
 
+    /*
+        calculate where the maximum column would be which is current
+        column + n (the stride).
+    */
     max_col = v_desc->ccol + n;
 
-    for(c = v_desc->cols - 1; c >= v_desc->ccol + n; c--)
-    {
+    // zero-based index of last column
+    scr_end = v_desc->cols - 1;
 
+    for(c = scr_end; c >= v_desc->ccol + n; c--)
+    {
         v_desc->cells[v_desc->crow][c] = v_desc->cells[v_desc->crow][c - n];
     }
 
