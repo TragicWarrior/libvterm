@@ -57,10 +57,10 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     */
     max_col = v_desc->ccol + n;
 
-    // zero-based index of last column
+    // zero-based index of last column of the screen
     scr_end = v_desc->cols - 1;
 
-    for(c = scr_end; c >= v_desc->ccol + n; c--)
+    for(c = scr_end; c >= max_col; c--)
     {
         v_desc->cells[v_desc->crow][c] = v_desc->cells[v_desc->crow][c - n];
     }
