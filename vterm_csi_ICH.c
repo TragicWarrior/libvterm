@@ -31,10 +31,11 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             i;
+    int             c;
     int             n = 1;
     int             idx;
     int             max_stride;
+    int             max_col;
 
     // set the vterm desciption selector
     idx = vterm_buffer_get_active(vterm);
@@ -46,19 +47,21 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     max_stride = v_desc->cols - v_desc->ccol;
     if(n > max_stride) n = max_stride;
 
-    for(i = v_desc->cols - 1; i >= v_desc->ccol + n; i--)
+    max_col = v_desc->ccol + n;
+
+    for(c = v_desc->cols - 1; c >= v_desc->ccol + n; c--)
     {
 
-        v_desc->cells[v_desc->crow][i] = v_desc->cells[v_desc->crow][i - n];
+        v_desc->cells[v_desc->crow][c] = v_desc->cells[v_desc->crow][c - n];
     }
 
-    for(i = v_desc->ccol; i < v_desc->ccol + n; i++)
+    vcell = &v_desc->cells[v_desc->crow][0];
+    for(c = v_desc->ccol; c < max_col; c++)
     {
-        // store cell addres to reduce scalar look-ups
-        vcell = &v_desc->cells[v_desc->crow][i];
-
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
+
+        vcell++;
     }
 
     return;
