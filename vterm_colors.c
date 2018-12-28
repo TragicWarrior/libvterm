@@ -195,15 +195,9 @@ vterm_get_colors(vterm_t *vterm)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-    {
-    }
-    else // ncurses
-    {
 #ifndef NOCURSES
         if(has_colors() == FALSE) return -1;
 #endif
-    }
 
     return v_desc->colors;
 }
