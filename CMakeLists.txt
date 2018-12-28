@@ -4,7 +4,7 @@ project(libvterm)
 
 option(DEFINE_CURSES "Build with curses" ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -Wall -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC")
 set(PROJECT_DESCRIPTION "A rxvt/vt100 terminal emulator library written in C.")
 
 if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.0)))
