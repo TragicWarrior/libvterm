@@ -29,12 +29,15 @@ This library is based on ROTE written by Bruno Takahashi C. de Oliveira
 void
 interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 {
-    vterm_cell_t    *vcell;
+    vterm_cell_t    *vcell_new;
+    vterm_cell_t    *vcell_old;
     vterm_desc_t    *v_desc = NULL;
-    int             i;
+    int             c;
     int             n = 1;
     int             idx;
     int             max_stride;
+    int             max_col;
+    int             scr_end;
 
     // set the vterm desciption selector
     idx = vterm_buffer_get_active(vterm);
@@ -42,23 +45,45 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 
     if(pcount && param[0] > 0) n = param[0];
 
-    // ICH has no effect beyond the edge
+    /*
+        ICH has no effect beyond the edge so calculate the maximum stride
+        possible and clamp 'n' to that value if ncessary.
+    */
     max_stride = v_desc->cols - v_desc->ccol;
     if(n > max_stride) n = max_stride;
 
-    for(i = v_desc->cols - 1; i >= v_desc->ccol + n; i--)
-    {
+    /*
+        calculate where the maximum column would be which is current
+        column + n (the stride).
+    */
+    max_col = v_desc->ccol + n;
 
-        v_desc->cells[v_desc->crow][i] = v_desc->cells[v_desc->crow][i - n];
+    // zero-based index of last column of the screen
+    scr_end = v_desc->cols - 1;
+
+    vcell_new = &v_desc->cells[v_desc->crow][scr_end];
+    vcell_old = &v_desc->cells[v_desc->crow][scr_end - n];
+
+    for(c = scr_end; c >= max_col; c--)
+    {
+        /*
+            this is a shallow struct copy.  if a vterm_cell_t ever becomes
+            packed with heap data referenced by pointer, it could
+            be problematic.
+        */
+        *vcell_new = *vcell_old;
+
+        vcell_new--;
+        vcell_old--;
     }
 
-    for(i = v_desc->ccol; i < v_desc->ccol + n; i++)
+    vcell_new = &v_desc->cells[v_desc->crow][0];
+    for(c = v_desc->ccol; c < max_col; c++)
     {
-        // store cell addres to reduce scalar look-ups
-        vcell = &v_desc->cells[v_desc->crow][i];
+        VCELL_SET_CHAR((*vcell_new), ' ');
+        VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
 
-        VCELL_SET_CHAR((*vcell), ' ');
-        VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        vcell_new++;
     }
 
     return;
