@@ -1,3 +1,7 @@
+4.11
+
+* [Bryan Christ] Make erase operations faster
+
 4.10
 
 * [Bryan Christ] Make csi DL faster.
