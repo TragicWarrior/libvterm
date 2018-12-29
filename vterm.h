@@ -110,8 +110,12 @@ typedef chtype          attr_t;
 */
 struct _vterm_cell_s
 {
-    cchar_t         uch;
     attr_t          attr;
+    wchar_t         wch[2];     // we need this when NOCURSES is defined
+
+#ifndef NOCURSES
+    cchar_t         uch;
+#endif
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;

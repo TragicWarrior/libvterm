@@ -101,7 +101,6 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             if(bytes > 0)
             {
                 vterm_put_char(vterm, *data, wch);
-                // vterm_put_char(vterm, NULL, wch);
                 vterm_utf8_cancel(vterm);
             }
 
@@ -138,6 +137,10 @@ vterm_render(vterm_t *vterm, const char *data, int len)
 /*
     if wch is not NULL, then 'c' should be ignored in this
     function.
+
+    todo:  this function is highly dependent on ncurses.  an alternate
+    version needs to be written which doesn't rely on ncurses to
+    support the NOCURSES build option.
 */
 void
 vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
@@ -165,7 +168,6 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     */
     vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
-    // if(IS_MODE_ACS(vterm))
     if(IS_MODE_ACS(vterm) && wch == NULL)
     {
         pos = vt100_acs;
@@ -175,8 +177,8 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         {
             if((char)c == *pos)
             {
-                // VCELL_SET_CHAR((*vcell), NCURSES_ACS(c));
                 memcpy(&vcell->uch, NCURSES_WACS(c), sizeof(cchar_t));
+                // todo:  copy contents into cell.wch
             }
             pos++;
         }
@@ -195,6 +197,9 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 
         return;
     }
+
+    // copy the widechar into the cell
+    memcpy(&vcell->wch, wch, sizeof(vcell->wch));
 
     // if constructing the cchar_t fails, use a blank
     if(setcchar(&vcell->uch, wch, 0, 0, NULL) == ERR)
