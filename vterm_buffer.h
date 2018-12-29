@@ -51,6 +51,7 @@ int     vterm_buffer_get_active(vterm_t *vterm);
             { \
                 wchar_t             _wch[CCHARW_MAX]; \
                 swprintf(_wch, CCHARW_MAX, L"%c", _ch); \
+                memcpy(&_cell.wch, _wch, sizeof(_cell.wch)); \
                 setcchar(&_cell.uch, _wch, 0, 0, NULL); \
             } \
 
