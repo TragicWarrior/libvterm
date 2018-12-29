@@ -1,3 +1,8 @@
+4.15
+
+* [Bryan Christ] Copy multibyte data into a wchar_t that is exposed
+  externally for use outside the library.
+
 4.14
 
 * [Bryan Christ] Fixed a bug that was introduced in version
