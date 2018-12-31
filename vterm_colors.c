@@ -284,7 +284,7 @@ _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
         // found an empty slot
         if(pos->ref == 0) break;
 
-        pos->ref = 0;
+        pos->ref--;
 
         if(pos == end)
         {
@@ -300,7 +300,7 @@ _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
     {
         pair_content(pair, &pos->fg, &pos->bg);
         pos->pair = pair;
-        pos->ref = 1;
+        if(pos->ref < 0xFF) pos->ref++;
     }
 
     *fg = pos->fg;
