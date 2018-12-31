@@ -217,7 +217,7 @@ find_color_pair(vterm_t *vterm, short fg, short bg)
     // check our cache
     for(i = 0; i < COLOR_BUF_SZ; i++)
     {
-        if(item->fg == fg && item->bg == bg)
+        if(item->pair != -1 && item->fg == fg && item->bg == bg)
         {
             if(item->ref < 0xFF) item->ref++;
             return item->pair;

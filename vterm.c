@@ -208,6 +208,22 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
+    {
+        FILE    *f;
+        f = fopen("color.cache", "w");
+
+        for(i = 0; i < COLOR_BUF_SZ; i++)
+        {
+            fprintf(f, "slot %d, pair %d, fg %d, bg %d, ref %d\n\r",
+                i,
+                vterm->color_cache[i].pair,
+                vterm->color_cache[i].fg,
+                vterm->color_cache[i].bg,
+                vterm->color_cache[i].ref);
+        }
+        fclose(f);
+    }
+
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)
     {
