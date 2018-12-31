@@ -11,14 +11,6 @@
 #include "vterm_buffer.h"
 
 
-struct _color_cache_s
-{
-    uint8_t     ref;
-    short       pair;
-    short       fg;
-    short       bg;
-};
-
 struct _my_color_pair_s
 {
     short fg;
@@ -26,8 +18,6 @@ struct _my_color_pair_s
 };
 
 typedef struct _my_color_pair_s my_color_pair_t;
-
-typedef struct _color_cache_s   color_cache_t;
 
 #define COLOR_CACHE_SLOTS   6
 #define MAX_COLOR_PAIRS     512
@@ -252,65 +242,58 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 int
 _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
 {
-    static color_cache_t    *color_cache = NULL;
-    static color_cache_t    *pos;
-    static color_cache_t    *end;
-    int                     i;
+    color_cache_t   *last;
+    color_cache_t   *item;
+    int             i;
 
-    (void)vterm;            // make compiler happy
+    if(vterm == NULL) return -1;
 
-    // one time init of cache
-    if(color_cache == NULL)
+    item = &vterm->color_cache[0];
+
+    // check to see if pair is already in the cache
+    for(i = 0; i < CC_SIZE; i++)
     {
-        color_cache = (color_cache_t*)calloc(COLOR_CACHE_SLOTS,
-            sizeof(color_cache_t));
-
-        // init pairs to -1 so we don't match on zero accidentally
-        for(i = 0; i < COLOR_CACHE_SLOTS; i++)
+        if(item->pair == pair)
         {
-            color_cache[i].pair = -1;
+            *fg = item->fg;
+            *bg = item->bg;
+
+            item->ref = 1;
+
+            return 0;
         }
 
-        pos = color_cache;
-        end = pos + COLOR_CACHE_SLOTS;
+        item++;
     }
 
-    // iterate through cache looking for a match or an open slot
+    /*
+        we have a "page fault".
+        iterate through cache looking for a match or an open slot.
+    */
+    last = &vterm->color_cache[CC_SIZE - 1];
     for(;;)
     {
-        // found a match
-        if(pos->pair == pair) break;
-
         // found an empty slot
-        if(pos->ref == 0) break;
+        if(vterm->cc_pos->ref == 0) break;
 
-        pos->ref--;
+        vterm->cc_pos->ref--;
 
-        if(pos == end)
+        if(vterm->cc_pos == last)
         {
-            pos = color_cache;
+            vterm->cc_pos = &vterm->color_cache[0];
             continue;
         }
 
-        pos++;
+        vterm->cc_pos++;
     }
 
-    // loop broke because we found an empty slot.   load it.
-    if(pos->ref == 0)
-    {
-        pair_content(pair, &pos->fg, &pos->bg);
-        pos->pair = pair;
-    }
+    // cache the pair
+    pair_content(pair, &vterm->cc_pos->fg, &vterm->cc_pos->bg);
+    vterm->cc_pos->pair = pair;
+    vterm->cc_pos->ref = 1;
 
-    if(pos->ref < 0xFF)
-    {
-        // pos->ref++;
-        pos->ref = pos->ref << 1;
-        pos->ref |= 1;
-    }
-
-    *fg = pos->fg;
-    *bg = pos->bg;
+    *fg = vterm->cc_pos->fg;
+    *bg = vterm->cc_pos->bg;
 
     return 0;
 }

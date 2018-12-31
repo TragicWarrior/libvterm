@@ -47,6 +47,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     char            *pos = NULL;
     int             retval;
+    int             i;
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
@@ -69,6 +70,18 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     vterm->pair_select = find_color_pair_simple;
     vterm->pair_split = _native_pair_splitter_2;
 #endif
+
+    // init the LRU color cache
+    // vterm->color_cache = (color_cache_t **)calloc(CC_SIZE,
+    //    sizeof(color_cache_t));
+    for(i = 0; i < CC_SIZE; i++)
+    {
+        vterm->color_cache[i].pair = -1;
+        vterm->color_cache[i].ref = 1;
+    }
+
+    // start the clock hand pointer at the first slot
+    vterm->cc_pos = &vterm->color_cache[0];
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
