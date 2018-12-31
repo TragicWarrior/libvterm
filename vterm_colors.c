@@ -258,7 +258,8 @@ _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
             *fg = item->fg;
             *bg = item->bg;
 
-            item->ref = 1;
+            // item->ref = 1;
+            if(item->ref < 0xff) item->ref++;
 
             return 0;
         }
