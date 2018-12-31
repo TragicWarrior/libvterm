@@ -1,22 +1,3 @@
-/*
-LICENSE INFORMATION:
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License (LGPL) as published by the Free Software Foundation.
-
-Please refer to the COPYING file for more information.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
-Copyright (c) 2017 Bryan Christ
-*/
 
 #include <string.h>
 #include <inttypes.h>
@@ -238,23 +219,33 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
     return byte_count;
 }
 
-// function "borrowed" from "cboard" chess program
 inline void
 utf8_str_to_wchar(wchar_t *wch, const char *str, int max)
 {
-    mbstate_t       ps;
-    const char      *p = str;
+    mbstate_t       mbs;
+    const char      *pos = str;
     size_t          len = max;
 
     memset(wch, 0, max);
+    memset(&mbs, 0, sizeof (mbstate_t));
 
-    memset(&ps, 0, sizeof (mbstate_t));
-    if(!len)
-        len = mbsrtowcs(NULL, &p, 0, &ps);
+    /*
+        user didn't specify a length so we need to calculate.
 
-    p = str;
-    memset (&ps, 0, sizeof (mbstate_t));
-    len = mbsrtowcs(wch, &p, len - 1, &ps);
+        according to the man pages for mbsrtowcw(), when the first
+        argument is NULL, the converstion take place but nothing is
+        written to memory.  however, the function still returns the
+        number of wide characters converted... effectively
+        measuring lengthy.
+    */
+    if(len == 0)
+    {
+        len = mbsrtowcs(NULL, &pos, 0, &mbs);
+    }
+
+    pos = str;
+    memset (&mbs, 0, sizeof (mbstate_t));
+    len = mbsrtowcs(wch, &pos, len - 1, &mbs);
 
     return;
 }

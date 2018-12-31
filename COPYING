@@ -1,4 +1,11 @@
+
 This library (libvterm) is a fork of libROTE.  With the author's premission,
 this derivative is dual-licensed under both the GPL 2.0 and LGPL 2.1.  The
 terms of these licenses are located in LICENSE.GPL and LICENSE.LGPL
 respectively.
+
+Copyright (C)
+
+    2004 Bruno Takahashi C. de Oliveira
+    2009 Bryan Christ <bryan.christ@gmail.com>
+    2014 Johannes Schauer <j.schauer@email.de>
