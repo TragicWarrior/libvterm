@@ -52,7 +52,7 @@ struct _vterm_s
     vterm_desc_t    vterm_desc[2];              // normal buffer and alt buffer
     int             vterm_desc_idx;             // index of active buffer;
 
-    color_cache_t   color_cache[CC_SIZE];       // LRU color cache
+    color_cache_t   color_cache[COLOR_BUF_SZ];  // LRU color cache
     color_cache_t   *cc_pos;                    // current pos int LRU cache
 
 #ifndef NOCURSES

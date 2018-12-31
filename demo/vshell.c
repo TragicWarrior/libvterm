@@ -218,6 +218,8 @@ int main(int argc, char **argv)
         if (ch != ERR) vterm_write_pipe(vterm,ch);
     }
 
+    vterm_destroy(vterm);
+
     endwin();
 
 /*

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 #include "macros.h"
 #include "vterm.h"
@@ -202,13 +203,36 @@ vterm_get_colors(vterm_t *vterm)
 }
 
 short
-find_color_pair(vterm_t *vterm, short fg,short bg)
+find_color_pair(vterm_t *vterm, short fg, short bg)
 {
+    color_cache_t   *last;
+    color_cache_t   *item;
+    short           pair = -1;
     int             i;
 
+    if(vterm == NULL) return -1;
+
+    item = &vterm->color_cache[0];
+
+    // check our cache
+    for(i = 0; i < COLOR_BUF_SZ; i++)
+    {
+        if(item->fg == fg && item->bg == bg)
+        {
+            if(item->ref < 0xFF) item->ref++;
+            return item->pair;
+        }
+
+        item++;
+    }
+
+    /*
+        a "page fault" has occurred.  item wasn't found in cache so we have
+        to look it up via the "long path".
+    */
     if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
     {
-        return find_color_pair_simple(vterm, fg, bg);
+        pair = find_color_pair_simple(vterm, fg, bg);
     }
     else // ncurses
     {
@@ -219,18 +243,48 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
         if(has_colors() == FALSE)
             return -1;
 
+        // this is expensive
         for(i = 1; i < COLOR_PAIRS; i++)
         {
             vterm->pair_split(vterm, i, &fg_color, &bg_color);
-            if(fg_color == fg && bg_color == bg) break;
+            if(fg_color == fg && bg_color == bg)
+            {
+                pair = i;
+                break;
+            }
         }
 
-        if(i == COLOR_PAIRS)
-            return -1;
+        if(i == COLOR_PAIRS) pair = -1;
 #endif
     }
 
-    return i;
+    // something went wrong... return error
+    if(pair == -1) return -1;
+
+    last = &vterm->color_cache[COLOR_BUF_SZ - 1];
+    for(;;)
+    {
+        // found an empty slot
+        if(vterm->cc_pos->ref == 0) break;
+
+        vterm->cc_pos->ref--;
+
+        if(vterm->cc_pos == last)
+        {
+            // use long notation for readability
+            vterm->cc_pos = &vterm->color_cache[0];
+            continue;
+        }
+
+        vterm->cc_pos++;
+    }
+
+    vterm->cc_pos->pair = pair;
+    vterm->cc_pos->fg = fg;
+    vterm->cc_pos->bg = bg;
+    vterm->cc_pos->ref = 1;
+
+    return pair;
 }
 
 /*
@@ -241,59 +295,9 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 int
 _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
 {
-    color_cache_t   *last;
-    color_cache_t   *item;
-    int             i;
+    (void)vterm;    //make compiler happy
 
-    if(vterm == NULL) return -1;
-
-    item = &vterm->color_cache[0];
-
-    // check to see if pair is already in the cache
-    for(i = 0; i < CC_SIZE; i++)
-    {
-        if(item->pair == pair)
-        {
-            *fg = item->fg;
-            *bg = item->bg;
-
-            // item->ref = 1;
-            if(item->ref < 0xff) item->ref++;
-
-            return 0;
-        }
-
-        item++;
-    }
-
-    /*
-        we have a "page fault".
-        iterate through cache looking for a match or an open slot.
-    */
-    last = &vterm->color_cache[CC_SIZE - 1];
-    for(;;)
-    {
-        // found an empty slot
-        if(vterm->cc_pos->ref == 0) break;
-
-        vterm->cc_pos->ref--;
-
-        if(vterm->cc_pos == last)
-        {
-            vterm->cc_pos = &vterm->color_cache[0];
-            continue;
-        }
-
-        vterm->cc_pos++;
-    }
-
-    // cache the pair
-    pair_content(pair, &vterm->cc_pos->fg, &vterm->cc_pos->bg);
-    vterm->cc_pos->pair = pair;
-    vterm->cc_pos->ref = 1;
-
-    *fg = vterm->cc_pos->fg;
-    *bg = vterm->cc_pos->bg;
+    pair_content(pair, fg, bg);
 
     return 0;
 }

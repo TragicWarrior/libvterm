@@ -74,7 +74,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     // init the LRU color cache
     // vterm->color_cache = (color_cache_t **)calloc(CC_SIZE,
     //    sizeof(color_cache_t));
-    for(i = 0; i < CC_SIZE; i++)
+    for(i = 0; i < COLOR_BUF_SZ; i++)
     {
         vterm->color_cache[i].pair = -1;
         vterm->color_cache[i].ref = 1;
