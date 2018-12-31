@@ -2,10 +2,22 @@
 #include <malloc.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <inttypes.h>
+
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_colors.h"
 #include "vterm_buffer.h"
+
+
+struct _color_cache_s
+{
+    uint8_t     ref;
+    short       pair;
+    short       fg;
+    short       bg;
+};
 
 struct _my_color_pair_s
 {
@@ -15,7 +27,10 @@ struct _my_color_pair_s
 
 typedef struct _my_color_pair_s my_color_pair_t;
 
-#define MAX_COLOR_PAIRS 512
+typedef struct _color_cache_s   color_cache_t;
+
+#define COLOR_CACHE_SLOTS   6
+#define MAX_COLOR_PAIRS     512
 
 my_color_pair_t *color_palette = NULL;
 int palette_size = 0;
@@ -237,9 +252,59 @@ find_color_pair(vterm_t *vterm, short fg,short bg)
 int
 _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
 {
-    (void)vterm;        // make compiler happy
+    static color_cache_t    *color_cache = NULL;
+    static color_cache_t    *pos;
+    static color_cache_t    *end;
+    int                     i;
 
-    pair_content(pair, fg, bg);
+    (void)vterm;            // make compiler happy
+
+    // one time init of cache
+    if(color_cache == NULL)
+    {
+        color_cache = (color_cache_t*)calloc(COLOR_CACHE_SLOTS,
+            sizeof(color_cache_t));
+
+        // init pairs to -1 so we don't match on zero accidentally
+        for(i = 0; i < COLOR_CACHE_SLOTS; i++)
+        {
+            color_cache[i].pair = -1;
+        }
+
+        pos = color_cache;
+        end = pos + COLOR_CACHE_SLOTS;
+    }
+
+    // iterate through cache looking for a match or an open slot
+    for(;;)
+    {
+        // found a match
+        if(pos->pair == pair) break;
+
+        // found an empty slot
+        if(pos->ref == 0) break;
+
+        pos->ref = 0;
+
+        if(pos == end)
+        {
+            pos = color_cache;
+            continue;
+        }
+
+        pos++;
+    }
+
+    // loop broke because we found an empty slot.   load it.
+    if(pos->ref == 0)
+    {
+        pair_content(pair, &pos->fg, &pos->bg);
+        pos->pair = pair;
+        pos->ref = 1;
+    }
+
+    *fg = pos->fg;
+    *bg = pos->bg;
 
     return 0;
 }
