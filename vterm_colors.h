@@ -14,7 +14,7 @@ struct _color_cache_s
 
 typedef struct _color_cache_s   color_cache_t;
 
-#define CC_SIZE 6
+#define CC_SIZE 8
 
 short
 find_color_pair(vterm_t *vterm, short fg, short bg);

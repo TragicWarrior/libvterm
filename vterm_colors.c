@@ -19,7 +19,6 @@ struct _my_color_pair_s
 
 typedef struct _my_color_pair_s my_color_pair_t;
 
-#define COLOR_CACHE_SLOTS   6
 #define MAX_COLOR_PAIRS     512
 
 my_color_pair_t *color_palette = NULL;
