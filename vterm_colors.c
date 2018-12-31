@@ -302,7 +302,13 @@ _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
         pos->pair = pair;
     }
 
-    if(pos->ref < 0xFF) pos->ref++;
+    if(pos->ref < 0xFF)
+    {
+        // pos->ref++;
+        pos->ref = pos->ref << 1;
+        pos->ref |= 1;
+    }
+
     *fg = pos->fg;
     *bg = pos->bg;
 
