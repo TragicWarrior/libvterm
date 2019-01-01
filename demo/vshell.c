@@ -178,8 +178,8 @@ int main(int argc, char **argv)
         vterm = vterm_create(screen_w - 2, screen_h - 2, flags);
     }
 
-    vterm_set_pair_selector(vterm, vshell_pair_selector);
-    vterm_set_pair_splitter(vterm, vshell_pair_splitter);
+    // vterm_set_pair_selector(vterm, vshell_pair_selector);
+    // vterm_set_pair_splitter(vterm, vshell_pair_splitter);
 
     vterm_set_colors(vterm, COLOR_WHITE, COLOR_BLACK);
     vterm_wnd_set(vterm, VWINDOW(twin));
@@ -217,6 +217,8 @@ int main(int argc, char **argv)
 
         if (ch != ERR) vterm_write_pipe(vterm,ch);
     }
+
+    vterm_destroy(vterm);
 
     endwin();
 

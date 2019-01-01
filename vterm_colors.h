@@ -4,6 +4,18 @@
 
 #include "vterm.h"
 
+struct _color_cache_s
+{
+    uint8_t     ref;
+    short       pair;
+    short       fg;
+    short       bg;
+};
+
+typedef struct _color_cache_s   color_cache_t;
+
+#define COLOR_BUF_SZ 12
+
 short
 find_color_pair(vterm_t *vterm, short fg, short bg);
 
