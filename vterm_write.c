@@ -66,6 +66,8 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
+        // case KEY_MOUSE:     buffer = "\e[M";    break;
+        case KEY_MOUSE:     endwin();           exit(0);
     }
 
     if(buffer == NULL)

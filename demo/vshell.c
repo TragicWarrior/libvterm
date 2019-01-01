@@ -61,6 +61,8 @@ int main(int argc, char **argv)
     ssize_t     bytes;
     int         flags = 0;
     testwin_t   *twin;
+    // mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
+    // mmask_t     mouse_mask = BUTTON1_CLICKED;
     char        *exec_path = NULL;
     char        **exec_argv = NULL;
     char        *locale;
@@ -82,6 +84,7 @@ int main(int argc, char **argv)
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
+    mousemask(mouse_mask, NULL);
 
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
@@ -198,6 +201,8 @@ int main(int argc, char **argv)
         if(bytes == -1) break;
 
         ch = getch();
+
+        // if(ch == KEY_MOUSE) break;
 
         // handle special events like resize first
         if(ch == KEY_RESIZE)
