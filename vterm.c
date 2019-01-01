@@ -208,6 +208,7 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
+/*
     {
         FILE    *f;
         f = fopen("color.cache", "w");
@@ -223,6 +224,7 @@ vterm_destroy(vterm_t *vterm)
         }
         fclose(f);
     }
+*/
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)
