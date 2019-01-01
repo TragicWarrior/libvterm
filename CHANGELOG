@@ -1,3 +1,9 @@
+4.16
+
+* [Bryan Christ] Implemented color caching system which yields
+  anywhere from 5% - 500% preformance improvement depending on
+  conditions.
+
 4.15
 
 * [Bryan Christ] Copy multibyte data into a wchar_t that is exposed
