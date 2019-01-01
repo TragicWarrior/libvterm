@@ -295,9 +295,56 @@ find_color_pair(vterm_t *vterm, short fg, short bg)
 int
 _native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
 {
-    (void)vterm;    //make compiler happy
+    color_cache_t       *last;
+    color_cache_t       *item;
+    int                 i;
+
+    if(vterm == NULL) return -1;
+
+    item = &vterm->color_cache[0];
+
+    // check to see if pair is already in the cache
+    for(i = 0; i < COLOR_BUF_SZ; i++)
+    {
+        if(item->pair == pair)
+        {
+            *fg = item->fg;
+            *bg = item->bg;
+
+            if(item->ref < 0xff) item->ref++;
+            return 0;
+        }
+
+        item++;
+    }
+
+    /*
+        we have a "page fault".
+        iterate through cache looking for an empty slot.
+    */
+
+    last = &vterm->color_cache[COLOR_BUF_SZ - 1];
+    for(;;)
+    {
+        // found an empty slot
+        if(vterm->cc_pos->ref == 0) break;
+
+        vterm->cc_pos->ref--;
+
+        if(vterm->cc_pos == last)
+        {
+            vterm->cc_pos = &vterm->color_cache[0];
+            continue;
+        }
+
+        vterm->cc_pos++;
+    }
 
     pair_content(pair, fg, bg);
+    vterm->cc_pos->pair = pair;
+    vterm->cc_pos->fg = *fg;
+    vterm->cc_pos->bg = *bg;
+    vterm->cc_pos->ref = 1;
 
     return 0;
 }
