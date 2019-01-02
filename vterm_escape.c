@@ -90,16 +90,30 @@ vterm_interpret_escapes(vterm_t *vterm)
         return;
     }
 
-    if(firstchar == '7' )
+    if(firstchar == '7')
     {
         interpret_csi_SAVECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
+
+        return;
     }
 
-    if(firstchar == '8' )
+    if(firstchar == '8')
     {
         interpret_csi_RESTORECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
+
+        return;
+    }
+
+    // The ESC c sequence is RS1 reset for most
+    if(firstchar == 'c')
+    {
+        // push in "\ec" as a safety check
+        interpret_csi_RS1_xterm(vterm, "\ec");
+        vterm_escape_cancel(vterm);
+
+        return;
     }
 
     // if it's not these, we don't have code to handle it.

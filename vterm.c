@@ -20,6 +20,7 @@
 #include "vterm_exec.h"
 #include "vterm_buffer.h"
 #include "vterm_colors.h"
+#include "vterm_csi.h"
 
 /*
     this string is emitted by for resetting an RXVT terminal (RS1).
@@ -27,7 +28,7 @@
     the same termcap operation.  the sequence is codified in terminfo
     database.  this can be inspected with the infocmp tool.
 */
-#define RXVT_RS1    "\e>\e[1;3;4;5;6l\e[?7h\em\er\e[2J\e[H"
+// #define RXVT_RS1    "\e>\e[1;3;4;5;6l\e[?7h\em\er\e[2J\e[H"
 
 vterm_t*
 vterm_alloc(void)
@@ -142,9 +143,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
         others typically use \Ec
     */
     if(flags & VTERM_FLAG_RXVT)
-    {
-        vterm->reset_rs1 = RXVT_RS1;
-    }
+        vterm->rs1_reset = interpret_csi_RS1_rxvt;
 
     if(flags & VTERM_FLAG_NOPTY)
     { // skip all the child process and fd stuff.

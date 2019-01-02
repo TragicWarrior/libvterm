@@ -97,13 +97,6 @@ struct _vterm_s
 
     int             utf8_buf_len;               //  number of utf8 bytes
 
-    char            *reset_rs1;                 /*
-                                                    rxvt emits a nasty long
-                                                    series of control codes
-                                                    instead of a single code
-                                                    to indicate a rs1 reset.
-                                                */
-
     int             pty_fd;                     /*
                                                     file descriptor for the pty
                                                     attached to this terminal.
@@ -119,8 +112,12 @@ struct _vterm_s
     char            *debug_filepath;
     int             debug_fd;
 
+    // internal callbacks
     int             (*write)            (vterm_t *, uint32_t);
     int             (*esc_handler)      (vterm_t *);
+    int             (*rs1_reset)        (vterm_t *, char *);
+
+    // callbacks that the implementer can specify
     void            (*event_hook)       (vterm_t *, int, void *);
     short           (*pair_select)      (vterm_t *, short, short);
     int             (*pair_split)       (vterm_t *, short, short *, short *);

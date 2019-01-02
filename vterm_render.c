@@ -37,7 +37,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         if(*data == 0) continue;
 
         // special processing looking for reset sequence
-        interpret_csi_RS1(vterm, (char *)data);
+        if(vterm->rs1_reset != NULL) vterm->rs1_reset(vterm, (char *)data);
 
         if(!IS_MODE_ESCAPED(vterm))
         {
