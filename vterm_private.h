@@ -12,8 +12,8 @@
 #  include <ncursesw/curses.h>
 #endif
 
-#define ESEQ_BUF_SIZE           128         // size of escape sequence buffer
-#define UTF8_BUF_SIZE           5           // 4 bytes + 0-terminator
+#define ESEQ_BUF_SIZE           128             // escape buffer max
+#define UTF8_BUF_SIZE           5               // 4 bytes + 0-terminator
 
 #define STATE_ALT_CHARSET       (1 << 1)
 #define STATE_ESCAPE_MODE       (1 << 2)
@@ -22,12 +22,20 @@
 #define STATE_PIPE_ERR          (1 << 8)
 #define STATE_CHILD_EXITED      (1 << 9)
 #define STATE_CURSOR_INVIS      (1 << 10)
-#define STATE_SCROLL_SHORT      (1 << 11)   // scroll region is not full height
+#define STATE_SCROLL_SHORT      (1 << 11)       /*
+                                                    scroll region is not
+                                                    full height
+                                                */
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
 #define IS_MODE_UTF8(x)         (x->internal_state & STATE_UTF8_MODE)
 
+#define VTERM_TERM_MASK         0x0F            /*
+                                                    the lower 4 bits of the
+                                                    flags value specify term
+                                                    type.
+                                                */
 
 struct _vterm_desc_s
 {

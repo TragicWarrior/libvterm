@@ -62,13 +62,14 @@ typedef chtype          attr_t;
 
 #define LIBVTERM_VERSION        "4.16"
 
-#define VTERM_FLAG_RXVT         0           // default
-#define VTERM_FLAG_VT100        (1 << 1)
-#define VTERM_FLAG_NOPTY        (1 << 2)    // skip all the fd and pty stuff.
+#define VTERM_FLAG_RXVT         (1 << 0)    // masquerade as rxvt (default)
+#define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100
+#define VTERM_FLAG_XTERM        (1 << 2)    // masquerade as xterm
+#define VTERM_FLAG_NOPTY        (1 << 3)    // skip all the fd and pty stuff.
                                             // just render input args byte
                                             // stream to a buffer
 
-#define VTERM_FLAG_NOCURSES     (1 << 3)    // skip the curses WINDOW stuff.
+#define VTERM_FLAG_NOCURSES     (1 << 4)    // skip the curses WINDOW stuff.
                                             // return the char cell array if
                                             // required
 
@@ -160,7 +161,7 @@ vterm_t*        vterm_alloc(void);
     @return:        a handle to a newly alloc'd vterm object if not provided.
 */
 vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
-                    unsigned int flags);
+                    uint16_t flags);
 
 /*
     convenience macro for alloc-ing a ready to use terminal object.

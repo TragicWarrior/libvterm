@@ -40,7 +40,7 @@ vterm_alloc(void)
 }
 
 vterm_t*
-vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
+vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
 {
     pid_t           child_pid = 0;
     int             master_fd;
@@ -48,6 +48,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     char            *pos = NULL;
     int             retval;
     int             i;
+
+    // rxvt emulation is the default if none specified
+    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT; 
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
@@ -72,8 +75,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
 #endif
 
     // init the LRU color cache
-    // vterm->color_cache = (color_cache_t **)calloc(CC_SIZE,
-    //    sizeof(color_cache_t));
     for(i = 0; i < COLOR_BUF_SZ; i++)
     {
         vterm->color_cache[i].pair = -1;
@@ -136,11 +137,11 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
     ws.ws_row = height;
     ws.ws_col = width;
 
-    if(flags & VTERM_FLAG_VT100)
-    {
-        vterm->reset_rs1 = NULL;
-    }
-    else
+    /*
+        rxvt has a crazy escape sequence for resetting the terminal.
+        others typically use \Ec
+    */
+    if(flags & VTERM_FLAG_RXVT)
     {
         vterm->reset_rs1 = RXVT_RS1;
     }
@@ -163,9 +164,17 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
         {
             signal(SIGINT, SIG_DFL);
 
-            // default is rxvt emulation
-            setenv("TERM", "rxvt", 1);
-            setenv("COLORTERM", "rxvt", 1);
+            if(flags & VTERM_FLAG_RXVT)
+            {
+                setenv("TERM", "rxvt", 1);
+                setenv("COLORTERM", "rxvt", 1);
+            }
+
+            if(flags & VTERM_FLAG_XTERM)
+            {
+                setenv("TERM", "xterm", 1);
+                setenv("COLORTERM", "xterm", 1);
+            }
 
             if(flags & VTERM_FLAG_VT100)
             {
@@ -195,8 +204,15 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, unsigned int flags)
         }
     }
 
-    if(flags & VTERM_FLAG_VT100) vterm->write = vterm_write_vt100;
-    else vterm->write = vterm_write_rxvt;
+    // set for the default which is RXVT
+    if(flags & VTERM_FLAG_RXVT)
+        vterm->write = vterm_write_rxvt;
+
+    if(flags & VTERM_FLAG_VT100)
+        vterm->write = vterm_write_vt100;
+
+    if(flags & VTERM_FLAG_XTERM)
+        vterm->write = vterm_write_xterm;
 
     return vterm;
 }

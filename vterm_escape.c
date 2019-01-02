@@ -428,8 +428,16 @@ vterm_interpret_esc_scs(vterm_t *vterm)
 
     p = vterm->esbuf;
 
-    // G0 sequence - unused
-    if(*p == '(') {}
+    // not the most elegant way to handle these.  todo: improve later.
+    if(*p == '(' && p[1] == '0')
+    {
+        vterm->internal_state |= STATE_ALT_CHARSET;
+    }
+
+    if(*p == '(' && p[1] == 'B')
+    {
+        vterm->internal_state &= ~STATE_ALT_CHARSET;
+    }
 
     // G1 sequence - unused
     if(*p == ')') {}
