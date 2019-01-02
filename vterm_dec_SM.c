@@ -3,6 +3,7 @@
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
+#include "vterm_cursor.h"
 
 /* Interpret DEC SM (set mode) */
 void
@@ -35,6 +36,21 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             if(idx == VTERM_BUFFER_ALT) continue;
 
             vterm_buffer_set_active(vterm, VTERM_BUFFER_ALT);
+            continue;
+        }
+
+        /*
+            nearly identical to ESC [ ? 47 h except it calls for
+            saving the cursor first then switching to alt buffer.
+        */
+        if(param[i] == 1049)
+        {
+            vterm_cursor_save(vterm);
+
+            // check to see if we're already using the ALT buffer
+            if(idx != VTERM_BUFFER_ALT)
+                vterm_buffer_set_active(vterm, VTERM_BUFFER_ALT);
+
             continue;
         }
     }

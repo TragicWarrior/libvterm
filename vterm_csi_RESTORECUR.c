@@ -3,6 +3,7 @@
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
+#include "vterm_cursor.h"
 
 void
 interpret_csi_RESTORECUR(vterm_t *vterm, int param[], int pcount)

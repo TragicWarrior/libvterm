@@ -3,6 +3,7 @@
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
+#include "vterm_cursor.h"
 
 /* Interpret the DEC RM (reset mode) */
 void
@@ -31,6 +32,22 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
             if(idx == VTERM_BUFFER_STD) continue;
 
             vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+            continue;
+        }
+
+        /*
+            similar to ESC [ ? 47 l except it restores the cursor after
+            switching back to standard buffer.
+        */
+        if(param[i] == 1049)
+        {
+            if(idx != VTERM_BUFFER_STD)
+            {
+                vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+            }
+
+            vterm_cursor_restore(vterm);
+
             continue;
         }
     }
