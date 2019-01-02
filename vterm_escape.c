@@ -375,61 +375,61 @@ vterm_interpret_esc_normal(vterm_t *vterm)
         case 'd':
         case '`':
         {
-            interpret_csi_CUx(vterm,verb,csiparam,param_count);
+            interpret_csi_CUx(vterm, verb, csiparam, param_count);
             break;
         }
 
         case 'K':
         {
-            interpret_csi_EL(vterm,csiparam,param_count);
+            interpret_csi_EL(vterm, csiparam, param_count);
             break;
         }
 
         case '@':
         {
-            interpret_csi_ICH(vterm,csiparam,param_count);
+            interpret_csi_ICH(vterm, csiparam, param_count);
             break;
         }
 
         case 'P':
         {
-            interpret_csi_DCH(vterm,csiparam,param_count);
+            interpret_csi_DCH(vterm, csiparam, param_count);
             break;
         }
 
         case 'L':
         {
-            interpret_csi_IL(vterm,csiparam,param_count);
+            interpret_csi_IL(vterm, csiparam, param_count);
             break;
         }
 
         case 'M':
         {
-            interpret_csi_DL(vterm,csiparam,param_count);
+            interpret_csi_DL(vterm, csiparam, param_count);
             break;
         }
 
         case 'X':
         {
-            interpret_csi_ECH(vterm,csiparam,param_count);
+            interpret_csi_ECH(vterm, csiparam, param_count);
             break;
         }
 
         case 'r':
         {
-            interpret_csi_DECSTBM(vterm,csiparam,param_count);
+            interpret_csi_DECSTBM(vterm, csiparam, param_count);
             break;
         }
 
         case 's':
         {
-            interpret_csi_SAVECUR(vterm,csiparam,param_count);
+            interpret_csi_SAVECUR(vterm, csiparam, param_count);
             break;
         }
 
         case 'u':
         {
-            interpret_csi_RESTORECUR(vterm,csiparam,param_count);
+            interpret_csi_RESTORECUR(vterm, csiparam, param_count);
             break;
         }
 
