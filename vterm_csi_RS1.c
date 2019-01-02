@@ -14,7 +14,7 @@
 int
 interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 {
-    static char     *end = RXVT_RS1 + strlen(RXVT_RS1) - 1;
+    static char     *end = RXVT_RS1 + sizeof(RXVT_RS1) - 2;
     static char     *pos = RXVT_RS1;
 
     // if we get a stray byte, reset sequence parser
