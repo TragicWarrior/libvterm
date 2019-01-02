@@ -28,6 +28,7 @@ void    interpret_csi_DCH(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_IL(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_DL(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_ECH(vterm_t *vterm, int param[], int pcount);
+void    interpret_csi_REP(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount);
 void    interpret_csi_DECSTBM(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_SAVECUR(vterm_t *vterm, int param[], int pcount);

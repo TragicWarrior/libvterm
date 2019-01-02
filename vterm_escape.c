@@ -110,13 +110,17 @@ vterm_interpret_escapes(vterm_t *vterm)
     if(firstchar == 'c')
     {
         // push in "\ec" as a safety check
-        interpret_csi_RS1_xterm(vterm, "\ec");
+        interpret_csi_RS1_xterm(vterm, XTERM_RS1);
         vterm_escape_cancel(vterm);
 
         return;
     }
 
-    // if it's not these, we don't have code to handle it.
+
+    /*
+        start of check for interims.
+        if it's not these, we don't have code to handle it.
+    */
     pos = interims;
 
     // look for intermediates we can handle
@@ -133,6 +137,7 @@ vterm_interpret_escapes(vterm_t *vterm)
         vterm_escape_cancel(vterm);
         return;
     }
+    /* end interims check */
 
     // looks like an complete xterm Operating System Command
     if(firstchar == ']' && validate_xterm_escape_suffix(lastchar))
@@ -316,6 +321,12 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     // delegate handling depending on command character (verb)
     switch (verb)
     {
+        case 'b':
+        {
+            interpret_csi_REP(vterm, csiparam, param_count);
+            break;
+        }
+
         case 'm':
         {
             interpret_csi_SGR(vterm, csiparam, param_count);

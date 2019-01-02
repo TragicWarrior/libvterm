@@ -46,7 +46,7 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
     if(vterm == NULL) return -1;
 
     // safety check
-    if(strncmp(data, "\ec", 2) != 0) return -1;
+    if(strncmp(data, XTERM_RS1, sizeof(XTERM_RS1) - 1) != 0) return -1;
 
     /*
         although the RXVT sequence is a bizarre signal for resetting the

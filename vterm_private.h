@@ -39,10 +39,11 @@
 
 struct _vterm_desc_s
 {
-    int             rows,cols;                  // terminal height & width
+    int             rows, cols;                 // terminal height & width
     vterm_cell_t    **cells;
+    vterm_cell_t    last_cell;                  // contents of last cell write
 
-    unsigned int    buffer_state;               //  internal state control
+    unsigned int    buffer_state;               // internal state control
 
     attr_t          curattr;                    // current attribute set
     int             crow, ccol;                 // current cursor column & row
