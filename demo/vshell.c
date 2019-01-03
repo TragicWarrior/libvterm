@@ -1,24 +1,3 @@
-/*
-Copyright (C) 2009 Bryan Christ
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
-
-/*
-This library is based on ROTE written by Bruno Takahashi C. de Oliveira
-*/
 
 #include <ncurses.h>
 #include <stdio.h>
@@ -118,6 +97,12 @@ int main(int argc, char **argv)
                 continue;
             }
 
+            if (strncmp(argv[i], "--xterm", strlen("--xterm")) == 0)
+            {
+                flags |= VTERM_FLAG_XTERM;
+                continue;
+            }
+
             if (strncmp(argv[i], "--vt100", strlen("--vt100")) == 0)
             {
                 flags |= VTERM_FLAG_VT100;
@@ -163,20 +148,15 @@ int main(int argc, char **argv)
     wattrset(VWINDOW(twin), COLOR_PAIR(7*8+7-0));        // black over white
     wrefresh(VWINDOW(twin));
 
-    // create the terminal and have it run bash
+    vterm = vterm_alloc();
+
+    // set the exec path if specified
     if(exec_path != NULL)
     {
-        vterm = vterm_alloc();
-        vterm_set_pair_selector(vterm, vshell_pair_selector);
-        vterm_set_pair_splitter(vterm, vshell_pair_splitter);
         vterm_set_exec(vterm, exec_path, exec_argv);
+    }
 
-        vterm_init(vterm, 80, 25, flags);
-    }
-    else
-    {
-        vterm = vterm_create(screen_w - 2, screen_h - 2, flags);
-    }
+    vterm = vterm_init(vterm, screen_w - 2, screen_h - 2, flags);
 
     // vterm_set_pair_selector(vterm, vshell_pair_selector);
     // vterm_set_pair_splitter(vterm, vshell_pair_splitter);

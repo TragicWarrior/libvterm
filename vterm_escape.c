@@ -90,19 +90,37 @@ vterm_interpret_escapes(vterm_t *vterm)
         return;
     }
 
-    if(firstchar == '7' )
+    if(firstchar == '7')
     {
         interpret_csi_SAVECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
+
+        return;
     }
 
-    if(firstchar == '8' )
+    if(firstchar == '8')
     {
         interpret_csi_RESTORECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
+
+        return;
     }
 
-    // if it's not these, we don't have code to handle it.
+    // The ESC c sequence is RS1 reset for most
+    if(firstchar == 'c')
+    {
+        // push in "\ec" as a safety check
+        interpret_csi_RS1_xterm(vterm, XTERM_RS1);
+        vterm_escape_cancel(vterm);
+
+        return;
+    }
+
+
+    /*
+        start of check for interims.
+        if it's not these, we don't have code to handle it.
+    */
     pos = interims;
 
     // look for intermediates we can handle
@@ -119,6 +137,7 @@ vterm_interpret_escapes(vterm_t *vterm)
         vterm_escape_cancel(vterm);
         return;
     }
+    /* end interims check */
 
     // looks like an complete xterm Operating System Command
     if(firstchar == ']' && validate_xterm_escape_suffix(lastchar))
@@ -302,6 +321,12 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     // delegate handling depending on command character (verb)
     switch (verb)
     {
+        case 'b':
+        {
+            interpret_csi_REP(vterm, csiparam, param_count);
+            break;
+        }
+
         case 'm':
         {
             interpret_csi_SGR(vterm, csiparam, param_count);
@@ -350,61 +375,61 @@ vterm_interpret_esc_normal(vterm_t *vterm)
         case 'd':
         case '`':
         {
-            interpret_csi_CUx(vterm,verb,csiparam,param_count);
+            interpret_csi_CUx(vterm, verb, csiparam, param_count);
             break;
         }
 
         case 'K':
         {
-            interpret_csi_EL(vterm,csiparam,param_count);
+            interpret_csi_EL(vterm, csiparam, param_count);
             break;
         }
 
         case '@':
         {
-            interpret_csi_ICH(vterm,csiparam,param_count);
+            interpret_csi_ICH(vterm, csiparam, param_count);
             break;
         }
 
         case 'P':
         {
-            interpret_csi_DCH(vterm,csiparam,param_count);
+            interpret_csi_DCH(vterm, csiparam, param_count);
             break;
         }
 
         case 'L':
         {
-            interpret_csi_IL(vterm,csiparam,param_count);
+            interpret_csi_IL(vterm, csiparam, param_count);
             break;
         }
 
         case 'M':
         {
-            interpret_csi_DL(vterm,csiparam,param_count);
+            interpret_csi_DL(vterm, csiparam, param_count);
             break;
         }
 
         case 'X':
         {
-            interpret_csi_ECH(vterm,csiparam,param_count);
+            interpret_csi_ECH(vterm, csiparam, param_count);
             break;
         }
 
         case 'r':
         {
-            interpret_csi_DECSTBM(vterm,csiparam,param_count);
+            interpret_csi_DECSTBM(vterm, csiparam, param_count);
             break;
         }
 
         case 's':
         {
-            interpret_csi_SAVECUR(vterm,csiparam,param_count);
+            interpret_csi_SAVECUR(vterm, csiparam, param_count);
             break;
         }
 
         case 'u':
         {
-            interpret_csi_RESTORECUR(vterm,csiparam,param_count);
+            interpret_csi_RESTORECUR(vterm, csiparam, param_count);
             break;
         }
 
@@ -428,8 +453,16 @@ vterm_interpret_esc_scs(vterm_t *vterm)
 
     p = vterm->esbuf;
 
-    // G0 sequence - unused
-    if(*p == '(') {}
+    // not the most elegant way to handle these.  todo: improve later.
+    if(*p == '(' && p[1] == '0')
+    {
+        vterm->internal_state |= STATE_ALT_CHARSET;
+    }
+
+    if(*p == '(' && p[1] == 'B')
+    {
+        vterm->internal_state &= ~STATE_ALT_CHARSET;
+    }
 
     // G1 sequence - unused
     if(*p == ')') {}

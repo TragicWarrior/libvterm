@@ -37,7 +37,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         if(*data == 0) continue;
 
         // special processing looking for reset sequence
-        interpret_csi_RS1(vterm, (char *)data);
+        if(vterm->rs1_reset != NULL) vterm->rs1_reset(vterm, (char *)data);
 
         if(!IS_MODE_ESCAPED(vterm))
         {
@@ -158,11 +158,17 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
             {
                 memcpy(&vcell->uch, NCURSES_WACS(c), sizeof(cchar_t));
                 // todo:  copy contents into cell.wch
+
+                break;
             }
             pos++;
         }
 
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
+
+        // "remember" what was written in case the next call is csi REP.
+        memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+
         v_desc->ccol++;
 
         return;
@@ -172,6 +178,10 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     {
         VCELL_SET_CHAR((*vcell), c);
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
+
+        // "remember" what was written in case the next call is csi REP.
+        memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+
         v_desc->ccol++;
 
         return;
@@ -187,6 +197,10 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     }
 
     VCELL_SET_ATTR((*vcell), v_desc->curattr);
+
+    // "remember" what was written in case the next call is csi REP.
+    memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+
     v_desc->ccol++;
 
     return;
