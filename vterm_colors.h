@@ -4,36 +4,47 @@
 
 #include "vterm.h"
 
+struct _color_pair_s
+{
+    uint8_t                 ref;
+
+    short                   num;
+    short                   fg;
+    short                   bg;
+
+    short                   red[2];
+    short                   green[2];
+    short                   blue[2];
+
+    struct _color_pair_s    *next;
+    struct _color_pair_s    *prev;
+};
+
+
+typedef struct _color_pair_s    color_pair_t;
+
 struct _color_cache_s
 {
-    uint8_t     ref;
-    short       pair;
-    short       fg;
-    short       bg;
+    short           pair_count;
+
+    color_pair_t    *pair_head;
 };
 
 typedef struct _color_cache_s   color_cache_t;
 
-#define COLOR_BUF_SZ 12
+color_cache_t*
+color_cache_init(int pairs);
 
 short
-find_color_pair(vterm_t *vterm, short fg, short bg);
+color_cache_find_pair(color_cache_t *color_cache, short fg, short bg);
 
 short
-find_color_pair_simple(vterm_t *vterm, short fg, short bg);
+color_cache_find_color(color_cache_t *color_cache, short color,
+    short r, short g, short b);
 
-int
-_native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg);
-
-int
-_native_pair_splitter_2(vterm_t *vterm, short pair, short *fg, short *bg);
-
-// short local hacks equivalent to ncurses, in case we don't link to it.
-void
-init_color_space();
-
-void
-free_color_cpace();
+short
+color_cache_split_pair(color_cache_t *color_cache, short pair_num,
+    short *fg, short *bg);
 
 #endif
 

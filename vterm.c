@@ -48,7 +48,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     char            *pos = NULL;
     int             retval;
-    int             i;
+    // int             i;
 
     // rxvt emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT; 
@@ -67,6 +67,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
     // setup the default color key
+/*
 #ifndef NOCURSES
     vterm->pair_select = find_color_pair;
     vterm->pair_split = _native_pair_splitter_1;
@@ -74,30 +75,34 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     vterm->pair_select = find_color_pair_simple;
     vterm->pair_split = _native_pair_splitter_2;
 #endif
+*/
+    vterm->color_cache = color_cache_init(COLOR_PAIRS);
 
     // init the LRU color cache
+/*
     for(i = 0; i < COLOR_BUF_SZ; i++)
     {
         vterm->color_cache[i].pair = -1;
         vterm->color_cache[i].ref = 1;
     }
+*/
 
     // start the clock hand pointer at the first slot
-    vterm->cc_pos = &vterm->color_cache[0];
+//    vterm->cc_pos = &vterm->color_cache[0];
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
     // it is just a bit mask/shift operation.
     if(flags & VTERM_FLAG_NOCURSES)
     {
-        vterm->pair_select = find_color_pair_simple;
-        vterm->pair_split = _native_pair_splitter_2;
+        // vterm->pair_select = find_color_pair_simple;
+        // vterm->pair_split = _native_pair_splitter_2;
 
-        int colorIndex = vterm->pair_select(vterm, COLOR_WHITE, COLOR_BLACK);
+        // int colorIndex = vterm->pair_select(vterm, COLOR_WHITE, COLOR_BLACK);
 
-        if( colorIndex < 0 || colorIndex > 255 )
-            colorIndex = 0;
-        vterm->vterm_desc[0].curattr = (colorIndex & 0xff) << 8;
+        // if( colorIndex < 0 || colorIndex > 255 )
+        //     colorIndex = 0;
+        // vterm->vterm_desc[0].curattr = (colorIndex & 0xff) << 8;
     }
     else
     {

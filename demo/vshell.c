@@ -139,6 +139,20 @@ int main(int argc, char **argv)
 
     vshell_color_init();
 
+/*
+    {
+        short   red, green, blue;
+
+        color_content(COLOR_BLUE, &red, &green, &blue);
+
+        endwin();
+
+        printf("color:  r:%d, g:%d, b:%d\n\r", red, green, blue);
+
+        exit(0);
+    }
+*/
+
     // set default frame color
     frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
