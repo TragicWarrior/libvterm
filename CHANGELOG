@@ -1,3 +1,7 @@
+4.17
+
+* [Bryan Christ] Prelinary support for masquerading as xterm.
+
 4.16
 
 * [Bryan Christ] Implemented color caching system which yields
