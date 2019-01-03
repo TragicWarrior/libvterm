@@ -17,11 +17,11 @@ Fidelity score: 5 = excellent, 1 = poor
 4 - links
 5 - lynx
 4 - finch
-4 - network manager (nmtui)
-4 - alsamixer
+5 - network manager (nmtui)
+5 - alsamixer
 5 - cmatrix
 5 - aewan
-4 - cboard (large board, utf-8 disabled)
+5 - cboard
 5 - dstat
 5 - ninvaders
 5 - mutt
@@ -36,3 +36,5 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - pspg
 5 - calcurse
 4 - cacaview
+5 - partimage
+5 - asciijump
