@@ -1,12 +1,18 @@
+4.18
+
+* [Bryan Christ] Make color mapping and caching dynamic.  The libary shouln't
+  have to know about the internals of the program that it's integrated with.
+* [Bryan Christ] Refactored the caching code which improved performance
+  another 5% - 10% under heavy loads.
+
 4.17
 
 * [Bryan Christ] Prelinary support for masquerading as xterm.
 
 4.16
 
-* [Bryan Christ] Implemented color caching system which yields
-  anywhere from 5% - 500% preformance improvement depending on
-  conditions.
+* [Bryan Christ] Implemented color caching system which yields anywhere
+  from 5% - 500% preformance improvement depending on conditions.
 
 4.15
 
@@ -15,9 +21,8 @@
 
 4.14
 
-* [Bryan Christ] Fixed a bug that was introduced in version
-  4.12 which was manifest when using bash history with the arrow
-  keys.
+* [Bryan Christ] Fixed a bug that was introduced in version 4.12 which was
+  manifest when using bash history with the arrow keys.
 
 4.13
 
@@ -34,8 +39,7 @@
 4.10
 
 * [Bryan Christ] Make csi DL faster.
-* [Bryan Christ] Fix bug with csi IL introduced on previous
-  version.  
+* [Bryan Christ] Fix bug with csi IL introduced on previous version.  
 
 4.9
 
@@ -43,22 +47,20 @@
 
 4.8
 
-* [Bryan Christ] Add APIs to externalize color mapping
-  interfaces so that external programs can access them.
+* [Bryan Christ] Add APIs to externalize color mapping interfaces so that
+  external programs can access them.
 
 4.7
 
-* [Bryan Christ] Make color pair extraction more
-  opaque and give more control to caller.  This also
-  fixes a performance problem seen on Fedora 29 where ncursesw
-  pair_content() is about 7x slower.
+* [Bryan Christ] Make color pair extraction more opaque and give more
+  control to caller.  This also fixes a performance problem seen
+  on Fedora 29 where ncursesw pair_content() is about 7x slower.
 
 4.6
 
-* [Bryan Christ] Make color indexing more opaque and
-  give more control to caller.  Results in about a 
-  10 percent performance gain over the default functions
-  when used correctly.
+* [Bryan Christ] Make color indexing more opaque and give more control
+  to caller.  Results in about a 10 percent performance gain over the
+  default functions when used correctly.
 
 4.5
 
@@ -71,18 +73,16 @@
 
 4.3
 
-* [Bryan Christ] Add TERM PRESIZE event hook to signal
-  when the terminal is about to be resized.
+* [Bryan Christ] Add TERM PRESIZE event hook to signal when the terminal
+  is about to be resized.
 
 4.2
 
-* [Bryan Christ] Handle csi for absolute cursor address
-  movement.
+* [Bryan Christ] Handle csi for absolute cursor address movement.
 
 4.1
 
-* [Bryan Christ] Properly handle crazy RS1 reset sequence
-  emitted by rxvt.
+* [Bryan Christ] Properly handle crazy RS1 reset sequence emitted by rxvt.
 
 4.0
 
@@ -90,40 +90,35 @@
 
 3.12
 
-* [Bryan Christ] make libvterm build and link against
-  the wide version of ncurses (ncursesw.h) as a step
-  toward full utf8 support.
+* [Bryan Christ] make libvterm build and link against the wide version of
+  ncurses (ncursesw.h) as a step toward full utf8 support.
 
 3.11
 
-* [Bryan Christ] make read size a multiple of PIPE_BUF
-  to minimize child process blocking.
+* [Bryan Christ] make read size a multiple of PIPE_BUF to minimize child
+  process blocking.
 
 3.10
 
-* [Bryan Christ] make the utf8 decoder more robust,
-  easier to read, an possibly a little bit faster.
+* [Bryan Christ] make the utf8 decoder more robust, easier to read, an
+  possibly a little bit faster.
 
 3.9
 
-* [Bryan Christ] map utf8 double line drawing codes to
-  ACS similars.
+* [Bryan Christ] map utf8 double line drawing codes to ACS similars.
 
 3.8
 
-* [Bryan Christ] use clues from Bash to detect and handle if
-  a program crashes while in alternate buffer mode.
+* [Bryan Christ] use clues from Bash to detect and handle if a program
+  crashes while in alternate buffer mode.
 
 3.7
 
-* [Bryan Christ] added a hook system for programs that need to
-  know when certain events have transpired and need to take
-  action.
-* [Bryan Christ] copied in some color routines into demo
-  program to make it easier to use and more educational for
-  the reader.
-* [Bryan Christ] some code to use new hook system in
-  demo program.
+* [Bryan Christ] added a hook system for programs that need to know when
+  certain events have transpired and need to take action.
+* [Bryan Christ] copied in some color routines into demo program to make
+  it easier to use and more educational for the reader.
+* [Bryan Christ] some code to use new hook system in demo program.
 
 3.6
 
@@ -135,19 +130,19 @@
 
 3.4
 
-* [Bryan Christ] If the terminal was resized while in alternate
-  buffer mode, the standard buffer needs to be resized
-  accordingly when alternate mode terminates.
+* [Bryan Christ] If the terminal was resized while in alternate buffer
+  mode, the standard buffer needs to be resized accordingly when alternate
+  mode terminates.
 
 3.3
 
-* [Bryan Christ] Fixed a SEGV caused by massive ICH moves.
-  Implemented as a workaround.  Full fix later.
+* [Bryan Christ] Fixed a SEGV caused by massive ICH moves.  Implemented as
+  a workaround.  Full fix later.
 
 3.2
 
-* [Bryan Christ] Fixed a SEGV caused by high-velocity applications
-  we made malloc blow up.
+* [Bryan Christ] Fixed a SEGV caused by high-velocity applications which
+  made malloc blow up.
 
 3.1
 
@@ -156,21 +151,21 @@
 3.0
 
 * [Bryan Christ] Added support for multiple buffers.
-* [Bryan Christ] Improved handling of OSC codes including a new
-  API for fetching window title.
+* [Bryan Christ] Improved handling of OSC codes including a new API for
+  fetching window title.
 * [Bryan Christ] Performance improvements in parsing systems.
 * [Bryan Christ] Bugfixes.
 * [Bryan Christ] Update demo program for showcase and testing.
 
 2.5
 
-* [Bryan Christ] Fixed some compiler warnings and improperly
-  typed functions in demo program.
+* [Bryan Christ] Fixed some compiler warnings and improperly typed functions
+  in demo program.
 
 2.4
 
-* [Bryan Christ] Implement trapping of cursor save and cursor restore
-  CSI codes which makes the 'apt' package manager output more pleasant.
+* [Bryan Christ] Implement trapping of cursor save and cursor restore CSI
+  codes which makes the 'apt' package manager output more pleasant.
 * [Bryan Christ] Added reference documentation folder so others can
   follow along.
 
@@ -183,28 +178,25 @@
 
 2.2
 
-* [Bryan Christ] Make vshell window size vary according to the
-  size of the terminal it's running in.
-* [Bryan Christ] Fix a long-standing bug with the bold
-  attribute.
+* [Bryan Christ] Make vshell window size vary according to the size of the
+  terminal it's running in.
+* [Bryan Christ] Fix a long-standing bug with the bold attribute.
 
 2.1
 
-* [Bryan Christ] set (or clear) COLORTERM environment variable
-  depending on init flags.
+* [Bryan Christ] set (or clear) COLORTERM environment variable depending
+  on init flags.
 
 2.0
 
-* [Bryan Christ] API change that enables caller to pass in an
-  alternate binary path which uses execv() to launch.  In
-  compliment to this change the vshell demo program was updated
-  with a --exec paramenter to support passing in programs from
-  the command line.
+* [Bryan Christ] API change that enables caller to pass in an alternate
+  binary path which uses execv() to launch.  In compliment to this change
+  the vshell demo program was updated with a --exec paramenter to support
+  passing in programs from the command line.
 
 1.13
 
-* [Bryan Christ] added --vt100 command line parameter for
-  vshell demo program.
+* [Bryan Christ] added --vt100 command line parameter for vshell demo program.
 
 1.12
 
@@ -213,8 +205,8 @@
 
 1.11
 
-* [Bryan Christ] improved SGR handling of colors and attributes
-  which improves cdw and myman compatibility.
+* [Bryan Christ] improved SGR handling of colors and attributes which
+  improves cdw and myman compatibility.
 
 1.10
 
@@ -222,15 +214,15 @@
 
 1.00
 
-* [Bryan Christ] fixed a long standing bug in the newline code.
-  it was an easy fix but it took me clearing the forest to see
-  the tree.  libterm now works great with every piece of test
-  software except some utf-8 glyphs don't show.
+* [Bryan Christ] fixed a long standing bug in the newline code.  Iit was an
+  easy fix but it took me clearing the forest to see the tree.  libterm now
+  works great with every piece of test software except some utf-8 glyphs
+  don't show.
 
 0.99.16
 
-* [Bryan Christ] security fix to prevent recursion bomb that was
-  introduced in 0.99.15
+* [Bryan Christ] security fix to prevent recursion bomb that was introduced
+  in 0.99.15
 
 0.99.15
 
@@ -242,8 +234,8 @@
 
 0.99.13
 
-* [Bryan Christ] fixed attribute issue with SGR color setting.
-  improves compatibility with myman and iptraf.
+* [Bryan Christ] fixed attribute issue with SGR color setting.  improves
+  compatibility with myman and iptraf.
 
 0.99.12
 
@@ -286,7 +278,7 @@
 0.99.4
 
 *  [Bryan Christ] Missing include signal.h added to vterm.c and
-    vterm_resize.c
+   vterm_resize.c
 
 0.99.3
 
