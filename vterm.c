@@ -22,13 +22,6 @@
 #include "vterm_colors.h"
 #include "vterm_csi.h"
 
-/*
-    this string is emitted by for resetting an RXVT terminal (RS1).
-    xterm is far more sane using a single \Ec control code to perform
-    the same termcap operation.  the sequence is codified in terminfo
-    database.  this can be inspected with the infocmp tool.
-*/
-// #define RXVT_RS1    "\e>\e[1;3;4;5;6l\e[?7h\em\er\e[2J\e[H"
 
 vterm_t*
 vterm_alloc(void)
@@ -48,7 +41,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     char            *pos = NULL;
     int             retval;
-    int             i;
 
     // rxvt emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT; 
@@ -66,38 +58,19 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
-    // setup the default color key
-#ifndef NOCURSES
-    vterm->pair_select = find_color_pair;
-    vterm->pair_split = _native_pair_splitter_1;
-#else
-    vterm->pair_select = find_color_pair_simple;
-    vterm->pair_split = _native_pair_splitter_2;
-#endif
+    /*
+        color_cache_init() will query all the existing pairs mapping them
+        and all color primitives.
+    */
+    vterm->color_cache = color_cache_init(COLOR_PAIRS);
 
-    // init the LRU color cache
-    for(i = 0; i < COLOR_BUF_SZ; i++)
-    {
-        vterm->color_cache[i].pair = -1;
-        vterm->color_cache[i].ref = 1;
-    }
-
-    // start the clock hand pointer at the first slot
-    vterm->cc_pos = &vterm->color_cache[0];
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
     // it is just a bit mask/shift operation.
     if(flags & VTERM_FLAG_NOCURSES)
     {
-        vterm->pair_select = find_color_pair_simple;
-        vterm->pair_split = _native_pair_splitter_2;
-
-        int colorIndex = vterm->pair_select(vterm, COLOR_WHITE, COLOR_BLACK);
-
-        if( colorIndex < 0 || colorIndex > 255 )
-            colorIndex = 0;
-        vterm->vterm_desc[0].curattr = (colorIndex & 0xff) << 8;
+        // todo:  gracefully handle NOCURSES
     }
     else
     {
@@ -222,24 +195,6 @@ vterm_destroy(vterm_t *vterm)
     int   i;
 
     if(vterm == NULL) return;
-
-/*
-    {
-        FILE    *f;
-        f = fopen("color.cache", "w");
-
-        for(i = 0; i < COLOR_BUF_SZ; i++)
-        {
-            fprintf(f, "slot %d, pair %d, fg %d, bg %d, ref %d\n\r",
-                i,
-                vterm->color_cache[i].pair,
-                vterm->color_cache[i].fg,
-                vterm->color_cache[i].bg,
-                vterm->color_cache[i].ref);
-        }
-        fclose(f);
-    }
-*/
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)

@@ -11,20 +11,41 @@
 #include "vterm_colors.h"
 #include "vterm_buffer.h"
 
+#include "utlist.h"
 
-struct _my_color_pair_s
+color_cache_t*
+color_cache_init(int pairs)
 {
-    short fg;
-    short bg;
-};
+    color_cache_t   *color_cache;
+    color_pair_t    *pair;
 
-typedef struct _my_color_pair_s my_color_pair_t;
+    int     i;
 
-#define MAX_COLOR_PAIRS     512
+    color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
 
-my_color_pair_t *color_palette = NULL;
-int palette_size = 0;
+    for(i = 0; i < pairs; i++)
+    {
+        pair = (color_pair_t *)calloc(1, sizeof(color_pair_t));
+        pair->num = i;
 
+        // explode pair
+        pair_content(i, &pair->fg, &pair->bg);
+
+        // extract foreground RGB
+        color_content(pair->fg, 
+            &pair->red[0], &pair->green[0], &pair->blue[0]);
+
+        // extract backgoroud RGB
+        color_content(pair->bg,
+            &pair->red[1], &pair->green[1], &pair->blue[1]);
+
+        DL_PREPEND(color_cache->pair_head, pair);
+    }
+
+    return color_cache;
+}
+
+/*
 void
 init_color_space()
 {
@@ -63,7 +84,9 @@ init_color_space()
         }
     }
 }
+*/
 
+/*
 void
 free_color_space()
 {
@@ -73,7 +96,9 @@ free_color_space()
     color_palette = NULL;
     palette_size = 0;
 }
+*/
 
+/*
 short
 find_color_pair_simple(vterm_t *vterm, short fg, short bg)
 {
@@ -99,6 +124,7 @@ find_color_pair_simple(vterm_t *vterm, short fg, short bg)
 
     return -1;
 }
+*/
 
 
 void
@@ -129,6 +155,7 @@ vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps)
 
     return;
 }
+
 
 VtermPairSelect
 vterm_get_pair_selector(vterm_t *vterm)
@@ -175,7 +202,8 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     if(has_colors() == FALSE) return -1;
 #endif
 
-    colors = vterm->pair_select(vterm, fg, bg);
+    // colors = vterm->pair_select(vterm, fg, bg);
+    colors = color_cache_find_pair(vterm->color_cache, fg, bg);
     if(colors == -1) colors = 0;
 
     v_desc->colors = colors;
@@ -203,166 +231,123 @@ vterm_get_colors(vterm_t *vterm)
 }
 
 short
-find_color_pair(vterm_t *vterm, short fg, short bg)
+color_cache_find_color(color_cache_t *color_cache, short color,
+        short r, short g, short b)
 {
-    color_cache_t   *last;
-    color_cache_t   *item;
-    short           pair = -1;
-    int             i;
+    color_pair_t    *pair;
+    color_pair_t    *pair_tmp;
+    bool            found = FALSE;
 
-    if(vterm == NULL) return -1;
+    if(color_cache == NULL) return -1;
 
-    item = &vterm->color_cache[0];
-
-    // check our cache
-    for(i = 0; i < COLOR_BUF_SZ; i++)
+    // if a color value was supplied, explode it and use those values
+    if(color != -1)
     {
-        if(item->pair != -1 && item->fg == fg && item->bg == bg)
+        color_content(color, &r, &g, &b);
+    }
+
+    DL_FOREACH_SAFE(color_cache->pair_head, pair, pair_tmp)
+    {
+        /*
+            we're searching for a color that contains a specific RGB
+            composition.  it doesn't matter whether that color is part
+            of the foreground or background color of the pair.  the
+            color number is the same no matter what.
+        */
+
+        // check the foreground color for a match
+        if(pair->red[0] == r && pair->green[0] == g && pair->blue[0] == b)
         {
-            if(item->ref < 0xFF) item->ref++;
-            return item->pair;
+            DL_DELETE(color_cache->pair_head, pair);
+            found = TRUE;
+            break;
         }
 
-        item++;
+        // check the background color for a match
+        if(pair->red[1] == r && pair->green[1] == g && pair->blue[1] == b)
+        {
+            DL_DELETE(color_cache->pair_head, pair);
+            found = TRUE;
+            break;
+        }
     }
+
+    if(found == FALSE) return -1;
 
     /*
-        a "page fault" has occurred.  item wasn't found in cache so we have
-        to look it up via the "long path".
+        push the pair to the front of the list to make subseqent look-ups
+        faster.
     */
-    if(vterm->flags & VTERM_FLAG_NOCURSES ) // no ncurses
-    {
-        pair = find_color_pair_simple(vterm, fg, bg);
-    }
-    else // ncurses
-    {
-#ifdef NOCURSES
-        return -1;
-#else
-        short   fg_color, bg_color;
-        if(has_colors() == FALSE)
-            return -1;
+    DL_PREPEND(color_cache->pair_head, pair);
 
-        // this is expensive
-        for(i = 1; i < COLOR_PAIRS; i++)
-        {
-            vterm->pair_split(vterm, i, &fg_color, &bg_color);
-            if(fg_color == fg && bg_color == bg)
-            {
-                pair = i;
-                break;
-            }
-        }
-
-        if(i == COLOR_PAIRS) pair = -1;
-#endif
-    }
-
-    // something went wrong... return error
-    if(pair == -1) return -1;
-
-    last = &vterm->color_cache[COLOR_BUF_SZ - 1];
-    for(;;)
-    {
-        // found an empty slot
-        if(vterm->cc_pos->ref == 0) break;
-
-        vterm->cc_pos->ref--;
-
-        if(vterm->cc_pos == last)
-        {
-            // use long notation for readability
-            vterm->cc_pos = &vterm->color_cache[0];
-            continue;
-        }
-
-        vterm->cc_pos++;
-    }
-
-    vterm->cc_pos->pair = pair;
-    vterm->cc_pos->fg = fg;
-    vterm->cc_pos->bg = bg;
-    vterm->cc_pos->ref = 1;
-
-    return pair;
+    return pair->num;
 }
 
-/*
-    this is a wrapper for pair_content() which can be really
-    inefficient.  applications using libvterm should supply a different
-    function through vterm_set_pair_splitter() for better performance.
-*/
-int
-_native_pair_splitter_1(vterm_t *vterm, short pair, short *fg, short *bg)
+short
+color_cache_find_pair(color_cache_t *color_cache, short fg, short bg)
 {
-    color_cache_t       *last;
-    color_cache_t       *item;
-    int                 i;
+    color_pair_t    *pair;
+    color_pair_t    *pair_tmp;
+    bool            found = FALSE;
 
-    if(vterm == NULL) return -1;
+    if(color_cache == NULL) return -1;
 
-    item = &vterm->color_cache[0];
-
-    // check to see if pair is already in the cache
-    for(i = 0; i < COLOR_BUF_SZ; i++)
+    // iterate through the cache looking for a match
+    DL_FOREACH_SAFE(color_cache->pair_head, pair, pair_tmp)
     {
-        if(item->pair == pair)
+        if(pair->fg == fg && pair->bg == bg)
         {
-            *fg = item->fg;
-            *bg = item->bg;
-
-            if(item->ref < 0xff) item->ref++;
-            return 0;
+            // unlink the node so we can prepend it
+            DL_DELETE(color_cache->pair_head, pair);
+            found = TRUE;
+            break;
         }
-
-        item++;
     }
+
+    // match wasn't found
+    if(found == FALSE) return -1;
 
     /*
-        we have a "page fault".
-        iterate through cache looking for an empty slot.
+        push the pair to the front of the list to make subseqent look-ups
+        faster.
     */
+    DL_PREPEND(color_cache->pair_head, pair);
 
-    last = &vterm->color_cache[COLOR_BUF_SZ - 1];
-    for(;;)
-    {
-        // found an empty slot
-        if(vterm->cc_pos->ref == 0) break;
-
-        vterm->cc_pos->ref--;
-
-        if(vterm->cc_pos == last)
-        {
-            vterm->cc_pos = &vterm->color_cache[0];
-            continue;
-        }
-
-        vterm->cc_pos++;
-    }
-
-    pair_content(pair, fg, bg);
-    vterm->cc_pos->pair = pair;
-    vterm->cc_pos->fg = *fg;
-    vterm->cc_pos->bg = *bg;
-    vterm->cc_pos->ref = 1;
-
-    return 0;
+    return pair->num;
 }
 
-int
-_native_pair_splitter_2(vterm_t *vterm, short pair, short *fg, short *bg)
+short
+color_cache_split_pair(color_cache_t *color_cache, short pair_num,
+    short *fg, short *bg)
 {
-    (void)vterm;        // make compiler happy
+    color_pair_t    *pair;
+    color_pair_t    *pair_tmp;
+    bool            found = FALSE;
 
-    if(color_palette == NULL || pair >= palette_size || pair < 0)
+    if(color_cache == NULL) return -1;
+
+    DL_FOREACH_SAFE(color_cache->pair_head, pair, pair_tmp)
     {
-        *fg = 0;
-        *bg = 0;
+        if(pair->num == pair_num)
+        {
+            DL_DELETE(color_cache->pair_head, pair);
+            found = TRUE;
+            break;
+        }
+    }
+
+    if(found == FALSE)
+    {
+        *fg = -1;
+        *bg = -1;
+
         return -1;
     }
 
-    *fg = color_palette[pair].fg;
-    *bg = color_palette[pair].bg;
+    DL_PREPEND(color_cache->pair_head, pair);
+
+    *fg = pair->fg;
+    *bg = pair->bg;
 
     return 0;
 }
