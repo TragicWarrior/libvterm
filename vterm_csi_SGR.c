@@ -75,9 +75,15 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             continue;
         }
 
-        if(param[i] == 1 || param[i] == 2 || param[i] == 4)       // bold on
+        if(param[i] == 1 || param[i] == 4)       // bold on
         {
             v_desc->curattr |= A_BOLD;
+            continue;
+        }
+
+        if(param[i] == 2)
+        {
+            v_desc->curattr |= A_DIM;
             continue;
         }
 

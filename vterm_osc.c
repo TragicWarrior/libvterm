@@ -121,6 +121,9 @@ vterm_osc_read_string(vterm_t *vterm, char *esbuf, char *buf, int buf_sz)
         if(*esbuf == '\x07') break;
         if(*esbuf == '\x9c') break;
 
+        // the seqencue ESC \ (0x5C) can also terminate a OSC string
+        if(*esbuf == '\x1b' && esbuf[1] == '\x5c') break;
+
         // limit hit
         if(count == buf_sz) break;
 
