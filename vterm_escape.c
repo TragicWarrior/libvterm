@@ -12,6 +12,7 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
+#include "vterm_osc.h"
 #include "vterm_render.h"
 #include "vterm_misc.h"
 #include "vterm_buffer.h"
@@ -19,9 +20,6 @@
 
 static int
 vterm_interpret_esc_normal(vterm_t *vterm);
-
-static int
-vterm_interpret_esc_xterm_osc(vterm_t *vterm);
 
 static int
 vterm_interpret_esc_xterm_dsc(vterm_t *vterm);
@@ -142,7 +140,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     // looks like an complete xterm Operating System Command
     if(firstchar == ']' && validate_xterm_escape_suffix(lastchar))
     {
-        vterm->esc_handler = vterm_interpret_esc_xterm_osc;
+        vterm->esc_handler = vterm_interpret_xterm_osc;
     }
 
     // we have a complete csi escape sequence: interpret it
@@ -182,76 +180,6 @@ vterm_interpret_escapes(vterm_t *vterm)
     }
 
     return;
-}
-
-int
-vterm_interpret_esc_xterm_osc(vterm_t *vterm)
-{
-    const char  *p;
-    char        *pos;
-    int         count = 0;
-    int         max_sz;
-
-    p = vterm->esbuf + 1;
-
-    // parse numeric parameters
-    if(isdigit(*p))
-    {
-        switch(*p)
-        {
-            // Change Icon Name and Window Title
-            case '0':
-
-            // Change Icon Name
-            case '1':
-
-            // Change Window Title
-            case '2':
-            {
-                /*
-                    todo:  for now we will simply copy the string and
-                    treat all OSC sequences the same (icon, name, both).
-                */
-
-                // advance past the control code and the semicolon
-                p += 2;
-
-                max_sz = (sizeof(vterm->title) / sizeof(vterm->title[0])) - 1;
-                memset(vterm->title, 0, max_sz + 1);
-                pos = vterm->title;
-
-                while(*p != '\x07')
-                {
-                    // don't overflow buffer
-                    if(count < max_sz)
-                    {
-                        *pos = *p;
-                        pos++;
-                    }
-
-                    p++;
-                    count++;
-
-                    continue;
-                }
-
-                /*
-                    bash seems to set this everytime he becomes the foreground
-                    process.  it could prove misguided, but we'll use this as
-                    a clue that we need to make sure we're in normal buffer
-                    mode.
-                */
-                // vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
-
-                break;
-            }
-
-            default:
-                break;
-         }
-    }
-
-    return count;
 }
 
 int
@@ -489,7 +417,8 @@ bool
 validate_xterm_escape_suffix(char c)
 {
     if(c == '\x07') return TRUE;
-    if(c == '\x96') return TRUE;
+    // if(c == '\x96') return TRUE;
+    if(c == '\x9c') return TRUE;
 
     return FALSE;
 }
