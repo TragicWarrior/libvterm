@@ -1,3 +1,8 @@
+4.19
+
+* [Bryan Christ] Added handling of U8 OSC user defined string emitted by
+  libvte on Fedora 29.
+
 4.18
 
 * [Bryan Christ] Make color mapping and caching dynamic.  The libary shouln't
