@@ -1,3 +1,8 @@
+4.20
+
+* [Bryan Christ] Fixed a bug with OSC string copy routine.
+* [Bryan Christ} Start using A_DIM on SGR code 2.
+
 4.19
 
 * [Bryan Christ] Added handling of U8 OSC user defined string emitted by
