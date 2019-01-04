@@ -27,14 +27,14 @@ vterm_interpret_esc_xterm_dsc(vterm_t *vterm);
 static int
 vterm_interpret_esc_scs(vterm_t *vterm);
 
-static bool
-validate_csi_escape_suffix(char c);
+inline bool
+validate_csi_escape_suffix(char *lastchar);
 
-static bool
-validate_xterm_escape_suffix(char c);
+inline bool
+validate_xterm_escape_suffix(char *lastcharc);
 
-static bool
-validate_scs_escape_suffix(char c);
+inline bool
+validate_scs_escape_suffix(char *lastchar);
 
 void
 vterm_escape_start(vterm_t *vterm)
@@ -70,11 +70,11 @@ vterm_interpret_escapes(vterm_t *vterm)
     static char         interims[] = "[]P()";
     static char         *end = interims + ARRAY_SZ(interims);
     char                firstchar;
-    char                lastchar;
+    char                *lastchar;
     char                *pos;
 
     firstchar = vterm->esbuf[0];
-    lastchar = vterm->esbuf[vterm->esbuf_len - 1];
+    lastchar = &vterm->esbuf[vterm->esbuf_len - 1];
 
     // too early to do anything
     if(!firstchar) return;
@@ -165,7 +165,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     if( firstchar == 'P'
         && vterm->esbuf_len > 2
         && vterm->esbuf[vterm->esbuf_len - 2] == '\x1B'
-        && lastchar == '\\' )
+        && *lastchar == '\\' )
     {
         vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
     }
@@ -403,29 +403,40 @@ vterm_interpret_esc_scs(vterm_t *vterm)
 }
 
 bool
-validate_csi_escape_suffix(char c)
+validate_csi_escape_suffix(char *lastchar)
 {
-   if(c >= 'a' && c <= 'z') return TRUE;
-   if(c >= 'A' && c <= 'Z') return TRUE;
-   if(c == '@') return TRUE;
-   if(c == '`') return TRUE;
+    char    c = *lastchar;
+
+    if(c >= 'a' && c <= 'z') return TRUE;
+    if(c >= 'A' && c <= 'Z') return TRUE;
+    if(c == '@') return TRUE;
+    if(c == '`') return TRUE;
 
    return FALSE;
 }
 
 bool
-validate_xterm_escape_suffix(char c)
+validate_xterm_escape_suffix(char *lastchar)
 {
+    char    c = *lastchar;
+
     if(c == '\x07') return TRUE;
-    // if(c == '\x96') return TRUE;
     if(c == '\x9c') return TRUE;
+
+    // seems to be a VTE thing
+    if(c == '\x5c')
+    {
+        if( *(--lastchar) == '\x1b') return TRUE;
+    }
 
     return FALSE;
 }
 
 bool
-validate_scs_escape_suffix(char c)
+validate_scs_escape_suffix(char *lastchar)
 {
+    char c = *lastchar;
+
     if(c == 'A') return TRUE;
     if(c == 'B') return TRUE;
     if(c == '0') return TRUE;

@@ -71,12 +71,12 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
                 break;
             }
 
-            // Unknown purpos.  Part of xterm u8 (user defined string #8)
+            // Unknown purpose.  Part of xterm u8 (user defined string #8)
             case '7':
             {
                 max_sz = ARRAY_SZ(buf);
                 count = vterm_osc_read_string(vterm, pos,
-                    vterm->title, max_sz);
+                    buf, max_sz);
 
                 break;
             }
