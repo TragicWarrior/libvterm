@@ -31,6 +31,7 @@ vterm_get_title(vterm_t *vterm, char *buf, int buf_sz)
 int
 vterm_interpret_xterm_osc(vterm_t *vterm)
 {
+    char        buf[128];           // general purpose capture buffer
     char        verb;
     char        *pos;
     int         count = 0;
@@ -67,9 +68,16 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
                 count = vterm_osc_read_string(vterm, pos,
                     vterm->title, max_sz);
 
-                // endwin();
-                // printf("%d\n", max_sz);
-                // exit(0);
+                break;
+            }
+
+            // Unknown purpos.  Part of xterm u8 (user defined string #8)
+            case '7':
+            {
+                max_sz = ARRAY_SZ(buf);
+                count = vterm_osc_read_string(vterm, pos,
+                    vterm->title, max_sz);
+
                 break;
             }
 
