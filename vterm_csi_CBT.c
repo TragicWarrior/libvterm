@@ -1,4 +1,6 @@
+#include "vterm_csi.h"
 #include "vterm_private.h"
+#include "vterm_buffer.h"
 
 /*
     From Xterm guide
@@ -13,6 +15,7 @@ interpret_csi_CBT(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             tab_count = 1;          // default is one
     int             stride;
+    int             idx;
 
     if(vterm == NULL) return;
 
@@ -30,10 +33,10 @@ interpret_csi_CBT(vterm_t *vterm, int param[], int pcount)
     {
         v_desc->ccol -= stride;
 
-        count--;
+        tab_count--;
         stride = 8;
     }
-    while(count > 0)
+    while(tab_count > 0);
 
     return;
 }
