@@ -361,6 +361,12 @@ vterm_interpret_esc_normal(vterm_t *vterm)
             break;
         }
 
+        case 'Z':
+        {
+            interpret_csi_CBT(vterm, csiparam, param_count);
+            break;
+        }
+
 #ifdef _DEBUG
         default:
         {

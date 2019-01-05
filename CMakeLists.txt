@@ -40,6 +40,7 @@ add_library(vterm-static STATIC
     vterm_exec.c
     vterm_buffer.c
     vterm_colors.c
+    vterm_csi_CBT.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c
     vterm_csi_DCH.c
@@ -79,6 +80,7 @@ add_library(vterm.o OBJECT
     vterm_buffer.c
     vterm_exec.c
     vterm_colors.c
+    vterm_csi_CBT.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c
     vterm_csi_DCH.c
