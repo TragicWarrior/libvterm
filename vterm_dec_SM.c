@@ -50,6 +50,16 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         }
 
         /*
+            set mouse mode SGR
+            the most ubiquitous mouse mode handling > 223 x 223 coord
+        */
+        if(param[i] == 1006)
+        {
+            vterm->mouse = VTERM_MOUSE_SGR;
+            continue;
+        }
+
+        /*
             nearly identical to ESC [ ? 47 h except it calls for
             saving the cursor first then switching to alt buffer.
         */
