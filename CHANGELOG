@@ -1,3 +1,7 @@
+4.22
+
+* [Bryan Christ] Added csi SD and SU support for xterm mode.
+
 4.21
 
 * [Bryan Christ] Added csi CBT for xterm mode.
