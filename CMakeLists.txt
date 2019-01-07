@@ -56,6 +56,7 @@ add_library(vterm-static STATIC
     vterm_csi_RS1.c
     vterm_csi_SAVECUR.c
     vterm_csi_SGR.c
+    vterm_csi_SU.c
     vterm_csi_UNKNOWN.c
     vterm_cursor.c
     vterm_dec_RM.c
@@ -96,6 +97,7 @@ add_library(vterm.o OBJECT
     vterm_csi_RS1.c
     vterm_csi_SAVECUR.c
     vterm_csi_SGR.c
+    vterm_csi_SU.c
     vterm_csi_UNKNOWN.c
     vterm_cursor.c
     vterm_dec_RM.c

@@ -355,6 +355,12 @@ vterm_interpret_esc_normal(vterm_t *vterm)
             break;
         }
 
+        case 'S':
+        {
+            interpret_csi_SU(vterm, csiparam, param_count);
+            break;
+        }
+
         case 'u':
         {
             interpret_csi_RESTORECUR(vterm, csiparam, param_count);
