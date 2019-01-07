@@ -99,11 +99,11 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
-    char                    *mouse = NULL;
+    // char                    *mouse = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
     int                     retval = 0;
-    MEVENT                  mouse_event;
+    // MEVENT                  mouse_event;
 
     tcgetattr(vterm->pty_fd,&term_state);
 
@@ -137,7 +137,7 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        case KEY_MOUSE:
+        /* case KEY_MOUSE:
         {
             getmouse(&mouse_event);
             mouse = strdup_printf("\e[M%c%c%c",
@@ -145,9 +145,10 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
                 (unsigned char)mouse_event.x,
                 (unsigned char)mouse_event.y);
             break;
-        }
+        } */
     }
 
+/*
     if(mouse != NULL)
     {
         bytes_written = write(vterm->pty_fd, mouse, strlen(mouse));
@@ -162,7 +163,9 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 
         return retval;
     }
+*/
 
+    // send a special sequence
     if(buffer != NULL)
     {
         bytes_written = write(vterm->pty_fd, buffer, strlen(buffer));
