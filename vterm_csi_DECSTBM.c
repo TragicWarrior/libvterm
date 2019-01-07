@@ -20,7 +20,7 @@ interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
     if(!pcount)
     {
         newtop = 0;
-        newbottom = v_desc->rows-1;
+        newbottom = v_desc->rows - 1;
     }
     else if(pcount < 2) return; /* malformed */
     else
