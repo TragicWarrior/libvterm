@@ -5,7 +5,13 @@
 #include "vterm_buffer.h"
 
 
-/* Interpret a 'set scrolling region' (DECSTBM) sequence */
+/*
+    Interpret a 'set scrolling region' (DECSTBM) sequence
+    ESC [ t ; b r
+
+    t = tob row
+    b = bottmo row
+*/
 void
 interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
 {

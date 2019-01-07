@@ -37,6 +37,10 @@
                                                     type.
                                                 */
 
+#define VTERM_MOUSE_X10         9
+#define VTERM_MOUSE_VT2000      1000
+#define VTERM_MOUSE_SGR         1006
+
 struct _vterm_desc_s
 {
     int             rows, cols;                 // terminal height & width
@@ -105,6 +109,8 @@ struct _vterm_s
     pid_t           child_pid;                  //  pid of the child process
     unsigned int    flags;                      //  user options
     unsigned int    internal_state;             //  internal state control
+
+    unsigned int    mouse;                      //  mouse mode
 
     char            *exec_path;                 //  optional binary path to use
     char            **exec_argv;                //  instead of starting shell.

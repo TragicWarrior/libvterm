@@ -40,6 +40,16 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         }
 
         /*
+            set mouse mode VT200
+            this is a varation of the X10 protocol with tracking
+        */
+        if(param[i] == 1000)
+        {
+            vterm->mouse = VTERM_MOUSE_VT2000;
+            continue;
+        }
+
+        /*
             nearly identical to ESC [ ? 47 h except it calls for
             saving the cursor first then switching to alt buffer.
         */

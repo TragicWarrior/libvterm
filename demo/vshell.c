@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     ssize_t     bytes;
     int         flags = 0;
     testwin_t   *twin;
-    // mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
+    mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
     // mmask_t     mouse_mask = BUTTON1_CLICKED;
     char        *exec_path = NULL;
     char        **exec_argv = NULL;
