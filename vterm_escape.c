@@ -355,6 +355,7 @@ vterm_interpret_esc_normal(vterm_t *vterm)
             break;
         }
 
+        // S is defined as scroll up (SU) for both VT420 and ECMA-48
         case 'S':
         {
             interpret_csi_SU(vterm, csiparam, param_count);
@@ -370,6 +371,14 @@ vterm_interpret_esc_normal(vterm_t *vterm)
         case 'Z':
         {
             interpret_csi_CBT(vterm, csiparam, param_count);
+            break;
+        }
+
+        // T is defined for scroll down (SD) VT420, ^ is defined for ECMA-48
+        case 'T':
+        case '^':
+        {
+            interpret_csi_SD(vterm, csiparam, param_count);
             break;
         }
 

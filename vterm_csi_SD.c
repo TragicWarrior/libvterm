@@ -7,21 +7,21 @@
 #include "vterm_buffer.h"
 
 /*
-    Interpret a 'scroll up' sequence (SU)
+    Interpret a 'scroll down' sequence (SD)
 
-    ESC [ n S
+    ESC [ n ^
 
     n = number of lines to scroll
 */
 
 void
-interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
+interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
     int             r;
     int             n = 1;          // number of scroll lines
     int             idx;
-    int             bottom_row;
+    int             top_row;
 
     // set selector for buffer description
     idx = vterm_buffer_get_active(vterm);
@@ -32,11 +32,11 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
         if(param[0] > 0) n = param[0];
     }
 
-    bottom_row = v_desc->scroll_max - n;
+    top_row = v_desc->scroll_min + n;
 
-    for(r = v_desc->scroll_min; r <= bottom_row; r++)
+    for(r = top_row; r <= v_desc->scroll_max; r++)
     {
-        memcpy(v_desc->cells[r], v_desc->cells[r + n],
+        memcpy(v_desc->cells[r], v_desc->cells[r - n],
                 sizeof(vterm_cell_t) * v_desc->cols);
     }
 
