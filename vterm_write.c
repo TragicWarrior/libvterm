@@ -3,10 +3,12 @@
 #include <string.h>
 #include <termios.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_write.h"
+#include "strings.h"
 
 int
 vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
@@ -66,6 +68,8 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
+        // case KEY_MOUSE:     buffer = "\e[M";    break;
+        // case KEY_MOUSE:     endwin();           exit(0);
     }
 
     if(buffer == NULL)
@@ -95,14 +99,16 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
+    char                    *mouse = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
     int                     retval = 0;
+    MEVENT                  mouse_event;
 
     tcgetattr(vterm->pty_fd,&term_state);
 
     if(term_state.c_cc[VERASE] != '0')
-        sprintf(backspace,"%c",term_state.c_cc[VERASE]);
+        sprintf(backspace, "%c", term_state.c_cc[VERASE]);
 
     switch(keycode)
     {
@@ -131,25 +137,50 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
+        case KEY_MOUSE:
+        {
+            getmouse(&mouse_event);
+            mouse = strdup_printf("\e[M%c%c%c",
+                0,
+                (unsigned char)mouse_event.x,
+                (unsigned char)mouse_event.y);
+            break;
+        }
     }
 
-    if(buffer == NULL)
+    if(mouse != NULL)
     {
-        bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
-        if( bytes_written != sizeof(char) )
+        bytes_written = write(vterm->pty_fd, mouse, strlen(mouse));
+
+        if( bytes_written != (ssize_t)strlen(mouse) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
         }
+
+        free(mouse);
+
+        return retval;
     }
-    else
+
+    if(buffer != NULL)
     {
-        bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
+        bytes_written = write(vterm->pty_fd, buffer, strlen(buffer));
         if( bytes_written != (ssize_t)strlen(buffer) )
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
         }
+
+        return retval;
+    }
+
+    // default... send keystroke
+    bytes_written = write(vterm->pty_fd, &keycode, sizeof(char));
+    if( bytes_written != sizeof(char) )
+    {
+        fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+        retval = -1;
     }
 
    return retval;
