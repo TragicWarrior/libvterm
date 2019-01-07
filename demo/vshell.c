@@ -239,7 +239,9 @@ vshell_paint_screen(vterm_t *vterm)
 
     // paint the screen blue
     attrset(COLOR_PAIR(frame_colors));    // white on blue
+    wattron(screen_wnd, A_BOLD);
     box(screen_wnd, 0, 0);
+    wattroff(screen_wnd, A_BOLD);
 
     // quick computer of title location
     vterm_get_title(vterm, buf, sizeof(buf));
@@ -257,7 +259,9 @@ vshell_paint_screen(vterm_t *vterm)
     sprintf(title, " %d x %d ", screen_w - 2, screen_h - 2);
     len = strlen(title);
     offset = (screen_w >> 1) - (len >> 1);
-    mvprintw(screen_h - 1, offset, title);
+    wattron(screen_wnd, A_DIM);
+    mvwprintw(screen_wnd, screen_h - 1, offset, title);
+    wattroff(screen_wnd, A_DIM);
 
     refresh();
 
