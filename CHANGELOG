@@ -1,3 +1,7 @@
+4.23
+
+* [Bryan Christ] Fix support of "dim" attribute in xterm emulation mode.
+
 4.22
 
 * [Bryan Christ] Added csi SD and SU support for xterm mode.

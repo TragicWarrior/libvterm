@@ -60,7 +60,7 @@ typedef chtype          attr_t;
 #include <ncursesw/curses.h>
 #endif
 
-#define LIBVTERM_VERSION        "4.22"
+#define LIBVTERM_VERSION        "4.23"
 
 #define VTERM_FLAG_RXVT         (1 << 0)    // masquerade as rxvt (default)
 #define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100
