@@ -1,8 +1,7 @@
 
-This library (libvterm) is a fork of libROTE.  With the author's premission,
-this derivative is dual-licensed under both the GPL 2.0 and LGPL 2.1.  The
-terms of these licenses are located in LICENSE.GPL and LICENSE.LGPL
-respectively.
+This library (libvterm) is a fork of libROTE.  This derivative is also
+licensed under LGPL 2.1 except where notied.  The of these licenses are
+located in LICENSE.LGPL file.
 
 Copyright (C)
 
