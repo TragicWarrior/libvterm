@@ -160,6 +160,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             */
             if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
             if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
 
             v_desc->curattr = 0;
             v_desc->curattr |= COLOR_PAIR(colors);
@@ -187,6 +188,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             */
             if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
             if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
+            if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
 
             v_desc->curattr = 0;
             v_desc->curattr |= COLOR_PAIR(colors);
