@@ -219,17 +219,23 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     p = vterm->esbuf + 1;
     verb = vterm->esbuf[vterm->esbuf_len - 1];
 
-    // parse numeric parameters
+    /*
+        Parse numeric parameters
+
+        The order of conditionals is intentional.  It's designed to
+        favor the most likely to occur characters.  For example, in
+        a standardized escape sequence the [ and ? will only occur
+        once so put them at the bottom.
+    */
     for(;;)
     {
-        if(*p == '[')
+        if(isdigit(*p))
         {
-            p++;
-            continue;
-        }
+            if(param_count == 0) csiparam[param_count++] = 0;
 
-        if(*p == '?')
-        {
+            // increaase order of prev digit (10s column, 100s column, etc...)
+            csiparam[param_count-1] *= 10;
+            csiparam[param_count-1] += *p - '0';
             p++;
             continue;
         }
@@ -242,13 +248,15 @@ vterm_interpret_esc_normal(vterm_t *vterm)
             continue;
         }
 
-        if(isdigit(*p))
+        if(*p == '[')
         {
-            if(param_count == 0) csiparam[param_count++] = 0;
+            p++;
+            continue;
+        }
 
-            // increaase order of prev digit (10s column, 100s column, etc...)
-            csiparam[param_count-1] *= 10;
-            csiparam[param_count-1] += *p - '0';
+
+        if(*p == '?')
+        {
             p++;
             continue;
         }
