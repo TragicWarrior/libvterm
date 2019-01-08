@@ -63,7 +63,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         return;
     }
 
-    for(i = 0;i < pcount;i++)
+    for(i = 0; i < pcount; i++)
     {
         if(param[i] == 0)
         {
@@ -219,11 +219,11 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         }
 
         // set custom background color
-        if(param[i] == 48)
-        {
-            interpret_custom_color(vterm, param, pcount);
-            break;
-        }
+        // if(param[i] == 48)
+        // {
+        //    interpret_custom_color(vterm, param, pcount);
+        //    break;
+        //}
 
         if(param[i] == 49)                                // reset bg color
         {
@@ -343,7 +343,13 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
     }
 
     endwin();
-    printf("method %d\n\r", method);
+    printf("method %d;%d;%d;d;%d;%d\n\r",
+                param[0],
+                param[1],
+                param[2],
+                param[3],
+                param[4],
+                param[5]);
     exit(0);
 
     return 0;

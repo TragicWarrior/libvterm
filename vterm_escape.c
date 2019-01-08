@@ -231,11 +231,15 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     {
         if(isdigit(*p))
         {
-            if(param_count == 0) csiparam[param_count++] = 0;
+            if(param_count == 0)
+            {
+                csiparam[param_count] = 0;
+                param_count++;
+            }
 
             // increaase order of prev digit (10s column, 100s column, etc...)
-            csiparam[param_count-1] *= 10;
-            csiparam[param_count-1] += *p - '0';
+            csiparam[param_count - 1] *= 10;
+            csiparam[param_count - 1] += *p - '0';
             p++;
             continue;
         }
@@ -243,7 +247,9 @@ vterm_interpret_esc_normal(vterm_t *vterm)
         if(*p == ';')
         {
             if(param_count >= MAX_CSI_ES_PARAMS) return -1;    // too long!
-            csiparam[param_count++] = 0;
+
+            csiparam[param_count] = 0;
+            param_count++;
             p++;
             continue;
         }
