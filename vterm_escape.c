@@ -114,7 +114,6 @@ vterm_interpret_escapes(vterm_t *vterm)
         return;
     }
 
-
     /*
         start of check for interims.
         if it's not these, we don't have code to handle it.
@@ -221,8 +220,14 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     verb = vterm->esbuf[vterm->esbuf_len - 1];
 
     // parse numeric parameters
-    while (isdigit(*p) || *p == ';' || *p == '?')
+    for(;;)
     {
+        if(*p == '[')
+        {
+            p++;
+            continue;
+        }
+
         if(*p == '?')
         {
             p++;
@@ -233,17 +238,22 @@ vterm_interpret_esc_normal(vterm_t *vterm)
         {
             if(param_count >= MAX_CSI_ES_PARAMS) return -1;    // too long!
             csiparam[param_count++] = 0;
+            p++;
+            continue;
         }
-        else
+
+        if(isdigit(*p))
         {
             if(param_count == 0) csiparam[param_count++] = 0;
 
             // increaase order of prev digit (10s column, 100s column, etc...)
             csiparam[param_count-1] *= 10;
             csiparam[param_count-1] += *p - '0';
+            p++;
+            continue;
         }
 
-        p++;
+        break;
     }
 
     // delegate handling depending on command character (verb)
