@@ -5,6 +5,8 @@
 #include <locale.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "../vterm.h"
 #include "../strings.h"
@@ -67,6 +69,7 @@ int main(int argc, char **argv)
     char        **exec_argv = NULL;
     char        *locale;
     int         count = 1;
+    // int         fd;
 
     locale = getenv("LANG");
     if(locale == NULL) locale = "en_US.UTF-8";
@@ -85,6 +88,12 @@ int main(int argc, char **argv)
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
     mousemask(mouse_mask, NULL);
+
+    // squelch STDERR
+    // fd = open("/dev/null", O_WRONLY);
+    // if(fd == -1) exit(0);
+    // close(STDERR_FILENO);
+    // dup2(fd, STDERR_FILENO);
 
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
@@ -214,9 +223,9 @@ int main(int argc, char **argv)
         if (ch != ERR) vterm_write_pipe(vterm,ch);
     }
 
-    vterm_destroy(vterm);
-
     endwin();
+
+    vterm_destroy(vterm);
 
 /*
     {

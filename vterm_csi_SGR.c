@@ -167,8 +167,14 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         // set custom foreground color
         if(param[i] == 38)
         {
-            interpret_custom_color(vterm, param, pcount);
-            break;
+            fg = interpret_custom_color(vterm, param, pcount);
+            if(fg != -1)
+            {
+                if(param[i + 1] == '5') i += 2;
+                if(param[i + 1] == '2') i += 4;
+            }
+
+            continue;
         }
 
         if(param[i] >= 40 && param[i] <= 47)            // set bg color
@@ -219,11 +225,18 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         }
 
         // set custom background color
-        // if(param[i] == 48)
-        // {
-        //    interpret_custom_color(vterm, param, pcount);
-        //    break;
-        //}
+        if(param[i] == 48)
+        {
+            bg = interpret_custom_color(vterm, param, pcount);
+
+            if(bg != -1)
+            {
+                if(param[i + 1] == '5') i += 2;
+                if(param[i + 1] == '2') i += 4;
+            }
+
+            continue;
+        }
 
         if(param[i] == 49)                                // reset bg color
         {
@@ -310,7 +323,6 @@ inline short
 interpret_custom_color(vterm_t *vterm, int param[], int pcount)
 {
     int     method = 0;
-    short   color;
     short   red;
     short   green;
     short   blue;
@@ -323,6 +335,11 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
     // set to color pair
     if(method == 5)
     {
+        /*
+            without having initmate knowledge of the client application,
+            it's not possible to determine what color is being
+            requested.
+        */
         if(pcount < 3) return -1;
 
         return (short)param[2];
@@ -342,15 +359,21 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
         exit(0);
     }
 
+/*
+SGR_DEBUG:
+
     endwin();
-    printf("method %d;%d;%d;d;%d;%d\n\r",
-                param[0],
-                param[1],
-                param[2],
-                param[3],
-                param[4],
-                param[5]);
+
+    printf("params %d\n\r", pcount);
+    int i;
+    for(i = 0; i < pcount; i++)
+    {
+        printf("%d ", param[i]);
+    }
+    printf("\n\r");
+
     exit(0);
+*/
 
     return 0;
 }
