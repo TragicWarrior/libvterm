@@ -323,9 +323,9 @@ inline short
 interpret_custom_color(vterm_t *vterm, int param[], int pcount)
 {
     int     method = 0;
-    short   red;
-    short   green;
-    short   blue;
+    // short   red;
+    // short   green;
+    // short   blue;
 
     if(vterm == NULL) return -1;
     if(pcount < 2) return -1;
@@ -350,13 +350,13 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
     {
         if(pcount < 6) return -1;
 
-        red = param[3];
-        green = param[4];
-        blue = param[5];
+        // red = param[3];
+        // green = param[4];
+        // blue = param[5];
 
-        endwin();
-        printf("r: %d, g: %d, b: %d\n\r", red, green, blue);
-        exit(0);
+        // endwin();
+        // printf("r: %d, g: %d, b: %d\n\r", red, green, blue);
+        // exit(0);
     }
 
 /*
