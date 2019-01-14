@@ -22,6 +22,7 @@
 #include "vterm_colors.h"
 #include "vterm_csi.h"
 
+#include "utlist.h"
 
 vterm_t*
 vterm_alloc(void)
@@ -195,6 +196,31 @@ vterm_destroy(vterm_t *vterm)
     int   i;
 
     if(vterm == NULL) return;
+
+/*
+    {
+        color_pair_t    *pair;
+
+        DL_FOREACH(vterm->color_cache->pair_head, pair)
+        {
+            printf("Pair Num:   %d\n\r", pair->num);
+            printf("RGB 256 Fg: r: %d, g: %d, b: %d\n\r",
+                pair->rgb_values[0].r / 4,
+                pair->rgb_values[0].g / 4,
+                pair->rgb_values[0].b / 4);
+            printf("HSL fg:     h: %f, s: %f, l: %f\n\r",
+                pair->hsl_values[0].h,
+                pair->hsl_values[0].s,
+                pair->hsl_values[0].l);
+            printf("CIE fg:     l: %f, a: %f, b: %f\n\r",
+                pair->cie_values[0].l,
+                pair->cie_values[0].a,
+                pair->cie_values[0].b);
+        }
+    }
+*/
+
+    color_cache_destroy(vterm->color_cache);
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)

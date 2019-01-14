@@ -20,7 +20,6 @@ add_definitions("-D_POSIX_C_SOURCE=200809L")
 # needed for cchar_t definition and turn on "wide support"
 add_definitions("-D_XOPEN_SOURCE_EXTENDED")
 
-
 # set these before running the find_package directive for Curses
 set(CURSES_NEED_NCURSES "TRUE")
 set(CURSES_NEED_WIDE "TRUE")
@@ -36,6 +35,7 @@ if (!Curses_FOUND)
 endif()
 
 add_library(vterm-static STATIC
+    color_math.c
     vterm.c
     vterm_exec.c
     vterm_buffer.c
@@ -78,6 +78,7 @@ add_library(vterm-static STATIC
     )
 
 add_library(vterm.o OBJECT
+    color_math.c
     vterm.c
     vterm_buffer.c
     vterm_exec.c
@@ -132,9 +133,9 @@ if (Curses_FOUND)
 endif()
 
 if ((Curses_FOUND) AND (DEFINE_CURSES))
-target_link_libraries(vshell vterm-shared vterm-static -lutil ${CURSES_LIBRARIES} )
+target_link_libraries(vshell vterm-shared vterm-static -lutil -lm ${CURSES_LIBRARIES} )
 else()
-target_link_libraries(vterm-shared vterm-static -lutil ${CURSES_LIBRARIES} )
+target_link_libraries(vterm-shared vterm-static -lutil -lm ${CURSES_LIBRARIES} )
 endif()
 
 # CMake doesn't allow targets with the same name.  This renames them properly afterward.

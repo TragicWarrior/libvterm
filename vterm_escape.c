@@ -114,7 +114,6 @@ vterm_interpret_escapes(vterm_t *vterm)
         return;
     }
 
-
     /*
         start of check for interims.
         if it's not these, we don't have code to handle it.
@@ -220,11 +219,27 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     p = vterm->esbuf + 1;
     verb = vterm->esbuf[vterm->esbuf_len - 1];
 
-    // parse numeric parameters
-    while (isdigit(*p) || *p == ';' || *p == '?')
+    /*
+        Parse numeric parameters
+
+        The order of conditionals is intentional.  It's designed to
+        favor the most likely to occur characters.  For example, in
+        a standardized escape sequence the [ and ? will only occur
+        once so put them at the bottom.
+    */
+    for(;;)
     {
-        if(*p == '?')
+        if(isdigit(*p))
         {
+            if(param_count == 0)
+            {
+                csiparam[param_count] = 0;
+                param_count++;
+            }
+
+            // increaase order of prev digit (10s column, 100s column, etc...)
+            csiparam[param_count - 1] *= 10;
+            csiparam[param_count - 1] += *p - '0';
             p++;
             continue;
         }
@@ -232,18 +247,27 @@ vterm_interpret_esc_normal(vterm_t *vterm)
         if(*p == ';')
         {
             if(param_count >= MAX_CSI_ES_PARAMS) return -1;    // too long!
-            csiparam[param_count++] = 0;
+
+            csiparam[param_count] = 0;
+            param_count++;
+            p++;
+            continue;
         }
-        else
+
+        if(*p == '[')
         {
-            if(param_count == 0) csiparam[param_count++] = 0;
-
-            // increaase order of prev digit (10s column, 100s column, etc...)
-            csiparam[param_count-1] *= 10;
-            csiparam[param_count-1] += *p - '0';
+            p++;
+            continue;
         }
 
-        p++;
+
+        if(*p == '?')
+        {
+            p++;
+            continue;
+        }
+
+        break;
     }
 
     // delegate handling depending on command character (verb)

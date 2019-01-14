@@ -10,3 +10,5 @@ Copyright (C)
     2014 Johannes Schauer <j.schauer@email.de>
 
 The utlist.h library is licensed under the Free BSD license.
+
+The color_math.c library is licensed under the MIT license.

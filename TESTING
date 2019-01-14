@@ -29,7 +29,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - tig
 5 - iptraf-ng
 5 - aaxine
-3 - cacaxine
+1 - cacaxine
 1 - ponysay
 5 - cacafire
 5 - cacademo
@@ -38,3 +38,24 @@ Fidelity score: 5 = excellent, 1 = poor
 4 - cacaview
 5 - partimage
 5 - asciijump
+5 - vlc
+
+*** Test Notes ***
+
+Configuration for VLC:
+
+vlc -V aa <file>
+vlc -V caca <file>
+
+Configuration for Mplayer:
+
+mplayer -quiet -framedrop -monitorpixelaspect 0.5 -contrast 2 -vo aa:driver=curses
+
+Configuration for myman:
+
+myman -z big
+myman -2 -z big
+
+Configuration for aaxine 
+
+aaxine -reverse -dim -bold -A alsa <file>

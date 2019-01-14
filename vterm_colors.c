@@ -10,6 +10,7 @@
 #include "vterm_private.h"
 #include "vterm_colors.h"
 #include "vterm_buffer.h"
+#include "color_math.h"
 
 #include "utlist.h"
 
@@ -18,8 +19,8 @@ color_cache_init(int pairs)
 {
     color_cache_t   *color_cache;
     color_pair_t    *pair;
-
-    int     i;
+    short           r, g, b;
+    int             i;
 
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
 
@@ -32,17 +33,72 @@ color_cache_init(int pairs)
         pair_content(i, &pair->fg, &pair->bg);
 
         // extract foreground RGB
-        color_content(pair->fg, 
-            &pair->red[0], &pair->green[0], &pair->blue[0]);
+        color_content(pair->fg, &r, &g, &b);
 
-        // extract backgoroud RGB
-        color_content(pair->bg,
-            &pair->red[1], &pair->green[1], &pair->blue[1]);
+        pair->rgb_values[0].r = r;
+        pair->rgb_values[0].g = g;
+        pair->rgb_values[0].b = b;
+
+        /*
+            store the HSL foreground values
+
+            ncurses uses a RGB range from 0 to 1000 but most "community" code
+            use 0 - 256 so we'll normalize that by 0.25.
+        */
+        rgb2hsl((float)r * 0.25, (float)g * 0.25, (float)b *0.25,
+            &pair->hsl_values[0].h,
+            &pair->hsl_values[0].s,
+            &pair->hsl_values[0].l);
+
+        // store the CIE2000 lab foreground values
+        rgb2lab(r / 4, g / 4, b / 4,
+            &pair->cie_values[0].l,
+            &pair->cie_values[0].a,
+            &pair->cie_values[0].b);
+
+        // extract background RGB
+        color_content(pair->bg, &r, &g, &b);
+
+        pair->rgb_values[1].r = r;
+        pair->rgb_values[1].g = g;
+        pair->rgb_values[1].b = b;
+
+        // store the HLS background values
+        rgb2hsl((float)r * 0.25, (float)g * 0.25, (float)b * 0.25,
+            &pair->hsl_values[1].h,
+            &pair->hsl_values[1].s,
+            &pair->hsl_values[1].l);
+
+        // store the CIE2000 lab background values
+        rgb2lab(r / 4, g / 4, b / 4,
+            &pair->cie_values[1].l,
+            &pair->cie_values[1].a,
+            &pair->cie_values[1].b);
 
         DL_PREPEND(color_cache->pair_head, pair);
     }
 
     return color_cache;
+}
+
+void
+color_cache_destroy(color_cache_t *color_cache)
+{
+    color_pair_t    *pair;
+    color_pair_t    *pair_tmp;
+
+    if(color_cache == NULL) return;
+
+    DL_FOREACH_SAFE(color_cache->pair_head, pair, pair_tmp)
+    {
+        DL_DELETE(color_cache->pair_head, pair);
+
+        free(pair);
+    }
+
+    free(color_cache);
+
+    return;
 }
 
 /*
@@ -231,7 +287,7 @@ vterm_get_colors(vterm_t *vterm)
 }
 
 short
-color_cache_find_color(color_cache_t *color_cache, short color,
+color_cache_find_exact_color(color_cache_t *color_cache, short color,
         short r, short g, short b)
 {
     color_pair_t    *pair;
@@ -256,7 +312,9 @@ color_cache_find_color(color_cache_t *color_cache, short color,
         */
 
         // check the foreground color for a match
-        if(pair->red[0] == r && pair->green[0] == g && pair->blue[0] == b)
+        if(pair->rgb_values[0].r == r &&
+            pair->rgb_values[0].g == g &&
+            pair->rgb_values[0].b == b)
         {
             DL_DELETE(color_cache->pair_head, pair);
             found = TRUE;
@@ -264,7 +322,9 @@ color_cache_find_color(color_cache_t *color_cache, short color,
         }
 
         // check the background color for a match
-        if(pair->red[1] == r && pair->green[1] == g && pair->blue[1] == b)
+        if(pair->rgb_values[1].r == r &&
+            pair->rgb_values[1].g == g &&
+            pair->rgb_values[1].b == b)
         {
             DL_DELETE(color_cache->pair_head, pair);
             found = TRUE;

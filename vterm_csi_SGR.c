@@ -1,26 +1,28 @@
 
 /*
-   VT100 SGR documentation
-   From http://vt100.net/docs/vt510-rm/SGR table 5-16
-   0    All attributes off
-   1    Bold
-   4    Underline
-   5    Blinking
-   7    Negative image
-   8    Invisible image
-   10   The ASCII character set is the current 7-bit
+    VT100 SGR documentation
+    From http://vt100.net/docs/vt510-rm/SGR table 5-16
+    0   All attributes off
+    1   Bold
+    4   Underline
+    5   Blinking
+    7   Negative image
+    8   Invisible image
+    10  The ASCII character set is the current 7-bit
         display character set (default) - SCO Console only.
-   11   Map Hex 00-7F of the PC character set codes
+    11  Map Hex 00-7F of the PC character set codes
         to the current 7-bit display character set
         - SCO Console only.
-   12   Map Hex 80-FF of the current character set to
+    12  Map Hex 80-FF of the current character set to
         the current 7-bit display character set - SCO
         Console only.
-   22   Bold off
-   24   Underline off
-   25   Blinking off
-   27   Negative image off
-   28   Invisible image off
+    22  Bold off
+    24  Underline off
+    25  Blinking off
+    27  Negative image off
+    28  Invisible image off
+    38  Custom foreground color
+    48  Custom background color
 */
 
 #include "vterm.h"
@@ -28,6 +30,12 @@
 #include "vterm_csi.h"
 #include "vterm_colors.h"
 #include "vterm_buffer.h"
+
+void
+_vterm_set_color_pair_safe(vterm_t *vterm, short colors);
+
+short
+interpret_custom_color(vterm_t *vterm, int param[], int pcount);
 
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
 void
@@ -39,7 +47,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     short           colors;
     static int      depth = 0;
     int             idx;
-    int             attr_saved = 0;
     short           fg, bg;
     int             retval;
 
@@ -56,7 +63,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         return;
     }
 
-    for(i = 0;i < pcount;i++)
+    for(i = 0; i < pcount; i++)
     {
         if(param[i] == 0)
         {
@@ -143,8 +150,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         if(param[i] >= 30 && param[i] <= 37)            // set fg color
         {
-            int  attr_saved = 0;
-
             v_desc->fg = param[i] - 30;
 
             // find the required pair in the cache
@@ -154,25 +159,26 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(colors == -1)
                 colors = 0;
 
-            /*
-                the COLOR_PAIR macros seems to trample attributes.
-                save them before making changes and OR them back in.
-            */
-            if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
-            if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
-            if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
+            _vterm_set_color_pair_safe(vterm, colors);
 
-            v_desc->curattr = 0;
-            v_desc->curattr |= COLOR_PAIR(colors);
-            v_desc->curattr |= attr_saved;
+            continue;
+        }
+
+        // set custom foreground color
+        if(param[i] == 38)
+        {
+            fg = interpret_custom_color(vterm, param, pcount);
+            if(fg != -1)
+            {
+                if(param[i + 1] == '5') i += 2;
+                if(param[i + 1] == '2') i += 4;
+            }
 
             continue;
         }
 
         if(param[i] >= 40 && param[i] <= 47)            // set bg color
         {
-            int  attr_saved = 0;
-
             v_desc->bg = param[i]-40;
 
             // find the required pair in the cache
@@ -182,17 +188,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(colors == -1)
                 colors = 0;
 
-            /*
-                the COLOR_PAIR macros seems to trample attributes.
-                save them before making changes and OR them back in.
-            */
-            if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
-            if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
-            if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
-
-            v_desc->curattr = 0;
-            v_desc->curattr |= COLOR_PAIR(colors);
-            v_desc->curattr |= attr_saved;
+            _vterm_set_color_pair_safe(vterm, colors);
 
             continue;
         }
@@ -223,12 +219,21 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // one addtl safeguard
             if(colors == -1) colors = 0;
 
-            if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
-            if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
+            _vterm_set_color_pair_safe(vterm, colors);
 
-            v_desc->curattr = 0;
-            v_desc->curattr |= COLOR_PAIR(colors);
-            v_desc->curattr |= attr_saved;
+            continue;
+        }
+
+        // set custom background color
+        if(param[i] == 48)
+        {
+            bg = interpret_custom_color(vterm, param, pcount);
+
+            if(bg != -1)
+            {
+                if(param[i + 1] == '5') i += 2;
+                if(param[i + 1] == '2') i += 4;
+            }
 
             continue;
         }
@@ -259,14 +264,116 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // one addtl safeguard
             if(colors == -1) colors = 0;
 
-            if (v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
-            if (v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
-
-            v_desc->curattr = 0;
-            v_desc->curattr |= COLOR_PAIR(colors);
-            v_desc->curattr |= attr_saved;
+            _vterm_set_color_pair_safe(vterm, colors);
 
             continue;
         }
     }
+}
+
+inline void
+_vterm_set_color_pair_safe(vterm_t *vterm, short colors)
+{
+    vterm_desc_t    *v_desc = NULL;
+    attr_t          attr_saved = 0;
+    int             idx;
+
+    // set vterm_desc buffer selector
+    idx = vterm_buffer_get_active(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    /*
+        the COLOR_PAIR macros seems to trample attributes.
+        save them before making changes and OR them back in.
+    */
+
+    if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
+    if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
+    if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
+
+    v_desc->curattr = 0;
+    v_desc->curattr |= COLOR_PAIR(colors);
+    v_desc->curattr |= attr_saved;
+
+    return;
+}
+
+/*
+    ISO-8613-6 sequenences are as follows:
+
+    Set foreground by RGB:
+    ESC [ 38 ; 2 ; i ; r ; g ; b m
+
+    Set foreground by color
+    ESC [ 38 ; 5 ; n m
+
+    Set bagkground by RGB:
+    ESC [ 48 ; 2 ; i ; r ; g ; b m
+
+    Set background by color
+    ESC [ 48 ; 5 ; n m
+
+    i = color space (always ignored)
+    r = red value
+    g = green value
+    b = blue value
+    n = a defined color
+*/
+inline short
+interpret_custom_color(vterm_t *vterm, int param[], int pcount)
+{
+    int     method = 0;
+    short   red;
+    short   green;
+    short   blue;
+
+    if(vterm == NULL) return -1;
+    if(pcount < 2) return -1;
+
+    method = param[1];
+
+    // set to color pair
+    if(method == 5)
+    {
+        /*
+            without having initmate knowledge of the client application,
+            it's not possible to determine what color is being
+            requested.
+        */
+        if(pcount < 3) return -1;
+
+        return (short)param[2];
+    }
+
+    // set to nearest rgb value
+    if(method == 2)
+    {
+        if(pcount < 6) return -1;
+
+        red = param[3];
+        green = param[4];
+        blue = param[5];
+
+        endwin();
+        printf("r: %d, g: %d, b: %d\n\r", red, green, blue);
+        exit(0);
+    }
+
+/*
+SGR_DEBUG:
+
+    endwin();
+
+    printf("params %d\n\r", pcount);
+    int i;
+    for(i = 0; i < pcount; i++)
+    {
+        printf("%d ", param[i]);
+    }
+    printf("\n\r");
+
+    exit(0);
+*/
+
+    return 0;
 }
