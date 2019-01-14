@@ -43,6 +43,8 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 int
 interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
 {
+    vterm_desc_t    *v_desc = NULL;
+
     if(vterm == NULL) return -1;
 
     // safety check
@@ -57,6 +59,9 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
 
     // reset to standard buffer (and add other stuff if ncessary)
     vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+
+    v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];
+    v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
 
     return 0;
 }
