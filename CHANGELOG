@@ -1,3 +1,9 @@
+4.24
+
+* [Bryan Christ] Fix a memory leak.
+* [Bryan Christ] Performance improvements to escape parsing engine.
+* [Bryan Christ] Preliminary work for supporting more than 8 colors.
+
 4.23
 
 * [Bryan Christ] Fix support of "dim" attribute in xterm emulation mode.
