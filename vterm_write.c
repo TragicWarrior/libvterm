@@ -120,8 +120,8 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_BACKSPACE: buffer = backspace; break;
         case KEY_IC:        buffer = "\e[2~";   break;
         case KEY_DC:        buffer = "\e[3~";   break;
-        case KEY_HOME:      buffer = "\e[7~";   break;
-        case KEY_END:       buffer = "\e[8~";   break;
+        case KEY_HOME:      buffer = "\eOH";    break;
+        case KEY_END:       buffer = "\eOF";    break;
         case KEY_PPAGE:     buffer = "\e[5~";   break;
         case KEY_NPAGE:     buffer = "\e[6~";   break;
         case KEY_SUSPEND:   buffer = "\x1A";    break;      // ctrl-z
@@ -129,7 +129,7 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(2):      buffer = "\eOQ";    break;
         case KEY_F(3):      buffer = "\eOR";    break;
         case KEY_F(4):      buffer = "\eOS";    break;
-        case KEY_F(5):      buffer = "\e[15~";    break;
+        case KEY_F(5):      buffer = "\e[15~";  break;
         case KEY_F(6):      buffer = "\e[17~";  break;
         case KEY_F(7):      buffer = "\e[18~";  break;
         case KEY_F(8):      buffer = "\e[19~";  break;
