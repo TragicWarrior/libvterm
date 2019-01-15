@@ -1,3 +1,8 @@
+4.26
+
+* [Bryan Christ] Fixed mapping of HOME and END keys when operating in
+  xterm mode.
+
 4.25
 
 * [Bryan Christ] Added logic to make sure cursor becomes visible after a
