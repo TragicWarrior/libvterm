@@ -16,6 +16,7 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 {
     static char     *end = RXVT_RS1 + sizeof(RXVT_RS1) - 2;
     static char     *pos = RXVT_RS1;
+    vterm_desc_t    *v_desc = NULL;
 
     // if we get a stray byte, reset sequence parser
     if(byte[0] != pos[0])
@@ -30,6 +31,10 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
         // reset to standard buffer (and add other stuff if ncessary)
         vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
 
+        // make cursor always visible after a reset
+        v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];
+        v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
+
         // reset the parser
         pos = RXVT_RS1;
         return 0;
@@ -43,6 +48,8 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 int
 interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
 {
+    vterm_desc_t    *v_desc = NULL;
+
     if(vterm == NULL) return -1;
 
     // safety check
@@ -57,6 +64,10 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
 
     // reset to standard buffer (and add other stuff if ncessary)
     vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+
+    // make cursor always visible after a reset
+    v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];
+    v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
 
     return 0;
 }
