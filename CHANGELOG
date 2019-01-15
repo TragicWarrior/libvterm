@@ -1,3 +1,8 @@
+4.25
+
+* [Bryan Christ] Added logic to make sure cursor becomes visible after a
+  RS1 (reset command) issued in xterm mode.
+
 4.24
 
 * [Bryan Christ] Fix a memory leak.
