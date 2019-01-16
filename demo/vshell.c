@@ -9,7 +9,7 @@
 #include <fcntl.h>
 
 #include "../vterm.h"
-#include "../strings.h"
+#include "../stringv.h"
 
 /*
     packing the WINDOW * inside another structure can be useful when
