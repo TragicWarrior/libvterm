@@ -24,6 +24,9 @@ color_cache_init(int pairs)
     color_pair_t    *pair;
     int             i;
 
+    // Fedora 29 break the legal value for short in xterm-256 color terminfo
+    if(pairs > 0x7FFF) pairs = 0x7FFF;
+
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
 
     for(i = 0; i < pairs; i++)
