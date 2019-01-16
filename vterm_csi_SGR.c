@@ -219,7 +219,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 39:
             {
                 retval = color_cache_split_pair(vterm->color_cache,
-                    v_desc->colors, &fg, &bg);
+                    v_desc->default_colors, &fg, &bg);
 
                 if(retval != -1)
                 {
@@ -305,7 +305,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 49:
             {
                 retval = color_cache_split_pair(vterm->color_cache,
-                    v_desc->colors, &fg, &bg);
+                    v_desc->default_colors, &fg, &bg);
 
                 if(retval != -1)
                 {

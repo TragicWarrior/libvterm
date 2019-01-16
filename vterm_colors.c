@@ -266,7 +266,7 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     colors = color_cache_find_pair(vterm->color_cache, fg, bg);
     if(colors == -1) colors = 0;
 
-    v_desc->colors = colors;
+    v_desc->default_colors = colors;
 
     return 0;
 }
@@ -287,7 +287,7 @@ vterm_get_colors(vterm_t *vterm)
         if(has_colors() == FALSE) return -1;
 #endif
 
-    return v_desc->colors;
+    return v_desc->default_colors;
 }
 
 

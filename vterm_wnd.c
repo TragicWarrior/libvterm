@@ -85,7 +85,7 @@ vterm_wnd_update(vterm_t *vterm)
     if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
     {
         mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
-            v_desc->colors, NULL);
+            v_desc->default_colors, NULL);
     }
 
     return;
