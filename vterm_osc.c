@@ -198,9 +198,13 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
         0x00 to 0xFF.  However, ncurses RGB values run from 0 - 1000
         so we need to scale accordingly.
     */
-    r = (short)(strtol(params[2], NULL, 16) * 4);
-    g = (short)(strtol(params[3], NULL, 16) * 4);
-    b = (short)(strtol(params[4], NULL, 16) * 4);
+    r = (short)(strtol(params[2], NULL, 16));
+    g = (short)(strtol(params[3], NULL, 16));
+    b = (short)(strtol(params[4], NULL, 16));
+
+    r = (r / 255.0) * 1000.0;
+    g = (g / 255.0) * 1000.0;
+    b = (b / 255.0) * 1000.0;
 
     strfreev(params);
 

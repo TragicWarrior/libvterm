@@ -202,12 +202,17 @@ vterm_destroy(vterm_t *vterm)
 /*
     {
         color_pair_t    *pair;
+        int             limit = 20;
 
         CDL_FOREACH(vterm->color_cache->pair_head, pair)
         {
+            if(limit == 0) break;
+
             printf("Pair Num:   %d\n\r", pair->num);
             printf("Fg:         %d\n\r", pair->fg);
             printf("Bg:         %d\n\r", pair->bg);
+
+            limit--;
         }
     }
 */
@@ -215,9 +220,12 @@ vterm_destroy(vterm_t *vterm)
 /*
     {
         color_pair_t    *pair;
+        int             limit = 20;
 
         CDL_FOREACH(vterm->color_cache->pair_head, pair)
         {
+            if(limit == 0) break;
+
             printf("Pair Num:   %d\n\r", pair->num);
             printf("RGB 256 Fg: r: %d, g: %d, b: %d\n\r",
                 pair->rgb_values[0].r / 4,
@@ -231,10 +239,15 @@ vterm_destroy(vterm_t *vterm)
                 pair->cie_values[0].l,
                 pair->cie_values[0].a,
                 pair->cie_values[0].b);
+            printf("RGB 256 Bg: r: %d, g: %d, b: %d\n\r",
+                pair->rgb_values[1].r / 4,
+                pair->rgb_values[1].g / 4,
+                pair->rgb_values[1].b / 4);
+
+            limit--;
         }
     }
 */
-
     color_cache_destroy(vterm->color_cache);
 
     // todo:  do something more elegant in the future

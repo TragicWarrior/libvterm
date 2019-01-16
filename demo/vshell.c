@@ -89,12 +89,6 @@ int main(int argc, char **argv)
     getmaxyx(stdscr, screen_h, screen_w);
     mousemask(mouse_mask, NULL);
 
-    // squelch STDERR
-    // fd = open("/dev/null", O_WRONLY);
-    // if(fd == -1) exit(0);
-    // close(STDERR_FILENO);
-    // dup2(fd, STDERR_FILENO);
-
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
     if (argc > 1)
@@ -157,20 +151,6 @@ int main(int argc, char **argv)
 
     vshell_color_init();
 
-/*
-    {
-        short   red, green, blue;
-
-        color_content(COLOR_BLUE, &red, &green, &blue);
-
-        endwin();
-
-        printf("color:  r:%d, g:%d, b:%d\n\r", red, green, blue);
-
-        exit(0);
-    }
-*/
-
     // set default frame color
     frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
@@ -232,18 +212,6 @@ int main(int argc, char **argv)
     endwin();
 
     vterm_destroy(vterm);
-
-/*
-    {
-        FILE    *f;
-        char    *termcap;
-
-        termcap = tigetstr("rmul");
-        f = fopen("value.dump", "a");
-        fprintf(f, "termcap: %s\n\r", termcap);
-        fclose(f);
-    }
-*/
 
     return 0;
 }
@@ -403,7 +371,6 @@ vshell_color_init(void)
 short
 vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 {
-    // extern color_mtx_t  *color_mtx;
     extern short        color_table[];
     extern int          color_count;
     int                 i = 0;
