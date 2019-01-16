@@ -42,9 +42,13 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     char            *pos = NULL;
     int             retval;
+    int             termcap_colors = 0;
 
     // rxvt emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM;
+
+    // how many colors does the underlying terminal actually support
+    termcap_colors = tigetnum("colors");
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
@@ -147,7 +151,11 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
 
             if(flags & VTERM_FLAG_XTERM_256)
             {
-                setenv("TERM", "xterm-256color", 1);
+                if(termcap_colors > 8)
+                    setenv("TERM", "xterm-256color", 1);
+                else
+                    setenv("TERM", "xterm", 1);
+
                 setenv("COLORTERM", "xterm", 1);
             }
 
