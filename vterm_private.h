@@ -31,8 +31,8 @@
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
 #define IS_MODE_UTF8(x)         (x->internal_state & STATE_UTF8_MODE)
 
-#define VTERM_TERM_MASK         0x0F            /*
-                                                    the lower 4 bits of the
+#define VTERM_TERM_MASK         0xFF            /*
+                                                    the lower 8 bits of the
                                                     flags value specify term
                                                     type.
                                                 */
@@ -107,7 +107,7 @@ struct _vterm_s
                                                 */
 
     pid_t           child_pid;                  //  pid of the child process
-    unsigned int    flags;                      //  user options
+    uint32_t        flags;                      //  user options
     unsigned int    internal_state;             //  internal state control
 
     unsigned int    mouse;                      //  mouse mode

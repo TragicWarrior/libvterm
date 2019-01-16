@@ -157,7 +157,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 v_desc->fg, v_desc->bg);
 
             if(colors == -1)
-                colors = 0;
+            {
+                colors = color_cache_add_new_pair(vterm->color_cache,
+                    v_desc->fg, v_desc->bg);
+            }
 
             _vterm_set_color_pair_safe(vterm, colors);
 
@@ -168,10 +171,24 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         if(param[i] == 38)
         {
             fg = interpret_custom_color(vterm, param, pcount);
+
             if(fg != -1)
             {
-                if(param[i + 1] == '5') i += 2;
-                if(param[i + 1] == '2') i += 4;
+                v_desc->fg = fg;
+
+                colors = color_cache_find_pair(vterm->color_cache,
+                    v_desc->fg, v_desc->bg);
+
+                if(colors == -1)
+                {
+                    colors = color_cache_add_new_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors);
+                // v_desc->curattr &= ~A_REVERSE;
+
+                i += 2;
             }
 
             continue;
@@ -179,14 +196,18 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         if(param[i] >= 40 && param[i] <= 47)            // set bg color
         {
-            v_desc->bg = param[i]-40;
+            v_desc->bg = param[i] - 40;
 
             // find the required pair in the cache
             colors = color_cache_find_pair(vterm->color_cache,
                 v_desc->fg, v_desc->bg);
 
+            // no color pair found so we'll try and add it
             if(colors == -1)
-                colors = 0;
+            {
+                colors = color_cache_add_new_pair(vterm->color_cache,
+                    v_desc->fg, v_desc->bg);
+            }
 
             _vterm_set_color_pair_safe(vterm, colors);
 
@@ -231,8 +252,21 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(bg != -1)
             {
-                if(param[i + 1] == '5') i += 2;
-                if(param[i + 1] == '2') i += 4;
+                v_desc->bg = bg;
+
+                colors = color_cache_find_pair(vterm->color_cache,
+                    v_desc->fg, v_desc->bg);
+
+                if(colors == -1)
+                {
+                    colors = color_cache_add_new_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors);
+                // v_desc->curattr &= ~A_REVERSE;
+
+                i += 2;
             }
 
             continue;
@@ -357,6 +391,8 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
         // endwin();
         // printf("r: %d, g: %d, b: %d\n\r", red, green, blue);
         // exit(0);
+
+        return -1;
     }
 
 /*
@@ -375,5 +411,5 @@ SGR_DEBUG:
     exit(0);
 */
 
-    return 0;
+    return -1;
 }

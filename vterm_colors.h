@@ -61,6 +61,9 @@ typedef struct _color_cache_s   color_cache_t;
 color_cache_t*
 color_cache_init(int pairs);
 
+short
+color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg);
+
 void
 color_cache_destroy(color_cache_t *color_cache);
 

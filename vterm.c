@@ -149,6 +149,12 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
                 setenv("COLORTERM", "xterm", 1);
             }
 
+            if(flags & VTERM_FLAG_XTERM_256)
+            {
+                setenv("TERM", "xterm-256color", 1);
+                setenv("COLORTERM", "xterm", 1);
+            }
+
             if(flags & VTERM_FLAG_VT100)
             {
                 setenv("TERM", "vt100", 1);
@@ -184,7 +190,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     if(flags & VTERM_FLAG_VT100)
         vterm->write = vterm_write_vt100;
 
-    if(flags & VTERM_FLAG_XTERM)
+    if(flags & VTERM_FLAG_XTERM || flags & VTERM_FLAG_XTERM_256)
         vterm->write = vterm_write_xterm;
 
     return vterm;
@@ -201,7 +207,20 @@ vterm_destroy(vterm_t *vterm)
     {
         color_pair_t    *pair;
 
-        DL_FOREACH(vterm->color_cache->pair_head, pair)
+        CDL_FOREACH(vterm->color_cache->pair_head, pair)
+        {
+            printf("Pair Num:   %d\n\r", pair->num);
+            printf("Fg:         %d\n\r", pair->fg);
+            printf("Bg:         %d\n\r", pair->bg);
+        }
+    }
+*/
+
+/*
+    {
+        color_pair_t    *pair;
+
+        CDL_FOREACH(vterm->color_cache->pair_head, pair)
         {
             printf("Pair Num:   %d\n\r", pair->num);
             printf("RGB 256 Fg: r: %d, g: %d, b: %d\n\r",

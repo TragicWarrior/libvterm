@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     vterm_t     *vterm;
     int 		i, ch;
     ssize_t     bytes;
-    int         flags = 0;
+    uint32_t    flags = 0;
     testwin_t   *twin;
     mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
     // mmask_t     mouse_mask = BUTTON1_CLICKED;
@@ -112,6 +112,12 @@ int main(int argc, char **argv)
             if (strncmp(argv[i], "--xterm", strlen("--xterm")) == 0)
             {
                 flags |= VTERM_FLAG_XTERM;
+                continue;
+            }
+
+            if (strncmp(argv[i], "--x256", strlen("--x256")) == 0)
+            {
+                flags |= VTERM_FLAG_XTERM_256;
                 continue;
             }
 

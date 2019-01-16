@@ -29,7 +29,7 @@ vterm_wnd_update(vterm_t *vterm)
     int             r, c;
     int             idx;
     attr_t          attrs;
-    short           color_pair;
+    short           colors;
     wchar_t         wch[CCHARW_MAX];
 
     if(vterm == NULL) return;
@@ -47,11 +47,35 @@ vterm_wnd_update(vterm_t *vterm)
         for(c = 0; c < v_desc->cols; c++)
         {
             // get character from wide storage
-            getcchar(&vcell->uch, wch, &attrs, &color_pair, NULL);
+            getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
 
             VCELL_GET_ATTR((*vcell), &attrs);
 
-            wattrset(vterm->window, attrs);
+            // this is a temp change for migrating to wattr_set()
+            colors = PAIR_NUMBER(attrs);
+
+        /*
+            {
+                short   fg;
+                short   bg;
+                short   f_red;
+                short   f_green;
+                short   f_blue;
+
+                if(colors > 250)
+                {
+                    pair_content(colors, &fg, &bg);
+                    color_content(fg, &f_red, &f_green, &f_blue);
+
+                    endwin();
+                    printf("pair:   %d, f: %d, b: %d\n\r", colors, fg, bg);
+                    printf("fg:     r: %d, g: %d, b: %d\n\r", f_red, f_green, f_blue);
+                    exit(0);
+                }
+            }
+        */
+
+            wattr_set(vterm->window, attrs, colors, NULL);
             mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
             vcell++;
