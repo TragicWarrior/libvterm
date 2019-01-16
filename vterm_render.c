@@ -165,6 +165,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         }
 
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        VCELL_SET_COLORS((*vcell), v_desc->colors);
 
         // "remember" what was written in case the next call is csi REP.
         memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
@@ -178,6 +179,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     {
         VCELL_SET_CHAR((*vcell), c);
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        VCELL_SET_COLORS((*vcell), v_desc->colors);
 
         // "remember" what was written in case the next call is csi REP.
         memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
@@ -197,6 +199,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     }
 
     VCELL_SET_ATTR((*vcell), v_desc->curattr);
+    VCELL_SET_COLORS((*vcell), v_desc->colors);
 
     // "remember" what was written in case the next call is csi REP.
     memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));

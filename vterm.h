@@ -92,6 +92,7 @@ typedef chtype          attr_t;
 struct _vterm_cell_s
 {
     attr_t          attr;
+    short           colors;
     wchar_t         wch[2];     // we need this when NOCURSES is defined
 
 #ifndef NOCURSES

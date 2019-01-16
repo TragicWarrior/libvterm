@@ -360,6 +360,8 @@ _vterm_set_color_pair_safe(vterm_t *vterm, short colors)
     v_desc->curattr |= COLOR_PAIR(colors);
     v_desc->curattr |= attr_saved;
 
+    v_desc->colors = colors;
+
     return;
 }
 

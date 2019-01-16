@@ -50,9 +50,25 @@ vterm_wnd_update(vterm_t *vterm)
             getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
 
             VCELL_GET_ATTR((*vcell), &attrs);
+            VCELL_GET_COLORS((*vcell), &colors);
+
+
+        /*
+        {
+            short   extracted_colors;
 
             // this is a temp change for migrating to wattr_set()
-            colors = PAIR_NUMBER(attrs);
+            extracted_colors = PAIR_NUMBER(attrs);
+
+            if(colors != extracted_colors)
+            {
+                endwin();
+                printf("colors %d, extracted %d\n\r",
+                    colors, extracted_colors);
+                exit(0);
+            }
+        }
+        */
 
         /*
             {
