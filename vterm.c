@@ -75,11 +75,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     }
     else
     {
-#ifdef NOCURSES
         vterm->vterm_desc[0].curattr = 0;
-#else
-        vterm->vterm_desc[0].curattr = COLOR_PAIR( 0 );
-#endif
     }
 
     // initialize all cells with defaults

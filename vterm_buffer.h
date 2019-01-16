@@ -39,5 +39,8 @@ int     vterm_buffer_get_active(vterm_t *vterm);
 #define VCELL_GET_ATTR(_cell, _attr_ptr) \
                 { *_attr_ptr = _cell.attr; }
 
+#define VCELL_SET_COLOR(_cell, _colors) \
+                { _cell.colors = colors; }
+
 #endif
 

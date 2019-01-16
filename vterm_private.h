@@ -50,6 +50,7 @@ struct _vterm_desc_s
     unsigned int    buffer_state;               // internal state control
 
     attr_t          curattr;                    // current attribute set
+    short           colors;                     // current color pair
 
     int             crow, ccol;                 // current cursor column & row
     int             scroll_min;                 // top of scrolling region
