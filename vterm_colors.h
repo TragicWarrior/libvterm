@@ -34,7 +34,7 @@ struct _color_pair_s
 {
     uint8_t                 ref;
 
-    short                   num;
+    unsigned short          num;
     short                   fg;
     short                   bg;
 
@@ -51,7 +51,8 @@ typedef struct _color_pair_s    color_pair_t;
 
 struct _color_cache_s
 {
-    short           pair_count;
+    long            pair_count;
+    long            reserve_pair;
 
     color_pair_t    *pair_head;
 };
@@ -61,26 +62,26 @@ typedef struct _color_cache_s   color_cache_t;
 color_cache_t*
 color_cache_init(int pairs);
 
-short
+long
 color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg);
 
 void
 color_cache_destroy(color_cache_t *color_cache);
 
-short
+long
 color_cache_find_pair(color_cache_t *color_cache, short fg, short bg);
 
-short
-color_cache_find_exact_color(color_cache_t *color_cache, short color,
-    short r, short g, short b);
+long
+color_cache_find_exact_color(color_cache_t *color_cache,
+    unsigned short color, short r, short g, short b);
 
-short
+long
 color_cache_find_nearest_color(color_cache_t *color_cache,
     short r, short g, short b);
 
 short
-color_cache_split_pair(color_cache_t *color_cache, short pair_num,
-    short *fg, short *bg);
+color_cache_split_pair(color_cache_t *color_cache,
+    unsigned short pair_num, short *fg, short *bg);
 
 #endif
 

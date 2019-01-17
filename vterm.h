@@ -92,7 +92,7 @@ typedef chtype          attr_t;
 struct _vterm_cell_s
 {
     attr_t          attr;
-    short           colors;
+    unsigned short  colors;
     wchar_t         wch[2];     // we need this when NOCURSES is defined
 
 #ifndef NOCURSES
@@ -375,7 +375,7 @@ int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
     @return:        returns the color pair index set as the default
                     fg/bg color combination.  returns -1 upon error.
 */
-short           vterm_get_colors(vterm_t *vterm);
+long            vterm_get_colors(vterm_t *vterm);
 
 /*
     erase the contents of the terminal.

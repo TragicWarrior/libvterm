@@ -29,7 +29,8 @@ vterm_wnd_update(vterm_t *vterm)
     int             r, c;
     int             idx;
     attr_t          attrs;
-    short           colors;
+    unsigned short  colors;
+    int             ext_color;
     wchar_t         wch[CCHARW_MAX];
 
     if(vterm == NULL) return;
@@ -47,11 +48,10 @@ vterm_wnd_update(vterm_t *vterm)
         for(c = 0; c < v_desc->cols; c++)
         {
             // get character from wide storage
-            getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
+            getcchar(&vcell->uch, wch, &attrs, (short *)&colors, &ext_color);
 
             VCELL_GET_ATTR((*vcell), &attrs);
             VCELL_GET_COLORS((*vcell), &colors);
-
 
         /*
         {
@@ -92,6 +92,7 @@ vterm_wnd_update(vterm_t *vterm)
         */
 
             wattr_set(vterm->window, attrs, colors, NULL);
+
             mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
             vcell++;

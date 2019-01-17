@@ -34,7 +34,7 @@
 void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors);
 
-short
+long
 interpret_custom_color(vterm_t *vterm, int param[], int pcount);
 
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
@@ -44,7 +44,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
-    short           colors;
+    long            colors;
     static int      depth = 0;
     int             idx;
     short           fg, bg;
@@ -386,7 +386,7 @@ _vterm_set_color_pair_safe(vterm_t *vterm, short colors)
     b = blue value
     n = a defined color
 */
-inline short
+inline long
 interpret_custom_color(vterm_t *vterm, int param[], int pcount)
 {
     int     method = 0;
@@ -409,7 +409,7 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
         */
         if(pcount < 3) return -1;
 
-        return (short)param[2];
+        return (unsigned short)param[2];
     }
 
     // set to nearest rgb value

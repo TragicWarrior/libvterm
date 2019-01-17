@@ -14,20 +14,30 @@
 
 #include "utlist.h"
 
+#define PAIR_FG_R(_pair_ptr)    (_pair_ptr->rgb_values[0].r)
+#define PAIR_FG_G(_pair_ptr)    (_pair_ptr->rgb_values[0].g)
+#define PAIR_FG_B(_pair_ptr)    (_pair_ptr->rgb_values[0].b)
+
+#define PAIR_BG_R(_pair_ptr)    (_pair_ptr->rgb_values[1].r)
+#define PAIR_BG_G(_pair_ptr)    (_pair_ptr->rgb_values[1].g)
+#define PAIR_BG_B(_pair_ptr)    (_pair_ptr->rgb_values[1].b)
+
 void
 _color_cache_profile_pair(color_pair_t *pair);
 
 color_cache_t*
 color_cache_init(int pairs)
 {
-    color_cache_t   *color_cache;
-    color_pair_t    *pair;
-    int             i;
+    color_cache_t       *color_cache;
+    color_pair_t        *pair;
+    unsigned short      color_sum = 0;
+    long                i;
 
     // Fedora 29 break the legal value for short in xterm-256 color terminfo
     if(pairs > 0x7FFF) pairs = 0x7FFF;
 
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
+    color_cache->reserve_pair = -1;
 
     for(i = 0; i < pairs; i++)
     {
@@ -36,52 +46,75 @@ color_cache_init(int pairs)
 
         _color_cache_profile_pair(pair);
 
-        CDL_PREPEND(color_cache->pair_head, pair);
+        // the sum total of all the RGB values will be zero for black on black
+        color_sum = PAIR_FG_R(pair) + PAIR_FG_G(pair) + PAIR_FG_B(pair);
+        color_sum += PAIR_BG_R(pair) + PAIR_BG_G(pair) + PAIR_BG_B(pair);
+
+        if(color_sum > 0 || color_cache->reserve_pair == -1)
+        {
+            CDL_APPEND(color_cache->pair_head, pair);
+        }
+
+        if(color_cache->reserve_pair == -1)
+        {
+            if(color_sum == 0) color_cache->reserve_pair = i;
+        }
     }
 
     return color_cache;
 }
 
 // use the pair at the end of the list as it's the lowest risk
-short
+long
 color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg)
 {
-    short           i = COLOR_PAIRS - 1;
-    short           sentry_fg;
-    short           sentry_bg;
-    color_pair_t    *pair;
+    unsigned short          i = COLOR_PAIRS - 1;
+    color_pair_t            *pair;
+    unsigned short          color_sum = 0;
+    rgb_values_t            rgb[2];
+
 
     if(color_cache == NULL) return -1;
+
+    pair = (color_pair_t *)calloc(1, sizeof(color_pair_t));
+
+    // we need to find out what colors are in the supplied fg & bg
+    color_content(fg, &rgb[0].r, &rgb[0].g, &rgb[0].b);
+    color_content(bg, &rgb[1].r, &rgb[1].g, &rgb[1].b);
+
+    color_sum = rgb[0].r + rgb[0].g + rgb[0].b;
+    color_sum += rgb[1].r + rgb[1].g + rgb[1].b;
+
+    // return the pair number for black on black if we already know it
+    if(color_sum == 0 && color_cache->reserve_pair != -1)
+    {
+        return color_cache->reserve_pair;
+    }
 
     // start backward looking for an unenumerated pair.
     while(i > 0)
     {
-        pair_content(i, &sentry_fg, &sentry_bg);
+        memset(pair, 0, sizeof(color_pair_t));
 
-        if(sentry_fg == 0 && sentry_bg == 0) break;
+        pair->num = i;
+        pair_content(i, &pair->fg, &pair->bg);
+
+        _color_cache_profile_pair(pair);
+
+        // the sum total of all the RGB values will be zero for black on black
+        color_sum = PAIR_FG_R(pair) + PAIR_FG_G(pair) + PAIR_FG_B(pair);
+        color_sum += PAIR_BG_R(pair) + PAIR_BG_G(pair) + PAIR_BG_B(pair);
+
+        // we found an unused pair
+        if(color_sum == 0) break;
 
         i--;
     }
 
-    // we didn't find a plausible open slot
-    if(i == 0) return -1;
-
-    // now look for that pair in cache
-    CDL_FOREACH(color_cache->pair_head, pair)
-    {
-        if(pair->num == i) break;
-    }
-
     init_pair(pair->num, fg, bg);
-
-    // endwin();
-    // printf("%d %d %d \n\r", pair->num, fg, bg);
-    // exit(0);
-
-    // extract foreground RGB
     _color_cache_profile_pair(pair);
 
-    // CDL_PREPEND(color_cache->pair_head, pair);
+    CDL_APPEND(color_cache->pair_head, pair);
 
     return i;
 }
@@ -252,7 +285,7 @@ int
 vterm_set_colors(vterm_t *vterm, short fg, short bg)
 {
     vterm_desc_t    *v_desc = NULL;
-    short           colors;
+    long            colors;
     int             idx;
 
     if(vterm == NULL) return -1;
@@ -274,7 +307,7 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     return 0;
 }
 
-short
+long
 vterm_get_colors(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
@@ -294,9 +327,9 @@ vterm_get_colors(vterm_t *vterm)
 }
 
 
-short
-color_cache_find_exact_color(color_cache_t *color_cache, short color,
-        short r, short g, short b)
+long
+color_cache_find_exact_color(color_cache_t *color_cache,
+    unsigned short color, short r, short g, short b)
 {
     color_pair_t    *pair;
     color_pair_t    *tmp1;
@@ -305,11 +338,7 @@ color_cache_find_exact_color(color_cache_t *color_cache, short color,
 
     if(color_cache == NULL) return -1;
 
-    // if a color value was supplied, explode it and use those values
-    if(color != -1)
-    {
-        color_content(color, &r, &g, &b);
-    }
+    color_content(color, &r, &g, &b);
 
     CDL_FOREACH_SAFE(color_cache->pair_head, pair, tmp1, tmp2)
     {
@@ -352,7 +381,7 @@ color_cache_find_exact_color(color_cache_t *color_cache, short color,
     return pair->num;
 }
 
-short
+long
 color_cache_find_pair(color_cache_t *color_cache, short fg, short bg)
 {
     color_pair_t    *pair;
@@ -387,8 +416,8 @@ color_cache_find_pair(color_cache_t *color_cache, short fg, short bg)
 }
 
 short
-color_cache_split_pair(color_cache_t *color_cache, short pair_num,
-    short *fg, short *bg)
+color_cache_split_pair(color_cache_t *color_cache,
+    unsigned short pair_num, short *fg, short *bg)
 {
     color_pair_t    *pair;
     color_pair_t    *tmp1;

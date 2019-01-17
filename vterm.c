@@ -207,7 +207,6 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
-/*
     {
         color_pair_t    *pair;
         int             limit = 20;
@@ -223,7 +222,6 @@ vterm_destroy(vterm_t *vterm)
             limit--;
         }
     }
-*/
 
 /*
     {
