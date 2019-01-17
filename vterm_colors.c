@@ -33,7 +33,12 @@ color_cache_init(int pairs)
     unsigned short      color_sum = 0;
     long                i;
 
-    // Fedora 29 break the legal value for short in xterm-256 color terminfo
+    /*
+        Temporary:  Fedora 29 break and others break the legal value
+        for short in xterm-256 color terminfo.  It can be handled with
+        certain APIs that allow for an signed int value but, AFAIK, they're
+        ncurses exentsions.
+    */
     if(pairs > 0x7FFF) pairs = 0x7FFF;
 
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
@@ -68,11 +73,14 @@ color_cache_init(int pairs)
 long
 color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg)
 {
-    unsigned short          i = COLOR_PAIRS - 1;
+    int                     i = 0x7FFF - 1;     /*
+                                                    see note above.  would
+                                                    normally be set to
+                                                    COLOR_PAIRS -1.
+                                                */
     color_pair_t            *pair;
     unsigned short          color_sum = 0;
     rgb_values_t            rgb[2];
-
 
     if(color_cache == NULL) return -1;
 
@@ -110,6 +118,13 @@ color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg)
 
         i--;
     }
+
+/*
+    endwin();
+    printf("requested %d, %d\n\r", fg, bg);
+    printf("candidate %d", i);
+    exit(0);
+*/
 
     init_pair(pair->num, fg, bg);
     _color_cache_profile_pair(pair);

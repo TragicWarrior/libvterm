@@ -91,8 +91,8 @@ vterm_wnd_update(vterm_t *vterm)
             }
         */
 
+            // wattr_set(vterm->window, attrs, colors, NULL);
             wattr_set(vterm->window, attrs, colors, NULL);
-
             mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
             vcell++;

@@ -207,21 +207,7 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
-    {
-        color_pair_t    *pair;
-        int             limit = 20;
-
-        CDL_FOREACH(vterm->color_cache->pair_head, pair)
-        {
-            if(limit == 0) break;
-
-            printf("Pair Num:   %d\n\r", pair->num);
-            printf("Fg:         %d\n\r", pair->fg);
-            printf("Bg:         %d\n\r", pair->bg);
-
-            limit--;
-        }
-    }
+    // DEBUG_COLOR_PAIRS(vterm->color_cache, 20);
 
 /*
     {

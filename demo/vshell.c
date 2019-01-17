@@ -321,6 +321,8 @@ vshell_color_init(void)
 
     start_color();
 
+    // if(COLOR_PAIRS > 0x7FFF) COLOR_PAIRS = 0x7FFF;
+
     /*
         calculate the size of the matrix.  this is necessary because
         some terminals support 256 colors and we don't want to deal

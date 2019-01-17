@@ -83,5 +83,23 @@ short
 color_cache_split_pair(color_cache_t *color_cache,
     unsigned short pair_num, short *fg, short *bg);
 
+
+#define DEBUG_COLOR_PAIRS(cache, max)                               \
+            {                                                       \
+                color_pair_t    *_pair;                             \
+                int             _limit = max;                       \
+                                                                    \
+                CDL_FOREACH((cache)->pair_head, _pair)              \
+                {                                                   \
+                    if(_limit == 0) break;                          \
+                    printf("Pair Num:   %d\n\r", _pair->num);       \
+                    printf("Fg:         %d\n\r", _pair->fg);        \
+                    printf("Bg:         %d\n\r", _pair->bg);        \
+                    _limit--;                                       \
+                }                                                   \
+            }
+
+
+
 #endif
 
