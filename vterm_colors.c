@@ -57,7 +57,7 @@ color_cache_init(void)
 
 // use the pair at the end of the list as it's the lowest risk
 long
-color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg)
+color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
 {
     color_pair_t            *pair;
     unsigned short          color_sum = 0;

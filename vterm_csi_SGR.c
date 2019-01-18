@@ -44,7 +44,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
-    long            colors;
+    int             colors;
     static int      depth = 0;
     int             idx;
     short           fg, bg;
@@ -180,7 +180,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
                 if(colors == -1)
                 {
-                    colors = color_cache_add_new_pair(vterm->color_cache,
+                    colors = color_cache_add_pair(vterm->color_cache,
                         v_desc->fg, v_desc->bg);
                 }
 
@@ -203,7 +203,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
                     if(colors == -1)
                     {
-                        colors = color_cache_add_new_pair(vterm->color_cache,
+                        colors = color_cache_add_pair(vterm->color_cache,
                             v_desc->fg, v_desc->bg);
                     }
 
@@ -266,7 +266,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 // no color pair found so we'll try and add it
                 if(colors == -1)
                 {
-                    colors = color_cache_add_new_pair(vterm->color_cache,
+                    colors = color_cache_add_pair(vterm->color_cache,
                         v_desc->fg, v_desc->bg);
                 }
 
@@ -289,7 +289,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
                     if(colors == -1)
                     {
-                        colors = color_cache_add_new_pair(vterm->color_cache,
+                        colors = color_cache_add_pair(vterm->color_cache,
                             v_desc->fg, v_desc->bg);
                     }
 

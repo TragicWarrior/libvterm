@@ -66,7 +66,7 @@ color_cache_t*
 color_cache_init(void);
 
 long
-color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg);
+color_cache_add_pair(color_cache_t *color_cache, short fg, short bg);
 
 void
 color_cache_destroy(color_cache_t *color_cache);
