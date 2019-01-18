@@ -55,6 +55,7 @@ color_cache_init(void)
         _color_cache_profile_pair(pair);
 
         CDL_APPEND(color_cache->head, pair);
+        color_cache->pair_count++;
     }
 
     return color_cache;
@@ -65,8 +66,6 @@ long
 color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
 {
     color_pair_t            *pair;
-    unsigned short          color_sum = 0;
-    rgb_values_t            rgb[2];
     short                   i;
     int                     retval;
 
@@ -458,13 +457,13 @@ color_cache_split_pair(color_cache_t *color_cache,
 void
 _color_cache_profile_pair(color_pair_t *pair)
 {
-    int             retval;
+    // int             retval;
     short           r, g, b;
 
     if(pair == NULL) return;
 
     // explode pair
-    retval = pair_content(pair->num, &pair->fg, &pair->bg);
+    pair_content(pair->num, &pair->fg, &pair->bg);
 
     // extract foreground RGB
     color_content(pair->fg, &r, &g, &b);

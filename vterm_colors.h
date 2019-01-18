@@ -51,7 +51,7 @@ typedef struct _color_pair_s    color_pair_t;
 
 struct _color_cache_s
 {
-    long            pair_count;
+    int             pair_count;
     long            reserve_pair;
 
     int             term_colors;

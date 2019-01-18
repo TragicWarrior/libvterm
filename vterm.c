@@ -206,7 +206,7 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
-    DEBUG_COLOR_PAIRS(vterm->color_cache, 20);
+    // DEBUG_COLOR_PAIRS(vterm->color_cache, 20);
 
 /*
     {
