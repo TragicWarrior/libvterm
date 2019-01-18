@@ -54,13 +54,16 @@ struct _color_cache_s
     long            pair_count;
     long            reserve_pair;
 
-    color_pair_t    *pair_head;
+    int             term_colors;
+    int             term_pairs;
+
+    color_pair_t    *head;
 };
 
 typedef struct _color_cache_s   color_cache_t;
 
 color_cache_t*
-color_cache_init(int pairs);
+color_cache_init(void);
 
 long
 color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg);

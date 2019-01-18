@@ -26,44 +26,30 @@ void
 _color_cache_profile_pair(color_pair_t *pair);
 
 color_cache_t*
-color_cache_init(int pairs)
+color_cache_init(void)
 {
     color_cache_t       *color_cache;
     color_pair_t        *pair;
-    unsigned short      color_sum = 0;
-    long                i;
-
-    /*
-        Temporary:  Fedora 29 break and others break the legal value
-        for short in xterm-256 color terminfo.  It can be handled with
-        certain APIs that allow for an signed int value but, AFAIK, they're
-        ncurses exentsions.
-    */
-    if(pairs > 0x7FFF) pairs = 0x7FFF;
+    int                 i;
 
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
     color_cache->reserve_pair = -1;
 
-    for(i = 0; i < pairs; i++)
+    color_cache->term_colors = tigetnum("colors");
+    color_cache->term_pairs = tigetnum("pairs");
+
+    // clamp max pairs at 0x7FFF
+    if(color_cache->term_pairs > 0x7FFF) color_cache->term_pairs = 0x7FFF;
+
+    // profile all colors
+    for(i = 0; i < color_cache->term_pairs; i++)
     {
         pair = (color_pair_t *)calloc(1, sizeof(color_pair_t));
         pair->num = i;
 
         _color_cache_profile_pair(pair);
 
-        // the sum total of all the RGB values will be zero for black on black
-        color_sum = PAIR_FG_R(pair) + PAIR_FG_G(pair) + PAIR_FG_B(pair);
-        color_sum += PAIR_BG_R(pair) + PAIR_BG_G(pair) + PAIR_BG_B(pair);
-
-        if(color_sum > 0 || color_cache->reserve_pair == -1)
-        {
-            CDL_APPEND(color_cache->pair_head, pair);
-        }
-
-        if(color_cache->reserve_pair == -1)
-        {
-            if(color_sum == 0) color_cache->reserve_pair = i;
-        }
+        CDL_APPEND(color_cache->head, pair);
     }
 
     return color_cache;
@@ -73,16 +59,13 @@ color_cache_init(int pairs)
 long
 color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg)
 {
-    int                     i = 0x7FFF - 1;     /*
-                                                    see note above.  would
-                                                    normally be set to
-                                                    COLOR_PAIRS -1.
-                                                */
     color_pair_t            *pair;
     unsigned short          color_sum = 0;
     rgb_values_t            rgb[2];
+    int                     i;
 
     if(color_cache == NULL) return -1;
+    i = color_cache->term_pairs - 1;
 
     pair = (color_pair_t *)calloc(1, sizeof(color_pair_t));
 
@@ -129,7 +112,7 @@ color_cache_add_new_pair(color_cache_t *color_cache, short fg, short bg)
     init_pair(pair->num, fg, bg);
     _color_cache_profile_pair(pair);
 
-    CDL_APPEND(color_cache->pair_head, pair);
+    CDL_APPEND(color_cache->head, pair);
 
     return i;
 }
@@ -144,9 +127,9 @@ color_cache_destroy(color_cache_t *color_cache)
 
     if(color_cache == NULL) return;
 
-    CDL_FOREACH_SAFE(color_cache->pair_head, pair, tmp1, tmp2)
+    CDL_FOREACH_SAFE(color_cache->head, pair, tmp1, tmp2)
     {
-        CDL_DELETE(color_cache->pair_head, pair);
+        CDL_DELETE(color_cache->head, pair);
 
         free(pair);
     }
@@ -355,7 +338,7 @@ color_cache_find_exact_color(color_cache_t *color_cache,
 
     color_content(color, &r, &g, &b);
 
-    CDL_FOREACH_SAFE(color_cache->pair_head, pair, tmp1, tmp2)
+    CDL_FOREACH_SAFE(color_cache->head, pair, tmp1, tmp2)
     {
         /*
             we're searching for a color that contains a specific RGB
@@ -369,7 +352,7 @@ color_cache_find_exact_color(color_cache_t *color_cache,
             pair->rgb_values[0].g == g &&
             pair->rgb_values[0].b == b)
         {
-            CDL_DELETE(color_cache->pair_head, pair);
+            CDL_DELETE(color_cache->head, pair);
             found = TRUE;
             break;
         }
@@ -379,7 +362,7 @@ color_cache_find_exact_color(color_cache_t *color_cache,
             pair->rgb_values[1].g == g &&
             pair->rgb_values[1].b == b)
         {
-            CDL_DELETE(color_cache->pair_head, pair);
+            CDL_DELETE(color_cache->head, pair);
             found = TRUE;
             break;
         }
@@ -391,7 +374,7 @@ color_cache_find_exact_color(color_cache_t *color_cache,
         push the pair to the front of the list to make subseqent look-ups
         faster.
     */
-    CDL_PREPEND(color_cache->pair_head, pair);
+    CDL_PREPEND(color_cache->head, pair);
 
     return pair->num;
 }
@@ -407,12 +390,12 @@ color_cache_find_pair(color_cache_t *color_cache, short fg, short bg)
     if(color_cache == NULL) return -1;
 
     // iterate through the cache looking for a match
-    CDL_FOREACH_SAFE(color_cache->pair_head, pair, tmp1, tmp2)
+    CDL_FOREACH_SAFE(color_cache->head, pair, tmp1, tmp2)
     {
         if(pair->fg == fg && pair->bg == bg)
         {
             // unlink the node so we can prepend it
-            CDL_DELETE(color_cache->pair_head, pair);
+            CDL_DELETE(color_cache->head, pair);
             found = TRUE;
             break;
         }
@@ -425,7 +408,7 @@ color_cache_find_pair(color_cache_t *color_cache, short fg, short bg)
         push the pair to the front of the list to make subseqent look-ups
         faster.
     */
-    CDL_PREPEND(color_cache->pair_head, pair);
+    CDL_PREPEND(color_cache->head, pair);
 
     return pair->num;
 }
@@ -441,11 +424,11 @@ color_cache_split_pair(color_cache_t *color_cache,
 
     if(color_cache == NULL) return -1;
 
-    CDL_FOREACH_SAFE(color_cache->pair_head, pair, tmp1, tmp2)
+    CDL_FOREACH_SAFE(color_cache->head, pair, tmp1, tmp2)
     {
         if(pair->num == pair_num)
         {
-            CDL_DELETE(color_cache->pair_head, pair);
+            CDL_DELETE(color_cache->head, pair);
             found = TRUE;
             break;
         }
@@ -459,7 +442,7 @@ color_cache_split_pair(color_cache_t *color_cache,
         return -1;
     }
 
-    CDL_PREPEND(color_cache->pair_head, pair);
+    CDL_PREPEND(color_cache->head, pair);
 
     *fg = pair->fg;
     *bg = pair->bg;

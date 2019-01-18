@@ -45,10 +45,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     int             termcap_colors = 0;
 
     // rxvt emulation is the default if none specified
-    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM;
-
-    // how many colors does the underlying terminal actually support
-    termcap_colors = tigetnum("colors");
+    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT;
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
@@ -67,7 +64,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
         color_cache_init() will query all the existing pairs mapping them
         and all color primitives.
     */
-    vterm->color_cache = color_cache_init(COLOR_PAIRS);
+    vterm->color_cache = color_cache_init();
 
 
     // default active colors
