@@ -158,7 +158,7 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
 {
     char    **params = NULL;
     char    *pos;
-    short   color;
+    short   new_color;
     short   r, g, b;
 
     (void)vterm;    // make compiler happy
@@ -191,7 +191,7 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
         return;
     }
 
-    color = (short)atoi(params[0]);
+    new_color = (short)atoi(params[0]);
 
     /*
         XParseColor RGB values are specifed in base-16 and range from
@@ -208,7 +208,12 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
 
     strfreev(params);
 
-    init_color(color, r, g, b);
+    init_color(new_color, r, g, b);
+
+    // endwin();
+    // printf("new color: %d, r: %d, g: %d, b: %d\n\r",
+    //    new_color, r, g, b);
+    // exit(0);
 
     return;
 }

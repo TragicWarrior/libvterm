@@ -205,6 +205,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                     {
                         colors = color_cache_add_pair(vterm->color_cache,
                             v_desc->fg, v_desc->bg);
+
                     }
 
                     _vterm_set_color_pair_safe(vterm, colors);
@@ -357,7 +358,7 @@ _vterm_set_color_pair_safe(vterm_t *vterm, short colors)
     if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
 
     v_desc->curattr = 0;
-    v_desc->curattr |= COLOR_PAIR(colors);
+    // v_desc->curattr |= COLOR_PAIR(colors);
     v_desc->curattr |= attr_saved;
 
     v_desc->colors = colors;

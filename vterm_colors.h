@@ -34,7 +34,7 @@ struct _color_pair_s
 {
     uint8_t                 ref;
 
-    unsigned short          num;
+    int                     num;
     short                   fg;
     short                   bg;
 
@@ -87,22 +87,29 @@ color_cache_split_pair(color_cache_t *color_cache,
     unsigned short pair_num, short *fg, short *bg);
 
 
-#define DEBUG_COLOR_PAIRS(cache, max)                               \
-            {                                                       \
-                color_pair_t    *_pair;                             \
-                int             _limit = max;                       \
-                                                                    \
-                CDL_FOREACH((cache)->pair_head, _pair)              \
-                {                                                   \
-                    if(_limit == 0) break;                          \
-                    printf("Pair Num:   %d\n\r", _pair->num);       \
-                    printf("Fg:         %d\n\r", _pair->fg);        \
-                    printf("Bg:         %d\n\r", _pair->bg);        \
-                    _limit--;                                       \
-                }                                                   \
+#define DEBUG_COLOR_PAIRS(cache, max)                                       \
+            {                                                               \
+                color_pair_t    *_pair;                                     \
+                int             _limit = max;                               \
+                                                                            \
+                CDL_FOREACH((cache)->head, _pair)                      \
+                {                                                           \
+                    if(_limit == 0) break;                                  \
+                    printf("Pair Num:   %d\n\r", _pair->num);               \
+                    printf("  Fg:         %d\n\r", _pair->fg);              \
+                    printf("  F RGB:      r: %d, g: %d, b: %d\n\r",         \
+                        _pair->rgb_values[0].r,                             \
+                        _pair->rgb_values[0].g,                             \
+                        _pair->rgb_values[0].b);                            \
+                    printf("  Bg:         %d\n\r", _pair->bg);              \
+                    printf("  B RGB:      r: %d, g: %d, b: %d\n\r",         \
+                        _pair->rgb_values[1].r,                             \
+                        _pair->rgb_values[1].g,                             \
+                        _pair->rgb_values[1].b);                            \
+                    _limit--;                                               \
+                }                                                           \
+                printf("cached pairs: %d\n\r", (cache)->pair_count);        \
             }
-
-
 
 #endif
 

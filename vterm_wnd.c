@@ -29,7 +29,7 @@ vterm_wnd_update(vterm_t *vterm)
     int             r, c;
     int             idx;
     attr_t          attrs;
-    unsigned short  colors;
+    short           colors;
     int             ext_color;
     wchar_t         wch[CCHARW_MAX];
 
@@ -53,47 +53,24 @@ vterm_wnd_update(vterm_t *vterm)
             VCELL_GET_ATTR((*vcell), &attrs);
             VCELL_GET_COLORS((*vcell), &colors);
 
-        /*
-        {
-            short   extracted_colors;
-
-            // this is a temp change for migrating to wattr_set()
-            extracted_colors = PAIR_NUMBER(attrs);
-
-            if(colors != extracted_colors)
-            {
-                endwin();
-                printf("colors %d, extracted %d\n\r",
-                    colors, extracted_colors);
-                exit(0);
-            }
-        }
-        */
+            // wattr_set(vterm->window, attrs, colors, NULL);
+            wattr_set(vterm->window, attrs, colors, NULL);
+            mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
         /*
             {
-                short   fg;
-                short   bg;
-                short   f_red;
-                short   f_green;
-                short   f_blue;
-
-                if(colors > 250)
+                if(colors > 200)
                 {
-                    pair_content(colors, &fg, &bg);
-                    color_content(fg, &f_red, &f_green, &f_blue);
+                    short   fg_ex;
+                    short   bg_ex;
 
+                    pair_content(colors, &fg_ex, &bg_ex);
                     endwin();
-                    printf("pair:   %d, f: %d, b: %d\n\r", colors, fg, bg);
-                    printf("fg:     r: %d, g: %d, b: %d\n\r", f_red, f_green, f_blue);
+                    printf("pair: %d, f: %d, g: %d\n\r", colors, fg_ex, bg_ex);
                     exit(0);
                 }
             }
         */
-
-            // wattr_set(vterm->window, attrs, colors, NULL);
-            wattr_set(vterm->window, attrs, colors, NULL);
-            mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
             vcell++;
         }

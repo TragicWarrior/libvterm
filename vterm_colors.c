@@ -38,6 +38,11 @@ color_cache_init(void)
     color_cache->term_colors = tigetnum("colors");
     color_cache->term_pairs = tigetnum("pairs");
 
+    // endwin();
+    // printf("%d %d\n\r",
+    //     color_cache->term_colors, color_cache->term_pairs);
+    // exit(0);
+
     // clamp max pairs at 0x7FFF
     if(color_cache->term_pairs > 0x7FFF) color_cache->term_pairs = 0x7FFF;
 
@@ -62,7 +67,8 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
     color_pair_t            *pair;
     unsigned short          color_sum = 0;
     rgb_values_t            rgb[2];
-    int                     i;
+    short                   i;
+    int                     retval;
 
     if(color_cache == NULL) return -1;
     i = color_cache->term_pairs - 1;
@@ -75,31 +81,43 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
         memset(pair, 0, sizeof(color_pair_t));
 
         pair->num = i;
-        pair_content(i, &pair->fg, &pair->bg);
+        retval = pair_content(i, (short *)&pair->fg, (short *)&pair->bg);
+
+        // if we can't explode the pair, keep searching
+        if(retval == -1)
+        {
+            i--;
+            continue;
+        }
 
         _color_cache_profile_pair(pair);
 
-        // the sum total of all the RGB values will be zero for black on black
-        color_sum = PAIR_FG_R(pair) + PAIR_FG_G(pair) + PAIR_FG_B(pair);
-        color_sum += PAIR_BG_R(pair) + PAIR_BG_G(pair) + PAIR_BG_B(pair);
-
-        // we found an unused pair
-        if(color_sum == 0) break;
+        // look for a black on black pair
+        if( pair->rgb_values[0].r == 0 &&
+            pair->rgb_values[0].g == 0 &&
+            pair->rgb_values[0].b == 0 &&
+            pair->rgb_values[1].r == 0 &&
+            pair->rgb_values[1].g == 0 &&
+            pair->rgb_values[1].b == 0) break;
 
         i--;
     }
-
-/*
-    endwin();
-    printf("requested %d, %d\n\r", fg, bg);
-    printf("candidate %d", i);
-    exit(0);
-*/
 
     init_pair(pair->num, fg, bg);
     _color_cache_profile_pair(pair);
 
     CDL_PREPEND(color_cache->head, pair);
+
+/*
+    endwin();
+    printf("requested %d, %d\n\r", fg, bg);
+    printf("candidate %d / %d\n\r", i, pair->num);
+    printf("fg r: %d, g: %d, b: %d\n\r",
+        pair->rgb_values[0].r,
+        pair->rgb_values[0].g,
+        pair->rgb_values[0].b);
+    exit(0);
+*/
 
     return i;
 }
@@ -438,21 +456,31 @@ color_cache_split_pair(color_cache_t *color_cache,
 }
 
 void
-_color_cache_profile_pair(color_pair_t *cached_pair)
+_color_cache_profile_pair(color_pair_t *pair)
 {
+    int             retval;
     short           r, g, b;
 
-    if(cached_pair == NULL) return;
+    if(pair == NULL) return;
 
     // explode pair
-    pair_content(cached_pair->num, &cached_pair->fg, &cached_pair->bg);
+    retval = pair_content(pair->num, &pair->fg, &pair->bg);
 
     // extract foreground RGB
-    color_content(cached_pair->fg, &r, &g, &b);
+    color_content(pair->fg, &r, &g, &b);
 
-    cached_pair->rgb_values[0].r = r;
-    cached_pair->rgb_values[0].g = g;
-    cached_pair->rgb_values[0].b = b;
+    pair->rgb_values[0].r = r;
+    pair->rgb_values[0].g = g;
+    pair->rgb_values[0].b = b;
+
+    // extract background RGB
+    color_content(pair->bg, &r, &g, &b);
+
+    pair->rgb_values[1].r = r;
+    pair->rgb_values[1].g = g;
+    pair->rgb_values[1].b = b;
+
+    return;
 
     /*
         store the HSL foreground values
@@ -461,34 +489,28 @@ _color_cache_profile_pair(color_pair_t *cached_pair)
         use 0 - 256 so we'll normalize that by 0.25.
     */
     rgb2hsl((float)r * 0.25, (float)g * 0.25, (float)b *0.25,
-        &cached_pair->hsl_values[0].h,
-        &cached_pair->hsl_values[0].s,
-        &cached_pair->hsl_values[0].l);
+        &pair->hsl_values[0].h,
+        &pair->hsl_values[0].s,
+        &pair->hsl_values[0].l);
 
     // store the CIE2000 lab foreground values
     rgb2lab(r / 4, g / 4, b / 4,
-        &cached_pair->cie_values[0].l,
-        &cached_pair->cie_values[0].a,
-        &cached_pair->cie_values[0].b);
+        &pair->cie_values[0].l,
+        &pair->cie_values[0].a,
+        &pair->cie_values[0].b);
 
-    // extract background RGB
-    color_content(cached_pair->bg, &r, &g, &b);
-
-    cached_pair->rgb_values[1].r = r;
-    cached_pair->rgb_values[1].g = g;
-    cached_pair->rgb_values[1].b = b;
 
     // store the HLS background values
     rgb2hsl((float)r * 0.25, (float)g * 0.25, (float)b * 0.25,
-        &cached_pair->hsl_values[1].h,
-        &cached_pair->hsl_values[1].s,
-        &cached_pair->hsl_values[1].l);
+        &pair->hsl_values[1].h,
+        &pair->hsl_values[1].s,
+        &pair->hsl_values[1].l);
 
     // store the CIE2000 lab background values
     rgb2lab(r / 4, g / 4, b / 4,
-        &cached_pair->cie_values[1].l,
-        &cached_pair->cie_values[1].a,
-        &cached_pair->cie_values[1].b);
+        &pair->cie_values[1].l,
+        &pair->cie_values[1].a,
+        &pair->cie_values[1].b);
 
     return;
 }
