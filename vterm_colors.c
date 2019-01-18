@@ -69,19 +69,6 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
 
     pair = (color_pair_t *)calloc(1, sizeof(color_pair_t));
 
-    // we need to find out what colors are in the supplied fg & bg
-    color_content(fg, &rgb[0].r, &rgb[0].g, &rgb[0].b);
-    color_content(bg, &rgb[1].r, &rgb[1].g, &rgb[1].b);
-
-    color_sum = rgb[0].r + rgb[0].g + rgb[0].b;
-    color_sum += rgb[1].r + rgb[1].g + rgb[1].b;
-
-    // return the pair number for black on black if we already know it
-    if(color_sum == 0 && color_cache->reserve_pair != -1)
-    {
-        return color_cache->reserve_pair;
-    }
-
     // start backward looking for an unenumerated pair.
     while(i > 0)
     {
@@ -112,7 +99,7 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
     init_pair(pair->num, fg, bg);
     _color_cache_profile_pair(pair);
 
-    CDL_APPEND(color_cache->head, pair);
+    CDL_PREPEND(color_cache->head, pair);
 
     return i;
 }
