@@ -30,7 +30,7 @@ vterm_wnd_update(vterm_t *vterm)
     int             idx;
     attr_t          attrs;
     short           colors;
-    int             ext_color;
+    // int             ext_color;
     wchar_t         wch[CCHARW_MAX];
 
     if(vterm == NULL) return;
@@ -48,29 +48,38 @@ vterm_wnd_update(vterm_t *vterm)
         for(c = 0; c < v_desc->cols; c++)
         {
             // get character from wide storage
-            getcchar(&vcell->uch, wch, &attrs, (short *)&colors, &ext_color);
+            getcchar(&vcell->uch, wch, &attrs, (short *)&colors, NULL);
 
             VCELL_GET_ATTR((*vcell), &attrs);
             VCELL_GET_COLORS((*vcell), &colors);
 
-            // wattr_set(vterm->window, attrs, colors, NULL);
             wattr_set(vterm->window, attrs, colors, NULL);
             mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
-        /*
+            /*
             {
                 if(colors > 200)
                 {
-                    short   fg_ex;
-                    short   bg_ex;
+                    short           fg_ex;
+                    short           bg_ex;
+                    short           r;
+                    short           g;
+                    short           b;
 
-                    pair_content(colors, &fg_ex, &bg_ex);
                     endwin();
+                    pair_content(colors, &fg_ex, &bg_ex);
                     printf("pair: %d, f: %d, g: %d\n\r", colors, fg_ex, bg_ex);
+
+                    color_content(fg_ex, &r, &g, &b);
+                    printf("f rgb:  r: %d, g: %d, b: %d\n\r", r, g, b);
+
+                    color_content(bg_ex, &r, &g, &b);
+                    printf("b rgb:  r: %d, g: %d, b: %d\n\r", r, g, b);
+
                     exit(0);
                 }
             }
-        */
+            */
 
             vcell++;
         }
