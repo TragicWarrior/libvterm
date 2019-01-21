@@ -89,15 +89,11 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
             continue;
         }
 
-        _color_cache_profile_pair(pair);
-
-        // look for a black on black pair
-        if( pair->rgb_values[0].r == 0 &&
-            pair->rgb_values[0].g == 0 &&
-            pair->rgb_values[0].b == 0 &&
-            pair->rgb_values[1].r == 0 &&
-            pair->rgb_values[1].g == 0 &&
-            pair->rgb_values[1].b == 0) break;
+        /*
+            FG and BG of zero would be a truly odd pair and almost certianly
+            indicates an unused pair.
+        */
+        if(pair->fg == 0 && pair->bg == 0) break;
 
         i--;
     }
