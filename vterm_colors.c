@@ -33,7 +33,7 @@ color_cache_init(void)
     int                 i;
 
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
-    color_cache->reserve_pair = -1;
+    // color_cache->reserve_pair = -1;
 
     color_cache->term_colors = tigetnum("colors");
     color_cache->term_pairs = tigetnum("pairs");
@@ -45,6 +45,7 @@ color_cache_init(void)
 
     // clamp max pairs at 0x7FFF
     if(color_cache->term_pairs > 0x7FFF) color_cache->term_pairs = 0x7FFF;
+    // if(color_cache->term_pairs > 0x200) color_cache->term_pairs = 0x200;
 
     // profile all colors
     for(i = 0; i < color_cache->term_pairs; i++)
@@ -86,6 +87,7 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
         if(retval == -1)
         {
             i--;
+            // i++;
             continue;
         }
 
@@ -96,6 +98,7 @@ color_cache_add_pair(color_cache_t *color_cache, short fg, short bg)
         if(pair->fg == 0 && pair->bg == 0) break;
 
         i--;
+        // i++;
     }
 
     init_pair(pair->num, fg, bg);
