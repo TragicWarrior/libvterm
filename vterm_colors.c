@@ -38,14 +38,12 @@ color_cache_init(void)
     color_cache->term_colors = tigetnum("colors");
     color_cache->term_pairs = tigetnum("pairs");
 
-    // endwin();
-    // printf("%d %d\n\r",
-    //     color_cache->term_colors, color_cache->term_pairs);
-    // exit(0);
-
     // clamp max pairs at 0x7FFF
+#ifdef NCURSES_EXT_COLORS
     if(color_cache->term_pairs > 0x7FFF) color_cache->term_pairs = 0x7FFF;
-    // if(color_cache->term_pairs > 0x200) color_cache->term_pairs = 0x200;
+#else
+    if(color_cache->term_pairs > 0xFF) color_cache->term_pairs = 0xFF;
+#endif
 
     // profile all colors
     for(i = 0; i < color_cache->term_pairs; i++)
