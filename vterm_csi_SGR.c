@@ -116,7 +116,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 27:
             {
                 v_desc->curattr &= ~(A_REVERSE);
-                continue;
+                break;
             }
 
             // invisible on
@@ -209,11 +209,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                     }
 
                     _vterm_set_color_pair_safe(vterm, colors);
-
-                    i += 2;
                 }
 
-            break;
+                i += 2;
+                break;
             }
 
             // reset fg color
@@ -296,10 +295,11 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
                     _vterm_set_color_pair_safe(vterm, colors);
 
-                    i += 2;
                 }
 
-            break;
+                i += 2;
+
+                break;
             }
 
             // reset bg color
