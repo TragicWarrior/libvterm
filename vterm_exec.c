@@ -6,7 +6,7 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_exec.h"
-#include "strings.h"
+#include "stringv.h"
 
 void
 vterm_set_exec(vterm_t *vterm, char *path, char **exec_argv)

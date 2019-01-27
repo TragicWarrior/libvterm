@@ -9,7 +9,7 @@
 #include <fcntl.h>
 
 #include "../vterm.h"
-#include "../strings.h"
+#include "../stringv.h"
 
 /*
     packing the WINDOW * inside another structure can be useful when
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     vterm_t     *vterm;
     int 		i, ch;
     ssize_t     bytes;
-    int         flags = 0;
+    uint32_t    flags = 0;
     testwin_t   *twin;
     mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
     // mmask_t     mouse_mask = BUTTON1_CLICKED;
@@ -89,12 +89,6 @@ int main(int argc, char **argv)
     getmaxyx(stdscr, screen_h, screen_w);
     mousemask(mouse_mask, NULL);
 
-    // squelch STDERR
-    // fd = open("/dev/null", O_WRONLY);
-    // if(fd == -1) exit(0);
-    // close(STDERR_FILENO);
-    // dup2(fd, STDERR_FILENO);
-
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
     if (argc > 1)
@@ -112,6 +106,12 @@ int main(int argc, char **argv)
             if (strncmp(argv[i], "--xterm", strlen("--xterm")) == 0)
             {
                 flags |= VTERM_FLAG_XTERM;
+                continue;
+            }
+
+            if (strncmp(argv[i], "--x256", strlen("--x256")) == 0)
+            {
+                flags |= VTERM_FLAG_XTERM_256;
                 continue;
             }
 
@@ -150,20 +150,6 @@ int main(int argc, char **argv)
     }
 
     vshell_color_init();
-
-/*
-    {
-        short   red, green, blue;
-
-        color_content(COLOR_BLUE, &red, &green, &blue);
-
-        endwin();
-
-        printf("color:  r:%d, g:%d, b:%d\n\r", red, green, blue);
-
-        exit(0);
-    }
-*/
 
     // set default frame color
     frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
@@ -226,18 +212,6 @@ int main(int argc, char **argv)
     endwin();
 
     vterm_destroy(vterm);
-
-/*
-    {
-        FILE    *f;
-        char    *termcap;
-
-        termcap = tigetstr("rmul");
-        f = fopen("value.dump", "a");
-        fprintf(f, "termcap: %s\n\r", termcap);
-        fclose(f);
-    }
-*/
 
     return 0;
 }
@@ -347,6 +321,8 @@ vshell_color_init(void)
 
     start_color();
 
+    // if(COLOR_PAIRS > 0x7FFF) COLOR_PAIRS = 0x7FFF;
+
     /*
         calculate the size of the matrix.  this is necessary because
         some terminals support 256 colors and we don't want to deal
@@ -397,7 +373,6 @@ vshell_color_init(void)
 short
 vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 {
-    // extern color_mtx_t  *color_mtx;
     extern short        color_table[];
     extern int          color_count;
     int                 i = 0;

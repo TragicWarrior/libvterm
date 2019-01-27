@@ -204,7 +204,8 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
         v_desc = &vterm->vterm_desc[idx];
 
         // copy some defaults from standard buffer
-        v_desc->colors = vterm->vterm_desc[VTERM_BUFFER_STD].colors;
+        v_desc->default_colors =
+            vterm->vterm_desc[VTERM_BUFFER_STD].default_colors;
 
         // erase the newly created buffer
         vterm_erase(vterm, idx);

@@ -34,7 +34,7 @@
 void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors);
 
-short
+long
 interpret_custom_color(vterm_t *vterm, int param[], int pcount);
 
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
@@ -44,7 +44,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
-    short           colors;
+    int             colors;
     static int      depth = 0;
     int             idx;
     short           fg, bg;
@@ -65,208 +65,274 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
-        if(param[i] == 0)
+        // jump tables are always faster than conditionals
+        switch(param[i])
         {
-            v_desc->curattr = A_NORMAL;     // reset attributes
-
-            // attribute reset is an implicit color reset too so we'll
-            // do a nested call to handle it.
-            nested_params[0] = 39;
-            nested_params[1] = 49;
-
-            depth++;
-
-            interpret_csi_SGR(vterm, nested_params, 2);
-            depth--;
-
-            continue;
-        }
-
-        if(param[i] == 1 || param[i] == 4)       // bold on
-        {
-            v_desc->curattr |= A_BOLD;
-            continue;
-        }
-
-        if(param[i] == 2)
-        {
-            v_desc->curattr |= A_DIM;
-            continue;
-        }
-
-        if(param[i] == 5)                                   // blink on
-        {
-            v_desc->curattr |= A_BLINK;
-            continue;
-        }
-
-        if(param[i] == 7)                                   // reverse on
-        {
-            v_desc->curattr |= A_REVERSE;
-            continue;
-        }
-
-        if(param[i] == 27)
-        {
-            v_desc->curattr &= ~(A_REVERSE);
-            continue;
-        }
-
-        if(param[i] == 8)                                 // invisible on
-        {
-            v_desc->curattr |= A_INVIS;
-            continue;
-        }
-
-        if(param[i] == 10)                                // rmacs
-        {
-            vterm->internal_state &= ~STATE_ALT_CHARSET;
-            continue;
-        }
-
-		if(param[i] == 11)                                // smacs
-        {
-            vterm->internal_state |= STATE_ALT_CHARSET;
-            continue;
-        }
-
-        if(param[i] == 22 || param[i] == 24)                // bold off
-        {
-            v_desc->curattr &= ~A_BOLD;
-            continue;
-        }
-
-        if(param[i] == 25)                                // blink off
-        {
-            v_desc->curattr &= ~A_BLINK;
-            continue;
-        }
-
-        if(param[i] == 28)                                // invisible off
-        {
-            v_desc->curattr &= ~A_INVIS;
-            continue;
-        }
-
-        if(param[i] >= 30 && param[i] <= 37)            // set fg color
-        {
-            v_desc->fg = param[i] - 30;
-
-            // find the required pair in the cache
-            colors = color_cache_find_pair(vterm->color_cache,
-                v_desc->fg, v_desc->bg);
-
-            if(colors == -1)
-                colors = 0;
-
-            _vterm_set_color_pair_safe(vterm, colors);
-
-            continue;
-        }
-
-        // set custom foreground color
-        if(param[i] == 38)
-        {
-            fg = interpret_custom_color(vterm, param, pcount);
-            if(fg != -1)
+            case 0:
             {
-                if(param[i + 1] == '5') i += 2;
-                if(param[i + 1] == '2') i += 4;
+                v_desc->curattr = A_NORMAL;     // reset attributes
+
+                // attribute reset is an implicit color reset too so we'll
+                // do a nested call to handle it.
+                nested_params[0] = 39;
+                nested_params[1] = 49;
+
+                depth++;
+
+                interpret_csi_SGR(vterm, nested_params, 2);
+                depth--;
+
+                break;
             }
 
-            continue;
-        }
-
-        if(param[i] >= 40 && param[i] <= 47)            // set bg color
-        {
-            v_desc->bg = param[i]-40;
-
-            // find the required pair in the cache
-            colors = color_cache_find_pair(vterm->color_cache,
-                v_desc->fg, v_desc->bg);
-
-            if(colors == -1)
-                colors = 0;
-
-            _vterm_set_color_pair_safe(vterm, colors);
-
-            continue;
-        }
-
-        if(param[i] == 39)                                // reset fg color
-        {
-            retval = color_cache_split_pair(vterm->color_cache,
-                v_desc->colors, &fg, &bg);
-
-            if(retval != -1)
+            case 1:
+            case 4:                              // bold on
             {
-                v_desc->fg = fg;
+                v_desc->curattr |= A_BOLD;
+                break;
+            }
 
+            case 2:
+            {
+                v_desc->curattr |= A_DIM;
+                break;
+            }
+
+            // blink on
+            case 5:
+            {
+                v_desc->curattr |= A_BLINK;
+                break;
+            }
+
+            // reverse on
+            case 7:
+            {
+                v_desc->curattr |= A_REVERSE;
+                break;
+            }
+
+            // reverse off
+            case 27:
+            {
+                v_desc->curattr &= ~(A_REVERSE);
+                break;
+            }
+
+            // invisible on
+            case 8:
+            {
+                v_desc->curattr |= A_INVIS;
+                break;
+            }
+
+            // rmacs
+            case 10:
+            {
+                vterm->internal_state &= ~STATE_ALT_CHARSET;
+                break;
+            }
+
+            // smacs
+            case 11:
+            {
+                vterm->internal_state |= STATE_ALT_CHARSET;
+                break;
+            }
+
+            // bold on
+            case 22:
+            case 24:
+            {
+                v_desc->curattr &= ~A_BOLD;
+                break;
+            }
+
+            // blink off
+            case 25:
+            {
+                v_desc->curattr &= ~A_BLINK;
+                break;
+            }
+
+            // invisible off
+            case 28:
+            {
+                v_desc->curattr &= ~A_INVIS;
+                break;
+            }
+
+            // set fg color (case # - 30 = fg color)
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+            {
+                v_desc->fg = param[i] - 30;
+
+                // find the required pair in the cache
                 colors = color_cache_find_pair(vterm->color_cache,
                     v_desc->fg, v_desc->bg);
+
+                if(colors == -1)
+                {
+                    colors = color_cache_add_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors);
+
+                break;
             }
-            else
+
+            // set custom foreground color
+            case 38:
             {
-                colors = 0;
+                fg = interpret_custom_color(vterm, param, pcount);
+
+                if(fg != -1)
+                {
+                    v_desc->fg = fg;
+
+                    colors = color_cache_find_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+
+                    if(colors == -1)
+                    {
+                        colors = color_cache_add_pair(vterm->color_cache,
+                            v_desc->fg, v_desc->bg);
+
+                    }
+
+                    _vterm_set_color_pair_safe(vterm, colors);
+                }
+
+                i += 2;
+                break;
             }
+
+            // reset fg color
+            case 39:
+            {
+                retval = color_cache_split_pair(vterm->color_cache,
+                    v_desc->default_colors, &fg, &bg);
+
+                if(retval != -1)
+                {
+                    v_desc->fg = fg;
+
+                    colors = color_cache_find_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+                }
+                else
+                {
+                    colors = 0;
+                }
 
 #ifdef NOCURSES
-            // should not ever execute - bad combination of flags and
-            // #define's.
-            colors = 0;
+                // should not ever execute - bad combination of flags and
+                // #define's.
+                colors = 0;
 #endif
 
-            // one addtl safeguard
-            if(colors == -1) colors = 0;
+                // one addtl safeguard
+                if(colors == -1) colors = 0;
 
-            _vterm_set_color_pair_safe(vterm, colors);
+                _vterm_set_color_pair_safe(vterm, colors);
 
-            continue;
-        }
-
-        // set custom background color
-        if(param[i] == 48)
-        {
-            bg = interpret_custom_color(vterm, param, pcount);
-
-            if(bg != -1)
-            {
-                if(param[i + 1] == '5') i += 2;
-                if(param[i + 1] == '2') i += 4;
+            break;
             }
 
-            continue;
-        }
-
-        if(param[i] == 49)                                // reset bg color
-        {
-            retval = color_cache_split_pair(vterm->color_cache,
-                v_desc->colors, &fg, &bg);
-
-            if(retval != -1)
+            // set bg color (case # - 40 = fg color)
+            case 40:
+            case 41:
+            case 42:
+            case 43:
+            case 44:
+            case 45:
+            case 46:
+            case 47:
             {
-                v_desc->bg = bg;
+                v_desc->bg = param[i] - 40;
 
+                // find the required pair in the cache
                 colors = color_cache_find_pair(vterm->color_cache,
                     v_desc->fg, v_desc->bg);
+
+                // no color pair found so we'll try and add it
+                if(colors == -1)
+                {
+                    colors = color_cache_add_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors);
+
+                break;
             }
-            else
+
+            // set custom background color
+            case 48:
             {
-                colors = 0;
+                bg = interpret_custom_color(vterm, param, pcount);
+
+                if(bg != -1)
+                {
+                    v_desc->bg = bg;
+
+                    colors = color_cache_find_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+
+                    if(colors == -1)
+                    {
+                        colors = color_cache_add_pair(vterm->color_cache,
+                            v_desc->fg, v_desc->bg);
+                    }
+
+                    _vterm_set_color_pair_safe(vterm, colors);
+
+                }
+
+                i += 2;
+
+                break;
             }
+
+            // reset bg color
+            case 49:
+            {
+                retval = color_cache_split_pair(vterm->color_cache,
+                    v_desc->default_colors, &fg, &bg);
+
+                if(retval != -1)
+                {
+                    v_desc->bg = bg;
+
+                    colors = color_cache_find_pair(vterm->color_cache,
+                        v_desc->fg, v_desc->bg);
+                }
+                else
+                {
+                    colors = 0;
+                }
 
 #ifdef NOCURSES
-            // should not ever execute - bad combination of flags and
-            // #define's.
-            colors = 0;
+                // should not ever execute - bad combination of flags and
+                // #define's.
+                colors = 0;
 #endif
 
-            // one addtl safeguard
-            if(colors == -1) colors = 0;
+                // one addtl safeguard
+                if(colors == -1) colors = 0;
 
-            _vterm_set_color_pair_safe(vterm, colors);
+                _vterm_set_color_pair_safe(vterm, colors);
 
-            continue;
+                break;
+            }
         }
     }
 }
@@ -292,8 +358,10 @@ _vterm_set_color_pair_safe(vterm_t *vterm, short colors)
     if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
 
     v_desc->curattr = 0;
-    v_desc->curattr |= COLOR_PAIR(colors);
+    // v_desc->curattr |= COLOR_PAIR(colors);
     v_desc->curattr |= attr_saved;
+
+    v_desc->colors = colors;
 
     return;
 }
@@ -319,7 +387,7 @@ _vterm_set_color_pair_safe(vterm_t *vterm, short colors)
     b = blue value
     n = a defined color
 */
-inline short
+inline long
 interpret_custom_color(vterm_t *vterm, int param[], int pcount)
 {
     int     method = 0;
@@ -342,7 +410,7 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
         */
         if(pcount < 3) return -1;
 
-        return (short)param[2];
+        return (unsigned short)param[2];
     }
 
     // set to nearest rgb value
@@ -357,6 +425,8 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
         // endwin();
         // printf("r: %d, g: %d, b: %d\n\r", red, green, blue);
         // exit(0);
+
+        return -1;
     }
 
 /*
@@ -375,5 +445,5 @@ SGR_DEBUG:
     exit(0);
 */
 
-    return 0;
+    return -1;
 }

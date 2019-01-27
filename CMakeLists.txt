@@ -74,7 +74,7 @@ add_library(vterm-static STATIC
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
-    strings.c
+    stringv.c
     )
 
 add_library(vterm.o OBJECT
@@ -117,7 +117,7 @@ add_library(vterm.o OBJECT
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
-    strings.c
+    stringv.c
     )
 
 add_library(vterm-shared SHARED

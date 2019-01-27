@@ -4,6 +4,13 @@
 
 #include "vterm.h"
 
+enum
+{
+    PALETTE_DEFAULT =   0x00,
+    PALETTE_SAVED
+};
+
+
 struct _rgb_values_s
 {
     short   r;
@@ -34,7 +41,7 @@ struct _color_pair_s
 {
     uint8_t                 ref;
 
-    short                   num;
+    int                     num;
     short                   fg;
     short                   bg;
 
@@ -51,33 +58,74 @@ typedef struct _color_pair_s    color_pair_t;
 
 struct _color_cache_s
 {
-    short           pair_count;
+    int             pair_count;
+    long            reserve_pair;
 
-    color_pair_t    *pair_head;
+    int             term_colors;
+    int             term_pairs;
+
+    color_pair_t    *head[2];
 };
 
 typedef struct _color_cache_s   color_cache_t;
 
 color_cache_t*
-color_cache_init(int pairs);
+color_cache_init(void);
+
+int
+color_cache_add_pair(color_cache_t *color_cache, short fg, short bg);
 
 void
 color_cache_destroy(color_cache_t *color_cache);
 
-short
+void
+color_cache_save_palette(color_cache_t *color_cache);
+
+void
+color_cache_free_palette(color_cache_t *color_cache, int cache_id);
+
+void
+color_cache_load_palette(color_cache_t *color_cache);
+
+long
 color_cache_find_pair(color_cache_t *color_cache, short fg, short bg);
 
-short
-color_cache_find_exact_color(color_cache_t *color_cache, short color,
-    short r, short g, short b);
+long
+color_cache_find_exact_color(color_cache_t *color_cache,
+    unsigned short color, short r, short g, short b);
 
-short
+long
 color_cache_find_nearest_color(color_cache_t *color_cache,
     short r, short g, short b);
 
 short
-color_cache_split_pair(color_cache_t *color_cache, short pair_num,
-    short *fg, short *bg);
+color_cache_split_pair(color_cache_t *color_cache,
+    unsigned short pair_num, short *fg, short *bg);
+
+
+#define DEBUG_COLOR_PAIRS(cache, max)                                       \
+            {                                                               \
+                color_pair_t    *_pair;                                     \
+                int             _limit = max;                               \
+                                                                            \
+                CDL_FOREACH((cache)->head, _pair)                           \
+                {                                                           \
+                    if(_limit == 0) break;                                  \
+                    printf("Pair Num:   %d\n\r", _pair->num);               \
+                    printf("  Fg:         %d\n\r", _pair->fg);              \
+                    printf("  F RGB:      r: %d, g: %d, b: %d\n\r",         \
+                        _pair->rgb_values[0].r,                             \
+                        _pair->rgb_values[0].g,                             \
+                        _pair->rgb_values[0].b);                            \
+                    printf("  Bg:         %d\n\r", _pair->bg);              \
+                    printf("  B RGB:      r: %d, g: %d, b: %d\n\r",         \
+                        _pair->rgb_values[1].r,                             \
+                        _pair->rgb_values[1].g,                             \
+                        _pair->rgb_values[1].b);                            \
+                    _limit--;                                               \
+                }                                                           \
+                printf("cached pairs: %d\n\r", (cache)->pair_count);        \
+            }
 
 #endif
 

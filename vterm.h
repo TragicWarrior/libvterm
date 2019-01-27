@@ -65,15 +65,16 @@ typedef chtype          attr_t;
 #define VTERM_FLAG_RXVT         (1 << 0)    // masquerade as rxvt (default)
 #define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100
 #define VTERM_FLAG_XTERM        (1 << 2)    // masquerade as xterm
-#define VTERM_FLAG_NOPTY        (1 << 3)    // skip all the fd and pty stuff.
+#define VTERM_FLAG_XTERM_256    (1 << 3)    // masquerade as xterm-256
+#define VTERM_FLAG_NOPTY        (1 << 8)    // skip all the fd and pty stuff.
                                             // just render input args byte
                                             // stream to a buffer
 
-#define VTERM_FLAG_NOCURSES     (1 << 4)    // skip the curses WINDOW stuff.
+#define VTERM_FLAG_NOCURSES     (1 << 9)    // skip the curses WINDOW stuff.
                                             // return the char cell array if
                                             // required
 
-#define VTERM_FLAG_DUMP         (1 << 8)    // tell libvterm to write
+#define VTERM_FLAG_DUMP         (1 << 10)    // tell libvterm to write
                                             // stream data to a dump file
                                             // for debugging
 
@@ -91,6 +92,7 @@ typedef chtype          attr_t;
 struct _vterm_cell_s
 {
     attr_t          attr;
+    int             colors;
     wchar_t         wch[2];     // we need this when NOCURSES is defined
 
 #ifndef NOCURSES
@@ -373,7 +375,7 @@ int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
     @return:        returns the color pair index set as the default
                     fg/bg color combination.  returns -1 upon error.
 */
-short           vterm_get_colors(vterm_t *vterm);
+long            vterm_get_colors(vterm_t *vterm);
 
 /*
     erase the contents of the terminal.

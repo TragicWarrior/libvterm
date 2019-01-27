@@ -31,8 +31,8 @@
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
 #define IS_MODE_UTF8(x)         (x->internal_state & STATE_UTF8_MODE)
 
-#define VTERM_TERM_MASK         0x0F            /*
-                                                    the lower 4 bits of the
+#define VTERM_TERM_MASK         0xFF            /*
+                                                    the lower 8 bits of the
                                                     flags value specify term
                                                     type.
                                                 */
@@ -50,12 +50,15 @@ struct _vterm_desc_s
     unsigned int    buffer_state;               // internal state control
 
     attr_t          curattr;                    // current attribute set
+    int             colors;                     // current color pair
+
     int             crow, ccol;                 // current cursor column & row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region
     int             saved_x, saved_y;           // saved cursor coords
     int             fg, bg;                     // current fg/bg colors
-    short           colors;                     // color pair for default fg/bg
+
+    int             default_colors;             // color pair for default fg/bg
 };
 
 typedef struct _vterm_desc_s    vterm_desc_t;
@@ -107,7 +110,7 @@ struct _vterm_s
                                                 */
 
     pid_t           child_pid;                  //  pid of the child process
-    unsigned int    flags;                      //  user options
+    uint32_t        flags;                      //  user options
     unsigned int    internal_state;             //  internal state control
 
     unsigned int    mouse;                      //  mouse mode
