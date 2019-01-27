@@ -1,3 +1,8 @@
+4.27
+
+* [Bryan Christ] First set of changes for hicolor support and emulation of
+  xterm-256color mode.
+
 4.26
 
 * [Bryan Christ] Fixed mapping of HOME and END keys when operating in
