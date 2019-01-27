@@ -4,6 +4,13 @@
 
 #include "vterm.h"
 
+enum
+{
+    PALETTE_DEFAULT =   0x00,
+    PALETTE_SAVED
+};
+
+
 struct _rgb_values_s
 {
     short   r;
@@ -57,7 +64,7 @@ struct _color_cache_s
     int             term_colors;
     int             term_pairs;
 
-    color_pair_t    *head;
+    color_pair_t    *head[2];
 };
 
 typedef struct _color_cache_s   color_cache_t;
@@ -65,11 +72,20 @@ typedef struct _color_cache_s   color_cache_t;
 color_cache_t*
 color_cache_init(void);
 
-long
+int
 color_cache_add_pair(color_cache_t *color_cache, short fg, short bg);
 
 void
 color_cache_destroy(color_cache_t *color_cache);
+
+void
+color_cache_save_palette(color_cache_t *color_cache);
+
+void
+color_cache_free_palette(color_cache_t *color_cache, int cache_id);
+
+void
+color_cache_load_palette(color_cache_t *color_cache);
 
 long
 color_cache_find_pair(color_cache_t *color_cache, short fg, short bg);
@@ -92,7 +108,7 @@ color_cache_split_pair(color_cache_t *color_cache,
                 color_pair_t    *_pair;                                     \
                 int             _limit = max;                               \
                                                                             \
-                CDL_FOREACH((cache)->head, _pair)                      \
+                CDL_FOREACH((cache)->head, _pair)                           \
                 {                                                           \
                     if(_limit == 0) break;                                  \
                     printf("Pair Num:   %d\n\r", _pair->num);               \
