@@ -85,9 +85,9 @@ void
 color_cache_free_palette(color_cache_t *color_cache, int cache_id);
 
 void
-color_cache_load_palette(color_cache_t *color_cache);
+color_cache_load_palette(color_cache_t *color_cache, int cache_id);
 
-long
+int
 color_cache_find_pair(color_cache_t *color_cache, short fg, short bg);
 
 long
