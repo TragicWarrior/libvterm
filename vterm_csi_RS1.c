@@ -35,6 +35,9 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
         v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];
         v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
 
+        // restore the default palette
+        color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
+
         // reset the parser
         pos = RXVT_RS1;
         return 0;
@@ -64,6 +67,9 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
 
     // reset to standard buffer (and add other stuff if ncessary)
     vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+
+    // restore the default palette
+    color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
 
     // make cursor always visible after a reset
     v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];

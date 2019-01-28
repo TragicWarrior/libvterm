@@ -191,6 +191,9 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
 
             vterm_buffer_dealloc(vterm, curr_idx);
         }
+
+        // restore the default color palette
+        color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
     }
 
     /*

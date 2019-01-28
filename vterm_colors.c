@@ -66,7 +66,6 @@ color_cache_save_palette(color_cache_t *color_cache)
 {
     color_pair_t    *pair;
     color_pair_t    *tmp1;
-    // color_pair_t    *tmp2;
 
     if(color_cache == NULL) return;
 
@@ -84,6 +83,35 @@ color_cache_save_palette(color_cache_t *color_cache)
 
     return;
 }
+
+void
+color_cache_load_palette(color_cache_t *color_cache, int cache_id)
+{
+    color_pair_t    *pair;
+    color_pair_t    *tmp1;
+
+    if(color_cache == NULL) return;
+
+    if(color_cache->head[cache_id] != NULL)
+    {
+        // free the default palette (the active palette)
+        color_cache_free_palette(color_cache, PALETTE_DEFAULT);
+
+        // copy the specified palette into
+        CDL_FOREACH(color_cache->head[cache_id], pair)
+        {
+            tmp1 = (color_pair_t *)malloc(sizeof(color_pair_t));
+            memcpy(tmp1, pair, sizeof(color_pair_t));
+
+            CDL_PREPEND(color_cache->head[PALETTE_DEFAULT], tmp1);
+
+            init_pair(pair->num, pair->fg, pair->bg);
+        }
+    }
+
+    return;
+}
+
 
 void
 color_cache_free_palette(color_cache_t *color_cache, int cache_id)
@@ -328,7 +356,7 @@ color_cache_find_exact_color(color_cache_t *color_cache,
     return pair->num;
 }
 
-long
+int
 color_cache_find_pair(color_cache_t *color_cache, short fg, short bg)
 {
     color_pair_t    *pair;
