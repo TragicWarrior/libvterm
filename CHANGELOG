@@ -1,3 +1,8 @@
+4.29
+
+* [Bryan Christ] Fix broken RS1 logic with xterm and xterm-256color modes.
+* [Bryan Christ] Make RS1 reset to default color palette.
+
 4.28
 
 * [Bryan Christ] Fix SGR reset regression introduced in hicolor changes.
