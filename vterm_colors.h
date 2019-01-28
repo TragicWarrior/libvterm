@@ -79,7 +79,7 @@ void
 color_cache_destroy(color_cache_t *color_cache);
 
 void
-color_cache_save_palette(color_cache_t *color_cache);
+color_cache_save_palette(color_cache_t *color_cache, int cache_id);
 
 void
 color_cache_free_palette(color_cache_t *color_cache, int cache_id);

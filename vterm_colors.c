@@ -29,8 +29,6 @@ color_cache_t*
 color_cache_init(void)
 {
     color_cache_t       *color_cache;
-    color_pair_t        *pair;
-    int                 i;
 
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
 
@@ -44,6 +42,26 @@ color_cache_init(void)
     if(color_cache->term_pairs > 0xFF) color_cache->term_pairs = 0xFF;
 #endif
 
+    // take a snapshot of the current palette
+    color_cache_save_palette(color_cache, PALETTE_DEFAULT);
+
+    return color_cache;
+}
+
+void
+color_cache_save_palette(color_cache_t *color_cache, int cache_id)
+{
+    color_pair_t    *pair;
+    int             i;
+
+    if(color_cache == NULL) return;
+
+    if(color_cache->head[cache_id] != NULL)
+    {
+        // free the saved palette if it exists
+        color_cache_free_palette(color_cache, cache_id);
+    }
+
     // profile all colors
     for(i = 0; i < color_cache->term_pairs; i++)
     {
@@ -52,33 +70,7 @@ color_cache_init(void)
 
         _color_cache_profile_pair(pair);
 
-        CDL_APPEND(color_cache->head[PALETTE_DEFAULT], pair);
-        color_cache->pair_count++;
-    }
-
-    color_cache_save_palette(color_cache);
-
-    return color_cache;
-}
-
-void
-color_cache_save_palette(color_cache_t *color_cache)
-{
-    color_pair_t    *pair;
-    color_pair_t    *tmp1;
-
-    if(color_cache == NULL) return;
-
-    // free the saved palette if it exists
-    color_cache_free_palette(color_cache, PALETTE_SAVED);
-
-    // copy the active palette into a saved palette
-    CDL_FOREACH(color_cache->head[PALETTE_DEFAULT], pair)
-    {
-        tmp1 = (color_pair_t *)malloc(sizeof(color_pair_t));
-        memcpy(tmp1, pair, sizeof(color_pair_t));
-
-        CDL_PREPEND(color_cache->head[PALETTE_SAVED], tmp1);
+        CDL_APPEND(color_cache->head[cache_id], pair);
     }
 
     return;
