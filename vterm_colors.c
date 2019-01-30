@@ -235,6 +235,13 @@ vterm_color_cache_add_pair(short fg, short bg)
 
         for(;;)
         {
+            // break out of an infitite loop scenario
+            if(pair->prev == vterm_color_cache->head[PALETTE_ACTIVE])
+            {
+                // no recourse for this, just return pair 1
+                return 1;
+            }
+
             pair = pair->prev;
 
             if(pair->unbound == TRUE)
