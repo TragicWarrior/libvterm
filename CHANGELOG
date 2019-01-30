@@ -1,3 +1,8 @@
+
+4.30
+
+* [Bryan Christ] More improvements to xterm-256color mode.
+
 4.29
 
 * [Bryan Christ] Fix broken RS1 logic with xterm and xterm-256color modes.
