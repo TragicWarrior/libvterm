@@ -92,6 +92,8 @@ vterm_color_cache_save_palette(int cache_id)
         vterm_color_cache_free_palette(cache_id);
     }
 
+    vterm_color_cache->reserved_pair = -1;
+
     // profile all colors
     for(i = 0; i < vterm_color_cache->term_pairs; i++)
     {
@@ -99,6 +101,15 @@ vterm_color_cache_save_palette(int cache_id)
         pair->num = i;
 
         _color_cache_profile_pair(pair);
+
+        // reserve one pair where fg 0 and bg 0
+        if(pair->fg == 0 && pair->bg == 0)
+        {
+            if(vterm_color_cache->reserved_pair == -1)
+            {
+                vterm_color_cache->reserved_pair = i;
+            }
+        }
 
         CDL_APPEND(vterm_color_cache->head[cache_id], pair);
     }
@@ -185,6 +196,13 @@ vterm_color_cache_add_pair(short fg, short bg)
             continue;
         }
 
+        // if this is the reserved pair, skip
+        if(i == vterm_color_cache->reserved_pair)
+        {
+            i--;
+            continue;
+        }
+
         /*
             FG and BG of zero would be a truly odd pair and almost certianly
             indicates an unused pair.
@@ -208,7 +226,10 @@ vterm_color_cache_add_pair(short fg, short bg)
         {
             pair = pair->prev;
 
-            if(pair->unbound == TRUE) break;
+            if(pair->unbound == TRUE)
+            {
+                if(pair->num != vterm_color_cache->reserved_pair) break;
+            }
         }
 
         CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);

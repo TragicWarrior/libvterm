@@ -63,6 +63,8 @@ struct _color_cache_s
 {
     int             pair_count;
 
+    int             reserved_pair;
+
     int             term_colors;
     int             term_pairs;
 
