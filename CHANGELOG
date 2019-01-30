@@ -1,3 +1,8 @@
+4.32
+
+* [Bryan Christ] Prevent vterm_add_color_pair() from going into an infinite
+  loop when there are severe palette constraints.
+
 4.31
 
 * [Bryan Christ] Fixed a regression where sinking the mouse click event
