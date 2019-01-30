@@ -1,3 +1,7 @@
+4.31
+
+* [Bryan Christ] Fixed a regression where sinking the mouse click event
+  should occur but wasn't.
 
 4.30
 
