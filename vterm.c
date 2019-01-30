@@ -24,6 +24,14 @@
 
 #include "utlist.h"
 
+/*
+    the one and only global
+
+    as a shared library, it's necssary for all the terminals to be able to
+    share color palette information.
+*/
+color_cache_t   *vterm_color_cache = NULL;
+
 vterm_t*
 vterm_alloc(void)
 {
@@ -37,12 +45,13 @@ vterm_alloc(void)
 vterm_t*
 vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
 {
-    pid_t           child_pid = 0;
-    int             master_fd;
-    struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
-    char            *pos = NULL;
-    int             retval;
-    int             term_colors = 0;
+    extern color_cache_t    *vterm_color_cache;
+    pid_t                   child_pid = 0;
+    int                     master_fd;
+    struct winsize          ws = {.ws_xpixel = 0,.ws_ypixel = 0};
+    char                    *pos = NULL;
+    int                     retval;
+    int                     term_colors = 0;
 
     // rxvt emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT;
@@ -62,12 +71,8 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
-    /*
-        color_cache_init() will query all the existing pairs mapping them
-        and all color primitives.
-    */
-    vterm->color_cache = color_cache_init();
-
+    // initializes the color cache or updates the ref count
+    vterm_color_cache_init();
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
@@ -239,7 +244,7 @@ vterm_destroy(vterm_t *vterm)
         }
     }
 */
-    color_cache_destroy(vterm->color_cache);
+    vterm_color_cache_release();
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)

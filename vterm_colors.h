@@ -2,12 +2,15 @@
 #ifndef _VTERM_COLORS_H_
 #define _VTERM_COLORS_H_
 
+#include <signal.h>
+
 #include "vterm.h"
 
 enum
 {
-    PALETTE_DEFAULT =   0x00,
-    PALETTE_SAVED
+    PALETTE_HOST    =   0x00,
+    PALETTE_ACTIVE,
+    PALETTE_MAX                     // not a real palette.  just a counter.
 };
 
 
@@ -45,6 +48,8 @@ struct _color_pair_s
     short                   fg;
     short                   bg;
 
+    bool                    unbound;
+
     rgb_values_t            rgb_values[2];
     hsl_values_t            hsl_values[2];
     cie_values_t            cie_values[2];
@@ -58,49 +63,61 @@ typedef struct _color_pair_s    color_pair_t;
 
 struct _color_cache_s
 {
+    sig_atomic_t    ref_count;              /*
+                                                incremented when an new
+                                                vterm instance is allocated.
+                                                it's decremented when a
+                                                vterm instance is destroyed.
+                                                when it reaches zero, all
+                                                resources are freed.
+
+                                                use atomic type to prevent
+                                                race condition.
+                                            */
     int             pair_count;
-    long            reserve_pair;
+
+    int             reserved_pair;
 
     int             term_colors;
     int             term_pairs;
 
-    color_pair_t    *head[2];
+    color_pair_t    *head[PALETTE_MAX];
 };
 
 typedef struct _color_cache_s   color_cache_t;
 
-color_cache_t*
-color_cache_init(void);
+void
+vterm_color_cache_init(void);
 
 int
-color_cache_add_pair(color_cache_t *color_cache, short fg, short bg);
+vterm_color_cache_add_pair(short fg, short bg);
 
 void
-color_cache_destroy(color_cache_t *color_cache);
+vterm_color_cache_release();
 
 void
-color_cache_save_palette(color_cache_t *color_cache);
+vterm_color_cache_save_palette(int cache_id);
 
 void
-color_cache_free_palette(color_cache_t *color_cache, int cache_id);
+vterm_color_cache_copy_palette(int source, int target);
 
 void
-color_cache_load_palette(color_cache_t *color_cache, int cache_id);
+vterm_color_cache_load_palette(int cache_id);
+
+void
+vterm_color_cache_free_palette(int cache_id);
 
 int
-color_cache_find_pair(color_cache_t *color_cache, short fg, short bg);
+vterm_color_cache_find_pair(short fg, short bg);
 
-long
-color_cache_find_exact_color(color_cache_t *color_cache,
-    unsigned short color, short r, short g, short b);
+int
+vterm_color_cache_find_exact_color(int color, short r, short g, short b);
 
-long
-color_cache_find_nearest_color(color_cache_t *color_cache,
-    short r, short g, short b);
+int
+vterm_color_cache_find_nearest_color(short r, short g, short b);
 
-short
-color_cache_split_pair(color_cache_t *color_cache,
-    unsigned short pair_num, short *fg, short *bg);
+int
+vterm_color_cache_split_pair(int pair_num, short *fg, short *bg);
 
 
 #define DEBUG_COLOR_PAIRS(cache, max)                                       \

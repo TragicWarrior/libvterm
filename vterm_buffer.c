@@ -193,7 +193,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
         }
 
         // restore the default color palette
-        color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
+        // color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
     }
 
     /*
@@ -205,6 +205,9 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     {
         vterm_buffer_alloc(vterm, idx, width, height);
         v_desc = &vterm->vterm_desc[idx];
+
+        // take a snapshot of the color palette before switching buffers
+        // color_cache_save_palette(vterm->color_cache, PALETTE_SAVED);
 
         // copy some defaults from standard buffer
         v_desc->default_colors =
