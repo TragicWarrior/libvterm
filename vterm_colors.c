@@ -392,7 +392,8 @@ vterm_color_cache_find_exact_color(int color, short r, short g, short b)
     color_pair_t            *pair;
     color_pair_t            *tmp1;
     color_pair_t            *tmp2;
-    bool                    found = FALSE;
+    bool                    fg_found = FALSE;
+    bool                    bg_found = FALSE;
 
     color_content(color, &r, &g, &b);
 
@@ -410,9 +411,12 @@ vterm_color_cache_find_exact_color(int color, short r, short g, short b)
             pair->rgb_values[0].g == g &&
             pair->rgb_values[0].b == b)
         {
-            CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);
-            found = TRUE;
-            break;
+            fg_found = TRUE;
+        }
+        else
+        {
+            fg_found = FALSE;
+            continue;
         }
 
         // check the background color for a match
@@ -420,13 +424,22 @@ vterm_color_cache_find_exact_color(int color, short r, short g, short b)
             pair->rgb_values[1].g == g &&
             pair->rgb_values[1].b == b)
         {
+            bg_found = TRUE;
+        }
+        else
+        {
+            bg_found = FALSE;
+            continue;
+        }
+
+        if(fg_found == TRUE && bg_found == TRUE)
+        {
             CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);
-            found = TRUE;
             break;
         }
     }
 
-    if(found == FALSE) return -1;
+    if(fg_found == FALSE || bg_found == FALSE) return -1;
 
     /*
         push the pair to the front of the list to make subseqent look-ups
