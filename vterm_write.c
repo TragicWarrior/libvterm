@@ -68,8 +68,7 @@ vterm_write_rxvt(vterm_t *vterm,uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        // case KEY_MOUSE:     buffer = "\e[M";    break;
-        // case KEY_MOUSE:     endwin();           exit(0);
+        case KEY_MOUSE:     buffer = "\e[M";    break;
     }
 
     if(buffer == NULL)
@@ -137,33 +136,8 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        /* case KEY_MOUSE:
-        {
-            getmouse(&mouse_event);
-            mouse = strdup_printf("\e[M%c%c%c",
-                0,
-                (unsigned char)mouse_event.x,
-                (unsigned char)mouse_event.y);
-            break;
-        } */
+        case KEY_MOUSE:     buffer = "\e[M";    break;
     }
-
-/*
-    if(mouse != NULL)
-    {
-        bytes_written = write(vterm->pty_fd, mouse, strlen(mouse));
-
-        if( bytes_written != (ssize_t)strlen(mouse) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-
-        free(mouse);
-
-        return retval;
-    }
-*/
 
     // send a special sequence
     if(buffer != NULL)
