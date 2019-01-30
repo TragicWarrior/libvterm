@@ -30,7 +30,18 @@ vterm_color_cache_init(void)
 {
     extern color_cache_t    *vterm_color_cache;
 
+    /*
+        color cache has already be initialized by another instance
+        so just increment the ref count and return.
+    */
+    if(vterm_color_cache != NULL)
+    {
+        vterm_color_cache->ref_count++;
+        return;
+    }
+
     vterm_color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
+    vterm_color_cache->ref_count = 1;
 
     vterm_color_cache->term_colors = tigetnum("colors");
     vterm_color_cache->term_pairs = tigetnum("pairs");
@@ -249,10 +260,15 @@ vterm_color_cache_add_pair(short fg, short bg)
 
 
 void
-vterm_color_cache_destroy(void)
+vterm_color_cache_release(void)
 {
     extern color_cache_t    *vterm_color_cache;
     int                     i;
+
+    vterm_color_cache->ref_count--;
+
+    // if ref count is not zero return
+    if(vterm_color_cache->ref_count > 0) return;
 
     for(i = 0; i < PALETTE_MAX; i++)
     {
@@ -260,6 +276,7 @@ vterm_color_cache_destroy(void)
     }
 
     free(vterm_color_cache);
+    vterm_color_cache = NULL;
 
     return;
 }

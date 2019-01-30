@@ -71,14 +71,8 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
-    /*
-        color_cache_init() will query all the existing pairs mapping them
-        and all color primitives.
-    */
-    if(vterm_color_cache == NULL)
-    {
-        vterm_color_cache_init();
-    }
+    // initializes the color cache or updates the ref count
+    vterm_color_cache_init();
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
@@ -250,6 +244,7 @@ vterm_destroy(vterm_t *vterm)
         }
     }
 */
+    vterm_color_cache_release();
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)

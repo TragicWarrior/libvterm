@@ -2,6 +2,8 @@
 #ifndef _VTERM_COLORS_H_
 #define _VTERM_COLORS_H_
 
+#include <signal.h>
+
 #include "vterm.h"
 
 enum
@@ -61,6 +63,17 @@ typedef struct _color_pair_s    color_pair_t;
 
 struct _color_cache_s
 {
+    sig_atomic_t    ref_count;              /*
+                                                incremented when an new
+                                                vterm instance is allocated.
+                                                it's decremented when a
+                                                vterm instance is destroyed.
+                                                when it reaches zero, all
+                                                resources are freed.
+
+                                                use atomic type to prevent
+                                                race condition.
+                                            */
     int             pair_count;
 
     int             reserved_pair;
@@ -80,7 +93,7 @@ int
 vterm_color_cache_add_pair(short fg, short bg);
 
 void
-vterm_color_cache_destroy();
+vterm_color_cache_release();
 
 void
 vterm_color_cache_save_palette(int cache_id);
