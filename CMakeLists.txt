@@ -63,6 +63,8 @@ add_library(vterm-static STATIC
     vterm_dec_RM.c
     vterm_dec_SM.c
     vterm_esc_IND.c
+    vterm_esc_NEL.c
+    vterm_esc_RI.c
     vterm_erase.c
     vterm_escape.c
     vterm_hook.c
@@ -107,6 +109,8 @@ add_library(vterm.o OBJECT
     vterm_dec_RM.c
     vterm_dec_SM.c
     vterm_esc_IND.c
+    vterm_esc_NEL.c
+    vterm_esc_RI.c
     vterm_erase.c
     vterm_escape.c
     vterm_hook.c

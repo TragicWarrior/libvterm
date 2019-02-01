@@ -79,19 +79,49 @@ vterm_interpret_escapes(vterm_t *vterm)
     // too early to do anything
     if(!firstchar) return;
 
-    // interpret ESC-M as reverse line-feed
-    if(firstchar == 'M')
+    // interpert ESC-M a line-feed (NEL)
+    if(firstchar == 'E')
     {
-        vterm_scroll_up(vterm);
+        interpret_esc_NEL(vterm);
         vterm_escape_cancel(vterm);
 
         return;
     }
 
-    // interpreset ESC-D - VT100 Index (column unaffected, move down 1 row)
+    // interpret ESC-M as reverse line-feed (RI)
+    if(firstchar == 'M')
+    {
+        interpret_esc_RI(vterm);
+        vterm_escape_cancel(vterm);
+
+        return;
+    }
+
+    // VT52, move cursor up.  same as CUU which is ESC [ A
+    if(firstchar == 'A')
+    {
+        interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+    }
+
+    // VT52, move cursor down.  same as CUD which is ESC [ B
+    if(firstchar == 'B')
+    {
+        interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+    }
+
+    // VT52, move cursor right.  same as CUF which is ESC [ C
+    if(firstchar == 'C')
+    {
+        interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+    }
+
+    // VT52, move cursor left.  same as CUB which is ESC [ D
     if(firstchar == 'D')
     {
-        interpret_esc_IND(vterm);
+        interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
     }
