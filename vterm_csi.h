@@ -17,8 +17,12 @@
 #define XTERM_RS1   "\ec"
 
 void    interpret_esc_IND(vterm_t *vterm);
+void    interpret_esc_NEL(vterm_t *vterm);
+void    interpret_esc_RI(vterm_t *vterm);
+
 void    interpret_dec_SM(vterm_t *vterm, int param[], int pcount);
 void    interpret_dec_RM(vterm_t *vterm, int param[], int pcount);
+
 void    interpret_csi_SGR(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_ED(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_CUP(vterm_t *vterm, int param[], int pcount);
