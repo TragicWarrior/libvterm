@@ -5,8 +5,13 @@
 #include "vterm_misc.h"
 #include "vterm_buffer.h"
 
-/* interprets a 'move cursor' (CUP) escape sequence */
-void interpret_csi_CUP(vterm_t *vterm, int param[], int pcount)
+/*
+    interprets a 'move cursor' (CUP) escape sequence.
+
+    also the same as HVP.
+*/
+void
+interpret_csi_CUP(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
