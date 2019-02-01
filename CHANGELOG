@@ -1,3 +1,7 @@
+4.34
+
+* [Bryan Christ] Use a jump table for the simple escape sequences.
+
 4.33
 
 * [Bryan Christ] Added support for escape sequences NEL and RI after running
