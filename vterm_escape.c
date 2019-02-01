@@ -79,77 +79,87 @@ vterm_interpret_escapes(vterm_t *vterm)
     // too early to do anything
     if(!firstchar) return;
 
-    // interpert ESC-M a line-feed (NEL)
-    if(firstchar == 'E')
+    switch(firstchar)
     {
-        interpret_esc_NEL(vterm);
-        vterm_escape_cancel(vterm);
+        // interpert ESC-M a line-feed (NEL)
+        case 'E':
+        {
+            interpret_esc_NEL(vterm);
+            vterm_escape_cancel(vterm);
 
-        return;
-    }
+            return;
+        }
 
-    // interpret ESC-M as reverse line-feed (RI)
-    if(firstchar == 'M')
-    {
-        interpret_esc_RI(vterm);
-        vterm_escape_cancel(vterm);
+        // interpret ESC-M as reverse line-feed (RI)
+        case 'M':
+        {
+            interpret_esc_RI(vterm);
+            vterm_escape_cancel(vterm);
 
-        return;
-    }
+            return;
+        }
 
-    // VT52, move cursor up.  same as CUU which is ESC [ A
-    if(firstchar == 'A')
-    {
-        interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-    }
+        // VT52, move cursor up.  same as CUU which is ESC [ A
+        case 'A':
+        {
+            interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
+            vterm_escape_cancel(vterm);
 
-    // VT52, move cursor down.  same as CUD which is ESC [ B
-    if(firstchar == 'B')
-    {
-        interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-    }
+            return;
+        }
 
-    // VT52, move cursor right.  same as CUF which is ESC [ C
-    if(firstchar == 'C')
-    {
-        interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-    }
+        // VT52, move cursor down.  same as CUD which is ESC [ B
+        case 'B':
+        {
+            interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
+            vterm_escape_cancel(vterm);
 
-    // VT52, move cursor left.  same as CUB which is ESC [ D
-    if(firstchar == 'D')
-    {
-        interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-        return;
-    }
+            return;
+        }
 
-    if(firstchar == '7')
-    {
-        interpret_csi_SAVECUR(vterm, 0, 0);
-        vterm_escape_cancel(vterm);
+        // VT52, move cursor right.  same as CUF which is ESC [ C
+        case 'C':
+        {
+            interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
+            vterm_escape_cancel(vterm);
 
-        return;
-    }
+            return;
+        }
 
-    if(firstchar == '8')
-    {
-        interpret_csi_RESTORECUR(vterm, 0, 0);
-        vterm_escape_cancel(vterm);
+        // VT52, move cursor left.  same as CUB which is ESC [ D
+        case 'D':
+        {
+            interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
+            vterm_escape_cancel(vterm);
 
-        return;
-    }
+            return;
+        }
 
-    // The ESC c sequence is RS1 reset for most
-    if(firstchar == 'c')
-    {
-        // push in "\ec" as a safety check
-        interpret_csi_RS1_xterm(vterm, XTERM_RS1);
-        vterm_escape_cancel(vterm);
+        case '7':
+        {
+            interpret_csi_SAVECUR(vterm, 0, 0);
+            vterm_escape_cancel(vterm);
 
-        return;
+            return;
+        }
+
+        case '8':
+        {
+            interpret_csi_RESTORECUR(vterm, 0, 0);
+            vterm_escape_cancel(vterm);
+
+            return;
+        }
+
+        // The ESC c sequence is RS1 reset for most
+        case 'c':
+        {
+            // push in "\ec" as a safety check
+            interpret_csi_RS1_xterm(vterm, XTERM_RS1);
+            vterm_escape_cancel(vterm);
+
+            return;
+        }
     }
 
     /*
