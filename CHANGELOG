@@ -1,3 +1,8 @@
+4.33
+
+* [Bryan Christ] Added support for escape sequences NEL and RI after running
+  vttest for fidelity.
+
 4.32
 
 * [Bryan Christ] Prevent vterm_add_color_pair() from going into an infinite
