@@ -88,6 +88,14 @@ vterm_interpret_escapes(vterm_t *vterm)
         return;
     }
 
+    // interpreset ESC-D - VT100 Index (column unaffected, move down 1 row)
+    if(firstchar == 'D')
+    {
+        interpret_esc_IND(vterm);
+        vterm_escape_cancel(vterm);
+        return;
+    }
+
     if(firstchar == '7')
     {
         interpret_csi_SAVECUR(vterm, 0, 0);

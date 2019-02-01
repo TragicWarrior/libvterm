@@ -16,6 +16,7 @@
 #define RXVT_RS1    "\e>\e[1;3;4;5;6l\e[?7h\e[m\e[r\e[2J\e[H"
 #define XTERM_RS1   "\ec"
 
+void    interpret_esc_IND(vterm_t *vterm);
 void    interpret_dec_SM(vterm_t *vterm, int param[], int pcount);
 void    interpret_dec_RM(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_SGR(vterm_t *vterm, int param[], int pcount);
