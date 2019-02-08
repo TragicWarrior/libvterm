@@ -1,3 +1,8 @@
+4.36
+
+* [Bryan Christ] Refactor the code that exports a matrix of cells for use
+  in other contexts.
+
 4.34
 
 * [Bryan Christ] Use a jump table for the simple escape sequences.
