@@ -504,9 +504,15 @@ void            vterm_render(vterm_t *vterm, const char *data, int len);
 void            vterm_get_size(vterm_t *vterm, int *width, int *height);
 
 /*
-    raw access to the screen matrix which is current ncurses 'chtype'.
+    returns a copy of the active buffer screen matrix.
+
+    @params:
+        vterm       handle to a vterm object
+        rows        integer pointer indicating the row count of the matrix
+        cols        integer pointer indicating the column count of the matrix
+
 */
-vterm_cell_t**  vterm_get_buffer(vterm_t *vterm);
+vterm_cell_t**  vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols);
 
 #endif
 
