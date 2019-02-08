@@ -311,17 +311,3 @@ vterm_get_size( vterm_t *vterm, int *width, int *height )
     return;
 }
 
-vterm_cell_t**
-vterm_get_buffer( vterm_t *vterm )
-{
-    vterm_desc_t    *v_desc = NULL;
-    int             idx;
-
-    if(vterm == NULL) return NULL;
-
-    // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
-
-    return v_desc->cells;
-}

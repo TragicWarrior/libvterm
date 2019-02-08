@@ -8,11 +8,12 @@
 #include "vterm_private.h"
 #include "vterm_buffer.h"
 
+static vterm_cell_t** _vterm_buffer_alloc_raw(int rows, int cols);
+
 void
 vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
-    int             i;
 
     if(vterm == NULL) return;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
@@ -21,14 +22,15 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 
     v_desc = &vterm->vterm_desc[idx];
 
-    v_desc->cells =
-        (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
+    v_desc->cells = _vterm_buffer_alloc_raw(height, width);
 
-    for(i = 0;i < height;i++)
-    {
-        v_desc->cells[i] =
-            (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
-    }
+    // (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
+
+    // for(i = 0;i < height;i++)
+    // {
+    //    v_desc->cells[i] =
+    //        (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
+    // }
 
     v_desc->rows = height;
     v_desc->cols = width;
@@ -238,3 +240,48 @@ vterm_buffer_get_active(vterm_t *vterm)
     return vterm->vterm_desc_idx;
 }
 
+vterm_cell_t**
+vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
+{
+    vterm_desc_t    *v_desc = NULL;
+    vterm_cell_t    **buffer;
+    int             idx;
+    int             r;
+
+    if(vterm == NULL) return NULL;
+    if(rows == NULL || cols == NULL) return NULL;
+
+    // set vterm desc buffer selector
+    idx = vterm_buffer_get_active(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    *rows = v_desc->rows;
+    *cols = v_desc->cols;
+
+    buffer = _vterm_buffer_alloc_raw(*rows, *cols);
+
+    for(r = 0; r < *rows; r++)
+    {
+        // mem copy one row at a time
+        memcpy(buffer[r], v_desc->cells[r], 
+            v_desc->cols * sizeof(vterm_cell_t));
+    }
+
+    return buffer;
+}
+
+vterm_cell_t **
+_vterm_buffer_alloc_raw(int rows, int cols)
+{
+    vterm_cell_t    **buffer;
+    int             r;
+
+    buffer = (vterm_cell_t **)calloc(rows, sizeof(vterm_cell_t*));
+
+    for(r = 0; r < rows; r++)
+    {
+        buffer[r] = (vterm_cell_t *)calloc(cols, sizeof(vterm_cell_t));
+    }
+
+    return buffer;
+}
