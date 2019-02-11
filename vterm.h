@@ -60,7 +60,7 @@ typedef chtype          attr_t;
 #include <ncursesw/curses.h>
 #endif
 
-#define LIBVTERM_VERSION        "4.34"
+#define LIBVTERM_VERSION        "4.35"
 
 #define VTERM_FLAG_RXVT         (1 << 0)    // masquerade as rxvt (default)
 #define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100
@@ -93,6 +93,11 @@ struct _vterm_cell_s
 {
     attr_t          attr;
     int             colors;
+    short           fg;
+    short           bg;
+    short           f_rgb[3];
+    short           b_rgb[3];
+
     wchar_t         wch[2];     // we need this when NOCURSES is defined
 
 #ifndef NOCURSES

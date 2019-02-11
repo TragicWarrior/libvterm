@@ -29,8 +29,8 @@ vterm_erase(vterm_t *vterm, int idx)
         for(c = 0; c < v_desc->cols; c++)
         {
             VCELL_SET_CHAR((*vcell), ' ');
-            // VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->default_colors)));
-            VCELL_SET_COLORS((*vcell), v_desc->default_colors);
+            // VCELL_SET_COLORS((*vcell), v_desc->default_colors);
+            VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
             vcell++;
         }
@@ -59,8 +59,7 @@ vterm_erase_row(vterm_t *vterm, int row)
     for(c = 0;c < v_desc->cols; c++)
     {
         VCELL_SET_CHAR((*vcell), ' ');
-        // VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->default_colors)));
-        VCELL_SET_COLORS((*vcell), v_desc->default_colors);
+        VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
         vcell++;
     }
@@ -112,8 +111,7 @@ vterm_erase_col(vterm_t *vterm, int col)
         vcell = &v_desc->cells[r][col];
 
         VCELL_SET_CHAR((*vcell), ' ');
-        // VCELL_SET_ATTR((*vcell), (COLOR_PAIR(v_desc->default_colors)));
-        VCELL_SET_COLORS((*vcell), v_desc->default_colors);
+        VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
     }
 
     return;
