@@ -93,6 +93,11 @@ struct _vterm_cell_s
 {
     attr_t          attr;
     int             colors;
+    short           fg;
+    short           bg;
+    short           f_rgb[3];
+    short           b_rgb[3];
+
     wchar_t         wch[2];     // we need this when NOCURSES is defined
 
 #ifndef NOCURSES

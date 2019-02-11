@@ -38,7 +38,7 @@ interpret_csi_IL(vterm_t *vterm,int param[],int pcount)
         {
             VCELL_SET_CHAR((*vcell), ' ');
             VCELL_SET_ATTR((*vcell), v_desc->curattr);
-            VCELL_SET_COLORS((*vcell), v_desc->colors);
+            VCELL_SET_COLORS((*vcell), v_desc);
 
             vcell++;
         }

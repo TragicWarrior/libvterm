@@ -61,7 +61,7 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     {
         VCELL_SET_CHAR((*vcell_new), ' ');
         VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
-        VCELL_SET_COLORS((*vcell_new), v_desc->colors);
+        VCELL_SET_COLORS((*vcell_new), v_desc);
 
         vcell_new++;
     }

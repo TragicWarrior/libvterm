@@ -52,13 +52,17 @@ struct _vterm_desc_s
     attr_t          curattr;                    // current attribute set
     int             colors;                     // current color pair
 
-    int             default_colors;             // color pair for default fg/bg
+    int             default_colors;             // default fg/bg color pair
 
     int             crow, ccol;                 // current cursor column & row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region
     int             saved_x, saved_y;           // saved cursor coords
-    int             fg, bg;                     // current fg/bg colors
+
+    int             fg;                         // current fg color
+    int             bg;                         // current bg color
+    short           f_rgb[3];                   // current fg RGB values
+    short           b_rgb[3];                   // current bg RGB values
 };
 
 typedef struct _vterm_desc_s    vterm_desc_t;
