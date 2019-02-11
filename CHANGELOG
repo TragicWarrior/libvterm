@@ -1,3 +1,8 @@
+4.37
+
+* [Bryan Christ] Export RGB values in data structure for external use where
+  a WINDOW type is not the primary raster.
+
 4.36
 
 * [Bryan Christ] Refactor the code that exports a matrix of cells for use
