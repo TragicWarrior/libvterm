@@ -56,31 +56,6 @@ vterm_wnd_update(vterm_t *vterm)
             wattr_set(vterm->window, attrs, colors, NULL);
             mvwadd_wch(vterm->window, r, c, &vcell->uch);
 
-            /*
-            {
-                if(colors > 200)
-                {
-                    short           fg_ex;
-                    short           bg_ex;
-                    short           r;
-                    short           g;
-                    short           b;
-
-                    endwin();
-                    pair_content(colors, &fg_ex, &bg_ex);
-                    printf("pair: %d, f: %d, g: %d\n\r", colors, fg_ex, bg_ex);
-
-                    color_content(fg_ex, &r, &g, &b);
-                    printf("f rgb:  r: %d, g: %d, b: %d\n\r", r, g, b);
-
-                    color_content(bg_ex, &r, &g, &b);
-                    printf("b rgb:  r: %d, g: %d, b: %d\n\r", r, g, b);
-
-                    exit(0);
-                }
-            }
-            */
-
             vcell++;
         }
     }
