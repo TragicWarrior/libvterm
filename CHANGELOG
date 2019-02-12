@@ -1,3 +1,7 @@
+4.38
+
+* [Bryan Christ] Optimize export of matrix and for external use.
+
 4.37
 
 * [Bryan Christ] Export RGB values in data structure for external use where
