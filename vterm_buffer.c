@@ -24,14 +24,6 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 
     v_desc->cells = _vterm_buffer_alloc_raw(height, width);
 
-    // (vterm_cell_t**)calloc(1, (sizeof(vterm_cell_t*) * height));
-
-    // for(i = 0;i < height;i++)
-    // {
-    //    v_desc->cells[i] =
-    //        (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
-    // }
-
     v_desc->rows = height;
     v_desc->cols = width;
 
@@ -193,9 +185,6 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
 
             vterm_buffer_dealloc(vterm, curr_idx);
         }
-
-        // restore the default color palette
-        // color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
     }
 
     /*
@@ -207,9 +196,6 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     {
         vterm_buffer_alloc(vterm, idx, width, height);
         v_desc = &vterm->vterm_desc[idx];
-
-        // take a snapshot of the color palette before switching buffers
-        // color_cache_save_palette(vterm->color_cache, PALETTE_SAVED);
 
         // copy some defaults from standard buffer
         v_desc->default_colors =
@@ -245,11 +231,8 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    **buffer;
-    vterm_cell_t    *src;
-    vterm_cell_t    *dst;
     int             idx;
     int             r;
-    int             c;
 
     if(vterm == NULL) return NULL;
     if(rows == NULL || cols == NULL) return NULL;
@@ -262,21 +245,6 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
     *cols = v_desc->cols;
 
     buffer = _vterm_buffer_alloc_raw(*rows, *cols);
-/*
-    for(r = 0; r < v_desc->rows; r++)
-    {
-        dst = &buffer[r][0];
-        src = &v_desc->cells[r][0];
-
-        for(c = 0; c < v_desc->cols; c++)
-        {
-            memcpy(dst, src, sizeof(vterm_cell_t));
-
-            src++;
-            dst++;
-        }
-    }
-*/
 
     for(r = 0; r < *rows; r++)
     {

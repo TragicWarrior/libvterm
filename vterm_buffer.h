@@ -25,22 +25,11 @@ int     vterm_buffer_get_active(vterm_t *vterm);
 #define VCELL_ZERO_ALL(_cell) \
             { memset(&_cell, 0, sizeof(_cell)); }
 
-/*
-#define VCELL_SET_CHAR(_cell, _ch) \
-            { \
-                wchar_t             _wch[CCHARW_MAX]; \
-                swprintf(_wch, CCHARW_MAX, L"%c", _ch); \
-                memcpy(&_cell.wch, _wch, sizeof(_cell.wch)); \
-                setcchar(&_cell.uch, _wch, 0, 0, NULL); \
-            } \
-*/
-
 #define VCELL_SET_CHAR(_cell, _ch) \
             { \
                 swprintf(_cell.wch, 2, L"%c", _ch); \
                 setcchar(&_cell.uch, _cell.wch, 0, 0, NULL); \
             }
-
 
 #define VCELL_SET_ATTR(_cell, _attr) \
                 { _cell.attr = _attr; }
