@@ -245,8 +245,11 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    **buffer;
+    vterm_cell_t    *src;
+    vterm_cell_t    *dst;
     int             idx;
     int             r;
+    int             c;
 
     if(vterm == NULL) return NULL;
     if(rows == NULL || cols == NULL) return NULL;
@@ -259,11 +262,26 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
     *cols = v_desc->cols;
 
     buffer = _vterm_buffer_alloc_raw(*rows, *cols);
+/*
+    for(r = 0; r < v_desc->rows; r++)
+    {
+        dst = &buffer[r][0];
+        src = &v_desc->cells[r][0];
+
+        for(c = 0; c < v_desc->cols; c++)
+        {
+            memcpy(dst, src, sizeof(vterm_cell_t));
+
+            src++;
+            dst++;
+        }
+    }
+*/
 
     for(r = 0; r < *rows; r++)
     {
         // mem copy one row at a time
-        memcpy(buffer[r], v_desc->cells[r], 
+        memcpy(&buffer[r][0], &v_desc->cells[r][0],
             v_desc->cols * sizeof(vterm_cell_t));
     }
 
@@ -285,3 +303,5 @@ _vterm_buffer_alloc_raw(int rows, int cols)
 
     return buffer;
 }
+
+
