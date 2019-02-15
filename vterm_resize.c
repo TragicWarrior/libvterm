@@ -66,8 +66,11 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     if(delta_y > 0) vterm_erase_rows(vterm, start_y);
 
     // signal the child process that terminal changed size
-    ioctl(vterm->pty_fd, TIOCSWINSZ, &ws);
-    kill(vterm->child_pid, SIGWINCH);
+    if(!(vterm->flags & VTERM_FLAG_NOPTY))
+    {
+        ioctl(vterm->pty_fd, TIOCSWINSZ, &ws);
+        kill(vterm->child_pid, SIGWINCH);
+    }
 
     // fire off the TERM RESIZED event hook if it's been set
     if(vterm->event_hook != NULL)
