@@ -1,3 +1,8 @@
+4.39
+
+* [Bryan Christ] Fixed a SIGWINCH signal loop that would occur when running
+  in NOPTY mode.
+
 4.38
 
 * [Bryan Christ] Optimize export of matrix and for external use.
