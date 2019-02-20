@@ -1,3 +1,8 @@
+4.40
+
+* [Bryan Christ] Update color copy macro to make sure that foreground and
+  background RGB values are always written to the matrix cell.
+
 4.39
 
 * [Bryan Christ] Fixed a SIGWINCH signal loop that would occur when running
