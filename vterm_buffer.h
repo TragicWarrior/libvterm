@@ -38,7 +38,15 @@ int     vterm_buffer_get_active(vterm_t *vterm);
                 { *_attr_ptr = _cell.attr; }
 
 #define VCELL_SET_COLORS(_cell, _desc) \
-                { _cell.colors = _desc->colors; }
+                { \
+                    _cell.colors = _desc->colors; \
+                    _cell.f_rgb[0] = _desc->f_rgb[0]; \
+                    _cell.f_rgb[1] = _desc->f_rgb[1]; \
+                    _cell.f_rgb[2] = _desc->f_rgb[2]; \
+                    _cell.b_rgb[0] = _desc->b_rgb[0]; \
+                    _cell.b_rgb[1] = _desc->b_rgb[1]; \
+                    _cell.b_rgb[2] = _desc->b_rgb[2]; \
+                }
 
 #define VCELL_SET_DEFAULT_COLORS(_cell, _desc) \
                 { _cell.colors = _desc->default_colors; }
