@@ -44,14 +44,15 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     /* clean range */
     for(r = start_row;r <= end_row; r++)
     {
+        vcell = &v_desc->cells[r][0];
+
         for(c = start_col; c <= end_col; c++)
         {
-            // store cell address to reduce scalar look-ups
-            vcell = &v_desc->cells[r][c];
-
             VCELL_SET_CHAR((*vcell), ' ');
             VCELL_SET_ATTR((*vcell), v_desc->curattr);
             VCELL_SET_COLORS((*vcell), v_desc);
+
+            vcell++;
         }
     }
 }
