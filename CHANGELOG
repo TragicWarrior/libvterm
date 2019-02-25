@@ -1,3 +1,8 @@
+4.42
+
+* [Bryan Christ] Replaced some scalar computations and reptitive in-loop
+  computations picking for improved performance.
+
 4.41
 
 * [Bryan Christ] Handle SGR codes more precisely which yields better rending
