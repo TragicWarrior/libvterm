@@ -93,7 +93,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             }
 
             case 1:
-            case 4:                              // bold on
             {
                 v_desc->curattr |= A_BOLD;
                 break;
@@ -102,6 +101,12 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 2:
             {
                 v_desc->curattr |= A_DIM;
+                break;
+            }
+
+            case 4:
+            {
+                v_desc->curattr |= A_UNDERLINE;
                 break;
             }
 
@@ -116,13 +121,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 7:
             {
                 v_desc->curattr |= A_REVERSE;
-                break;
-            }
-
-            // reverse off
-            case 27:
-            {
-                v_desc->curattr &= ~(A_REVERSE);
                 break;
             }
 
@@ -147,11 +145,17 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 break;
             }
 
-            // bold on
+            // bold and dim off
             case 22:
-            case 24:
             {
                 v_desc->curattr &= ~A_BOLD;
+                v_desc->curattr &= ~A_DIM;
+                break;
+            }
+
+            case 24:
+            {
+                v_desc->curattr &= ~A_UNDERLINE;
                 break;
             }
 
@@ -159,6 +163,13 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 25:
             {
                 v_desc->curattr &= ~A_BLINK;
+                break;
+            }
+
+            // reverse off
+            case 27:
+            {
+                v_desc->curattr &= ~(A_REVERSE);
                 break;
             }
 
@@ -351,7 +362,7 @@ inline void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors, int fg, int bg)
 {
     vterm_desc_t    *v_desc = NULL;
-    attr_t          attr_saved = 0;
+    // attr_t          attr_saved = 0;
     int             idx;
 
     // set vterm_desc buffer selector
@@ -363,12 +374,13 @@ _vterm_set_color_pair_safe(vterm_t *vterm, short colors, int fg, int bg)
         save them before making changes and OR them back in.
     */
 
-    if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
-    if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
-    if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
+    // if(v_desc->curattr & A_UNDERLINE) attr_saved |= A_UNDERLINE;
+    // if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
+    // if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
+    // if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
 
-    v_desc->curattr = 0;
-    v_desc->curattr |= attr_saved;
+    // v_desc->curattr = 0;
+    // v_desc->curattr |= attr_saved;
 
     v_desc->colors = colors;
 
