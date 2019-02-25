@@ -1,7 +1,11 @@
+## Introduction ##
+
 Based on ROTE, libvterm is a terminal emulator library which attempts to
 mimic VT100, rxvt, xterm and xterm 256 color capabilities. Although the
 natural display apparatus is curses, current contributions from Hitachi-ID
 have allowed it to use a stream buffer for output.
+
+## Building ##
 
 The build system for libvterm uses CMake and it automatically detects a
 variety of different settings and libraries.  A default build tries to
@@ -10,7 +14,7 @@ specify the following:
 
 cmake -DDEFINE_CURSES=OFF
 
-Performance Tuning
+## Performance Tuning ##
 
 A terminal emulation should be light and fast.  Whenever possible, the
 routines in libvterm are written (or re-written) to be highly efficient.
