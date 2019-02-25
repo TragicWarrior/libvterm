@@ -362,25 +362,11 @@ inline void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors, int fg, int bg)
 {
     vterm_desc_t    *v_desc = NULL;
-    // attr_t          attr_saved = 0;
     int             idx;
 
     // set vterm_desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
-
-    /*
-        the COLOR_PAIR macros seems to trample attributes.
-        save them before making changes and OR them back in.
-    */
-
-    // if(v_desc->curattr & A_UNDERLINE) attr_saved |= A_UNDERLINE;
-    // if(v_desc->curattr & A_REVERSE) attr_saved |= A_REVERSE;
-    // if(v_desc->curattr & A_BOLD) attr_saved |= A_BOLD;
-    // if(v_desc->curattr & A_DIM) attr_saved |= A_DIM;
-
-    // v_desc->curattr = 0;
-    // v_desc->curattr |= attr_saved;
 
     v_desc->colors = colors;
 

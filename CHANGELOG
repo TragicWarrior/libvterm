@@ -1,3 +1,8 @@
+4.41
+
+* [Bryan Christ] Handle SGR codes more precisely which yields better rending
+  on some terminals.  Remove unused code saving instruction cycles.
+
 4.40
 
 * [Bryan Christ] Update color copy macro to make sure that foreground and
