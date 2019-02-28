@@ -134,7 +134,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // rmacs
             case 10:
             {
-                vterm->internal_state &= ~STATE_ALT_CHARSET;
+                vterm->internal_state &= ~(STATE_ALT_CHARSET);
                 break;
             }
 
@@ -148,21 +148,21 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // bold and dim off
             case 22:
             {
-                v_desc->curattr &= ~A_BOLD;
-                v_desc->curattr &= ~A_DIM;
+                v_desc->curattr &= ~(A_BOLD);
+                v_desc->curattr &= ~(A_DIM);
                 break;
             }
 
             case 24:
             {
-                v_desc->curattr &= ~A_UNDERLINE;
+                v_desc->curattr &= ~(A_UNDERLINE);
                 break;
             }
 
             // blink off
             case 25:
             {
-                v_desc->curattr &= ~A_BLINK;
+                v_desc->curattr &= ~(A_BLINK);
                 break;
             }
 
