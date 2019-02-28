@@ -1,3 +1,8 @@
+4.43
+
+* [Bryan Christ] Fixed a nasty bug that was uncovered in the erase routines
+  when underline attributes were properly implemented.
+
 4.42
 
 * [Bryan Christ] Replaced some scalar computations and reptitive in-loop
