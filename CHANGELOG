@@ -1,3 +1,8 @@
+4.44
+
+* [Bryan Christ] Added event hooks to notify integrator when there is a
+  change in buffer or the screen is cleared.
+
 4.43
 
 * [Bryan Christ] Fixed a nasty bug that was uncovered in the erase routines
