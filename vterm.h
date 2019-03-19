@@ -131,20 +131,24 @@ typedef void (*VtermEventHook) \
     -----                           --------------
     VTERM_HOOK_BUFFER_ACTIVATED     index of buffer as int*
     VTERM_HOOK_BUFFER_DEACTIVATED   index of buffer as int*
+    VTERM_HOOK_BUFFER_PREFLIP       index of new buffer as int*
     VTERM_HOOK_PIPE_READ            bytes read as ssize_t*
     VTERM_HOOK_PIPE_WRITTEN         unused
     VTERM_HOOK_TERM_PRESIZE         unused
     VTERM_HOOK_TERM_RESIZED         size as struct winsize*
+    VTERM_HOOK_TERM_PRECLEAR        unused
 */
 
 enum
 {
     VTERM_HOOK_BUFFER_ACTIVATED     =   0x10,
     VTERM_HOOK_BUFFER_DEACTIVATED,
+    VTERM_HOOK_BUFFER_PREFLIP,
     VTERM_HOOK_PIPE_READ,
     VTERM_HOOK_PIPE_WRITTEN,
     VTERM_HOOK_TERM_PRESIZE,
-    VTERM_HOOK_TERM_RESIZED
+    VTERM_HOOK_TERM_RESIZED,
+    VTERM_HOOK_TERM_PRECLEAR,
 };
 
 
