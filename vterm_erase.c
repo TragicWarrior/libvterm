@@ -22,6 +22,13 @@ vterm_erase(vterm_t *vterm, int idx)
 
     v_desc = &vterm->vterm_desc[idx];
 
+    // post event that term is about to be erased
+    if(vterm->event_hook != NULL)
+    {
+        vterm->event_hook(vterm,
+            VTERM_HOOK_TERM_PRECLEAR, NULL);
+    }
+
     for(r = 0;r < v_desc->rows; r++)
     {
         vcell = &v_desc->cells[r][0];

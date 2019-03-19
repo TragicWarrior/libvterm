@@ -143,6 +143,13 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     */
     if(idx == curr_idx) return 0;
 
+    // run the event hook if installed
+    if(vterm->event_hook != NULL)
+    {
+        vterm->event_hook(vterm, VTERM_HOOK_BUFFER_PREFLIP,
+            (void *)&idx);
+    }
+
     /*
         get current terminal size using the best methods available.  typically,
         that means using TIOCGWINSZ ioctl which is pretty portable.  an
