@@ -174,6 +174,7 @@ int main(int argc, char **argv)
     vterm_wnd_set(vterm, VWINDOW(twin));
 
     // this illustrates how to install an event hook
+    vterm_set_event_mask(vterm, VTERM_MASK_BUFFER_ACTIVATED);
     vterm_install_hook(vterm, vshell_hook);
 
     /*
@@ -289,7 +290,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
 
     switch(event)
     {
-        case VTERM_HOOK_BUFFER_ACTIVATED:
+        case VTERM_EVENT_BUFFER_ACTIVATED:
         {
             idx = *(int *)anything;
 

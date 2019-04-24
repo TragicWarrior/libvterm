@@ -123,6 +123,12 @@ struct _vterm_s
     char            *debug_filepath;
     int             debug_fd;
 
+    uint32_t        event_mask;                 /*
+                                                    specificies which events
+                                                    should be passed on to
+                                                    the custom event hook.
+                                                */
+
     // internal callbacks
     int             (*write)            (vterm_t *, uint32_t);
     int             (*esc_handler)      (vterm_t *);
@@ -134,6 +140,6 @@ struct _vterm_s
     int             (*pair_split)       (vterm_t *, short, short *, short *);
 };
 
-#define VTERM_CELL(vterm_ptr,x,y)   ((y * vterm_ptr->cols) + x)
+#define VTERM_CELL(vterm_ptr, x, y)     ((y * vterm_ptr->cols) + x)
 
 #endif

@@ -144,10 +144,13 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     if(idx == curr_idx) return 0;
 
     // run the event hook if installed
-    if(vterm->event_hook != NULL)
+    if(vterm->event_mask & VTERM_MASK_BUFFER_PREFLIP)
     {
-        vterm->event_hook(vterm, VTERM_HOOK_BUFFER_PREFLIP,
-            (void *)&idx);
+        if(vterm->event_hook != NULL)
+        {
+            vterm->event_hook(vterm, VTERM_EVENT_BUFFER_PREFLIP,
+                (void *)&idx);
+        }
     }
 
     /*
@@ -184,13 +187,16 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
             }
 
             // run the event hook if installed
-            if(vterm->event_hook != NULL)
+            if(vterm->event_mask & VTERM_MASK_BUFFER_DEACTIVATED)
             {
-                vterm->event_hook(vterm, VTERM_HOOK_BUFFER_DEACTIVATED,
-                    (void *)&curr_idx);
-            }
+                if(vterm->event_hook != NULL)
+                {
+                    vterm->event_hook(vterm, VTERM_EVENT_BUFFER_DEACTIVATED,
+                        (void *)&curr_idx);
+                }
 
-            vterm_buffer_dealloc(vterm, curr_idx);
+                vterm_buffer_dealloc(vterm, curr_idx);
+            }
         }
     }
 
@@ -216,10 +222,13 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     vterm->vterm_desc_idx = idx;
 
     // run the event hook if installed
-    if(vterm->event_hook != NULL)
+    if(vterm->event_mask & VTERM_MASK_BUFFER_ACTIVATED)
     {
-        vterm->event_hook(vterm, VTERM_HOOK_BUFFER_ACTIVATED,
-            (void *)&idx);
+        if(vterm->event_hook != NULL)
+        {
+            vterm->event_hook(vterm, VTERM_EVENT_BUFFER_ACTIVATED,
+                (void *)&idx);
+        }
     }
 
     return 0;
