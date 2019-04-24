@@ -7,4 +7,5 @@
 // calculate the number of elements in a static array (scalar)
 #define  ARRAY_SZ(x)    (sizeof(x) / sizeof(x[0]))
 
+
 #endif

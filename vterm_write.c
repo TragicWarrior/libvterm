@@ -19,9 +19,12 @@ vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
 
     retval = vterm->write(vterm, keycode);
 
-    if(vterm->event_hook != NULL)
+    if(vterm->event_mask & VTERM_MASK_PIPE_WRITTEN)
     {
-        vterm->event_hook(vterm, VTERM_HOOK_PIPE_WRITTEN, NULL);
+        if(vterm->event_hook != NULL)
+        {
+            vterm->event_hook(vterm, VTERM_MASK_PIPE_WRITTEN, NULL);
+        }
     }
 
     return retval;

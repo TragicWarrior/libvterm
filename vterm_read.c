@@ -139,10 +139,13 @@ vterm_read_pipe(vterm_t *vterm)
 
     if(bytes_read == -1 && errcpy != EINTR) return -1;
 
-    if(vterm->event_hook != NULL)
+    if(vterm->event_mask & VTERM_MASK_PIPE_READ)
     {
-        vterm->event_hook(vterm,
-            VTERM_HOOK_PIPE_READ, (void *)&bytes_read);
+        if(vterm->event_hook != NULL)
+        {
+            vterm->event_hook(vterm,
+                VTERM_EVENT_PIPE_READ, (void *)&bytes_read);
+        }
     }
 
     return bytes_waiting - bytes_remaining;

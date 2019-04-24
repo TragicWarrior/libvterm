@@ -79,8 +79,8 @@ typedef chtype          attr_t;
                                             // for debugging
 
 
-#define VCELL_TYPE_SIMPLE       0
-#define VCELL_TYPE_WIDE         1
+// #define VCELL_TYPE_SIMPLE       0
+// #define VCELL_TYPE_WIDE         1
 
 /*
     Need this to be public if we want to expose the buffer to callers.
@@ -127,30 +127,42 @@ typedef void (*VtermEventHook) \
     an 'anything' data pointer.  the contents of 'anything' are
     dictated by the type of event and described as following:
 
-    Event                           void *anything
-    -----                           --------------
-    VTERM_HOOK_BUFFER_ACTIVATED     index of buffer as int*
-    VTERM_HOOK_BUFFER_DEACTIVATED   index of buffer as int*
-    VTERM_HOOK_BUFFER_PREFLIP       index of new buffer as int*
-    VTERM_HOOK_PIPE_READ            bytes read as ssize_t*
-    VTERM_HOOK_PIPE_WRITTEN         unused
-    VTERM_HOOK_TERM_PRESIZE         unused
-    VTERM_HOOK_TERM_RESIZED         size as struct winsize*
-    VTERM_HOOK_TERM_PRECLEAR        unused
+    Event                               void *anything
+    -----                               --------------
+    VTERM_EVENT_BUFFER_ACTIVATED        index of buffer as int*
+    VTERM_EVENT_BUFFER_DEACTIVATED      index of buffer as int*
+    VTERM_EVENT_BUFFER_PREFLIP          index of new buffer as int*
+    VTERM_EVENT_PIPE_READ               bytes read as ssize_t*
+    VTERM_EVENT_PIPE_WRITTEN            unused
+    VTERM_EVENT_TERM_PRESIZE            unused
+    VTERM_EVENT_TERM_RESIZED            size as struct winsize*
+    VTERM_EVENT_TERM_PRECLEAR           unused
+    VTERM_EVENT_TERM_SCROLLED           direction of scroll as int* (-1 or 1)
 */
 
 enum
 {
-    VTERM_HOOK_BUFFER_ACTIVATED     =   0x10,
-    VTERM_HOOK_BUFFER_DEACTIVATED,
-    VTERM_HOOK_BUFFER_PREFLIP,
-    VTERM_HOOK_PIPE_READ,
-    VTERM_HOOK_PIPE_WRITTEN,
-    VTERM_HOOK_TERM_PRESIZE,
-    VTERM_HOOK_TERM_RESIZED,
-    VTERM_HOOK_TERM_PRECLEAR,
+    VTERM_EVENT_BUFFER_ACTIVATED =      0x10,
+    VTERM_EVENT_BUFFER_DEACTIVATED,
+    VTERM_EVENT_BUFFER_PREFLIP,
+    VTERM_EVENT_PIPE_READ,
+    VTERM_EVENT_PIPE_WRITTEN,
+    VTERM_EVENT_TERM_PRESIZE,
+    VTERM_EVENT_TERM_RESIZED,
+    VTERM_EVENT_TERM_PRECLEAR,
+    VTERM_EVENT_TERM_SCROLLED,
 };
 
+#define VTERM_MASK_BUFFER_ACTIVATED     (1L << 0)
+#define VTERM_MASK_BUFFER_DEACTIVATED   (1L << 1)
+#define VTERM_MASK_BUFFER_PREFLIP       (1L << 2)
+#define VTERM_MASK_BUFFER_READ          (1L << 3)
+#define VTERM_MASK_PIPE_READ            (1L << 4)
+#define VTERM_MASK_PIPE_WRITTEN         (1L << 5)
+#define VTERM_MASK_TERM_PRESIZE         (1L << 6)
+#define VTERM_MASK_TERM_RESIZED         (1L << 7)
+#define VTERM_MASK_TERM_PRECLEAR        (1L << 8)
+#define VTERM_MASK_TERM_SCROLLED        (1L << 9)
 
 /*
     alloc a raw terminal object.
@@ -331,6 +343,28 @@ int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
         hook        a callback that will be invoked by certain events.
 */
 void            vterm_install_hook(vterm_t *vterm, VtermEventHook hook);
+
+/*
+    returns the current event mask.
+
+    @params:
+        vterm       a valid vterm object handle.
+
+    @return:        retursn the bitmask of subscribed events
+*/
+uint32_t        vterm_get_event_mask(vterm_t *vterm);
+
+/*
+    sets the mask of events that will be passed to the event hook if
+    installed via vterm_install_hook().
+
+    @params:
+        vterm       a valid vterm object handle.
+
+        mask        a bitmask of events to subscribe to.
+*/
+void            vterm_set_event_mask(vterm_t *vterm, uint32_t mask);
+
 
 #ifndef NOCURSES
 /*

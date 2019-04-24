@@ -41,6 +41,15 @@ vterm_scroll_down(vterm_t *vterm)
     /* clear last row of the scrolling region */
     vterm_erase_row(vterm, v_desc->scroll_max);
 
+    if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
+    {
+        if(vterm->event_hook != NULL)
+        {
+            vterm->event_hook(vterm, VTERM_EVENT_TERM_SCROLLED,
+                &(int){-1});
+        }
+    }
+
     return;
 }
 
@@ -73,6 +82,15 @@ vterm_scroll_up(vterm_t *vterm)
 
     /* clear first row of the scrolling region */
     vterm_erase_row(vterm, v_desc->scroll_min);
+
+    if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
+    {
+        if(vterm->event_hook != NULL)
+        {
+            vterm->event_hook(vterm, VTERM_EVENT_TERM_SCROLLED,
+                &(int){1});
+        }
+    }
 
     return;
 }
