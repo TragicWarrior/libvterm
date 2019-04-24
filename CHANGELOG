@@ -1,3 +1,8 @@
+4.45
+
+* [Bryan Christ] Changed to a subscriber model for the event hook interface
+  to provide more events with less impact on performance.
+
 4.44
 
 * [Bryan Christ] Added event hooks to notify integrator when there is a
