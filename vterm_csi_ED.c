@@ -4,6 +4,9 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 
+#define SWITCH(jtable, x)    goto *jtable[x]
+
+
 /* interprets an 'erase display' (ED) escape sequence */
 void
 interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
@@ -14,32 +17,40 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     int             start_row, start_col, end_row, end_col;
     int             idx;
 
+    unsigned int    p;
+    static void     *table[] = {&&csi_ED_1, &&csi_ED_2, &&csi_ED_3};
+
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
+    p = (pcount > 0 ? param[0] : 3);
+
     /* decide range */
-    if(pcount && param[0] == 2)
-    {
-        start_row = 0;
-        start_col = 0;
-        end_row = v_desc->rows - 1;
-        end_col = v_desc->cols - 1;
-    }
-    else if(pcount && param[0] == 1)
-    {
-        start_row = 0;
-        start_col = 0;
-        end_row = v_desc->crow;
-        end_col = v_desc->ccol;
-    }
-    else
-    {
-        start_row = v_desc->crow;
-        start_col = v_desc->ccol;
-        end_row = v_desc->rows - 1;
-        end_col = v_desc->cols-1;
-    }
+    SWITCH(table, p - 1);
+
+    csi_ED_1:
+    start_row = 0;
+    start_col = 0;
+    end_row = v_desc->crow;
+    end_col = v_desc->ccol;
+    goto jmp_done;
+
+    csi_ED_2:
+    start_row = 0;
+    start_col = 0;
+    end_row = v_desc->rows - 1;
+    end_col = v_desc->cols - 1;
+    goto jmp_done;
+
+    csi_ED_3:
+    start_row = v_desc->crow;
+    start_col = v_desc->ccol;
+    end_row = v_desc->rows - 1;
+    end_col = v_desc->cols-1;
+    goto jmp_done;
+
+    jmp_done:
 
     /* clean range */
     for(r = start_row;r <= end_row; r++)
