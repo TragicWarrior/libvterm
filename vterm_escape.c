@@ -36,6 +36,16 @@ validate_xterm_escape_suffix(char *lastcharc);
 inline bool
 validate_scs_escape_suffix(char *lastchar);
 
+#define     SWITCH(jtable, idx)                 \
+                do                              \
+                {                               \
+                    if(jtable[idx] == 0)        \
+                        goto *jtable[0];        \
+                    else                        \
+                        goto *jtable[idx];      \
+                }                               \
+                while(0)
+
 void
 vterm_escape_start(vterm_t *vterm)
 {
@@ -73,94 +83,82 @@ vterm_interpret_escapes(vterm_t *vterm)
     char                *lastchar;
     char                *pos;
 
+    static void         *table[128] =
+                            {
+                                [0] = &&first_char_default,
+                                ['E'] = &&first_char_E,
+                                ['M'] = &&first_char_M,
+                                ['A'] = &&first_char_A,
+                                ['B'] = &&first_char_B,
+                                ['C'] = &&first_char_C,
+                                ['D'] = &&first_char_D,
+                                ['7'] = &&first_char_vii,
+                                ['8'] = &&first_char_viii,
+                                ['c'] = &&first_char_c,
+                            };
+
     firstchar = vterm->esbuf[0];
     lastchar = &vterm->esbuf[vterm->esbuf_len - 1];
 
     // too early to do anything
     if(!firstchar) return;
 
-    switch(firstchar)
-    {
-        // interpert ESC-M a line-feed (NEL)
-        case 'E':
-        {
-            interpret_esc_NEL(vterm);
-            vterm_escape_cancel(vterm);
+    SWITCH(table, firstchar);
 
-            return;
-        }
+    // interpert ESC-M a line-feed (NEL)
+    first_char_E:
+        interpret_esc_NEL(vterm);
+        vterm_escape_cancel(vterm);
+        return;
 
-        // interpret ESC-M as reverse line-feed (RI)
-        case 'M':
-        {
-            interpret_esc_RI(vterm);
-            vterm_escape_cancel(vterm);
+    // interpret ESC-M as reverse line-feed (RI)
+    first_char_M:
+        interpret_esc_RI(vterm);
+        vterm_escape_cancel(vterm);
+        return;
 
-            return;
-        }
+    // VT52, move cursor up.  same as CUU which is ESC [ A
+    first_char_A:
+        interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+        return;
 
-        // VT52, move cursor up.  same as CUU which is ESC [ A
-        case 'A':
-        {
-            interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
-            vterm_escape_cancel(vterm);
+    // VT52, move cursor down.  same as CUD which is ESC [ B
+    first_char_B:
+        interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+        return;
 
-            return;
-        }
+    // VT52, move cursor right.  same as CUF which is ESC [ C
+    first_char_C:
+        interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+        return;
 
-        // VT52, move cursor down.  same as CUD which is ESC [ B
-        case 'B':
-        {
-            interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
-            vterm_escape_cancel(vterm);
+    // VT52, move cursor left.  same as CUB which is ESC [ D
+    first_char_D:
+        interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
+        vterm_escape_cancel(vterm);
+        return;
 
-            return;
-        }
+    first_char_vii:
+        interpret_csi_SAVECUR(vterm, 0, 0);
+        vterm_escape_cancel(vterm);
+        return;
 
-        // VT52, move cursor right.  same as CUF which is ESC [ C
-        case 'C':
-        {
-            interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
-            vterm_escape_cancel(vterm);
+    first_char_viii:
+        interpret_csi_RESTORECUR(vterm, 0, 0);
+        vterm_escape_cancel(vterm);
+        return;
 
-            return;
-        }
+    // The ESC c sequence is RS1 reset for most
+    first_char_c:
+        // push in "\ec" as a safety check
+        interpret_csi_RS1_xterm(vterm, XTERM_RS1);
+        vterm_escape_cancel(vterm);
+        return;
 
-        // VT52, move cursor left.  same as CUB which is ESC [ D
-        case 'D':
-        {
-            interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
-            vterm_escape_cancel(vterm);
-
-            return;
-        }
-
-        case '7':
-        {
-            interpret_csi_SAVECUR(vterm, 0, 0);
-            vterm_escape_cancel(vterm);
-
-            return;
-        }
-
-        case '8':
-        {
-            interpret_csi_RESTORECUR(vterm, 0, 0);
-            vterm_escape_cancel(vterm);
-
-            return;
-        }
-
-        // The ESC c sequence is RS1 reset for most
-        case 'c':
-        {
-            // push in "\ec" as a safety check
-            interpret_csi_RS1_xterm(vterm, XTERM_RS1);
-            vterm_escape_cancel(vterm);
-
-            return;
-        }
-    }
+    first_char_default:
 
     /*
         start of check for interims.

@@ -4,8 +4,6 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 
-#define SWITCH(jtable, x)    goto *jtable[x]
-
 
 /* interprets an 'erase display' (ED) escape sequence */
 void
@@ -18,7 +16,6 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     int             idx;
 
     unsigned int    p;
-    static void     *table[] = {&&csi_ED_1, &&csi_ED_2, &&csi_ED_3};
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
@@ -27,30 +24,31 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     p = (pcount > 0 ? param[0] : 3);
 
     /* decide range */
-    SWITCH(table, p - 1);
+    switch(p)
+    {
+        // case 2 is more prevalent and small switches don't convert to
+        // jump tables but rather conditional branching.
+        case 2:
+            start_row = 0;
+            start_col = 0;
+            end_row = v_desc->rows - 1;
+            end_col = v_desc->cols - 1;
+            break;
 
-    csi_ED_1:
-    start_row = 0;
-    start_col = 0;
-    end_row = v_desc->crow;
-    end_col = v_desc->ccol;
-    goto jmp_done;
+        case 1:
+            start_row = 0;
+            start_col = 0;
+            end_row = v_desc->crow;
+            end_col = v_desc->ccol;
+            break;
 
-    csi_ED_2:
-    start_row = 0;
-    start_col = 0;
-    end_row = v_desc->rows - 1;
-    end_col = v_desc->cols - 1;
-    goto jmp_done;
-
-    csi_ED_3:
-    start_row = v_desc->crow;
-    start_col = v_desc->ccol;
-    end_row = v_desc->rows - 1;
-    end_col = v_desc->cols-1;
-    goto jmp_done;
-
-    jmp_done:
+        case 3:
+            start_row = v_desc->crow;
+            start_col = v_desc->ccol;
+            end_row = v_desc->rows - 1;
+            end_col = v_desc->cols-1;
+            break;
+    }
 
     /* clean range */
     for(r = start_row;r <= end_row; r++)
