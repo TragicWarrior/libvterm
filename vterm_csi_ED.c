@@ -42,7 +42,7 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
             end_col = v_desc->ccol;
             break;
 
-        case 3:
+        default:
             start_row = v_desc->crow;
             start_col = v_desc->ccol;
             end_row = v_desc->rows - 1;

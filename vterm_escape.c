@@ -36,16 +36,6 @@ validate_xterm_escape_suffix(char *lastcharc);
 inline bool
 validate_scs_escape_suffix(char *lastchar);
 
-#define     SWITCH(jtable, idx)                 \
-                do                              \
-                {                               \
-                    if(jtable[idx] == 0)        \
-                        goto *jtable[0];        \
-                    else                        \
-                        goto *jtable[idx];      \
-                }                               \
-                while(0)
-
 void
 vterm_escape_start(vterm_t *vterm)
 {
@@ -103,7 +93,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     // too early to do anything
     if(!firstchar) return;
 
-    SWITCH(table, firstchar);
+    SWITCH(table, (unsigned int)firstchar, 0);
 
     // interpert ESC-M a line-feed (NEL)
     first_char_E:
