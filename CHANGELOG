@@ -1,3 +1,8 @@
+4.47
+
+* [Bryan Christ] Implement reply to OSC DA (device attribute) request
+  as prepatory work for terminfo "linux" compatibility mode.
+
 4.46
 
 * [Bryan Christ] Force gcc to create jump tables instead of conditional
