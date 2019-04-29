@@ -1,3 +1,8 @@
+4.46
+
+* [Bryan Christ] Force gcc to create jump tables instead of conditional
+  branching in some places and optimize vterm_scroll_down.
+
 4.45
 
 * [Bryan Christ] Changed to a subscriber model for the event hook interface
