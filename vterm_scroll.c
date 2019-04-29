@@ -17,8 +17,8 @@ vterm_scroll_down(vterm_t *vterm)
     vterm_desc_t    *v_desc = NULL;
     int             idx;
     int             i;
-    vterm_cell_t    *vcell_src;
-    vterm_cell_t    *vcell_dst;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
@@ -34,15 +34,15 @@ vterm_scroll_down(vterm_t *vterm)
     */
     v_desc->crow = v_desc->scroll_max;
 
-    vcell_src = v_desc->cells[v_desc->scroll_min + 1];
-    vcell_dst = v_desc->cells[v_desc->scroll_min];
+    vcell_src = &v_desc->cells[v_desc->scroll_min + 1];
+    vcell_dst = &v_desc->cells[v_desc->scroll_min];
 
     for(i = v_desc->scroll_min; i < v_desc->scroll_max; i++)
     {
         // memcpy(v_desc->cells[i], v_desc->cells[i + 1],
-        //     sizeof(vterm_cell_t) * v_desc->cols);
+        //    sizeof(vterm_cell_t) * v_desc->cols);
 
-        memcpy(vcell_dst, vcell_src,
+        memcpy(*vcell_dst, *vcell_src,
              sizeof(vterm_cell_t) * v_desc->cols);
 
         vcell_src++;

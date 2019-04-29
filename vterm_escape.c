@@ -67,25 +67,36 @@ vterm_escape_cancel(vterm_t *vterm)
 void
 vterm_interpret_escapes(vterm_t *vterm)
 {
-    static char         interims[] = "[]P()";
-    static char         *end = interims + ARRAY_SZ(interims);
+    // static char         interims[] = "[]P()";
+    // static char         *end = interims + ARRAY_SZ(interims);
     char                firstchar;
     char                *lastchar;
-    char                *pos;
+    // char                *pos;
 
-    static void         *table[128] =
+    static void         *primary_table[128] =
                             {
-                                [0] = &&first_char_default,
-                                ['E'] = &&first_char_E,
-                                ['M'] = &&first_char_M,
-                                ['A'] = &&first_char_A,
-                                ['B'] = &&first_char_B,
-                                ['C'] = &&first_char_C,
-                                ['D'] = &&first_char_D,
-                                ['7'] = &&first_char_vii,
-                                ['8'] = &&first_char_viii,
-                                ['c'] = &&first_char_c,
+                                [0] = &&primary_char_default,
+                                ['E'] = &&primary_char_E,
+                                ['M'] = &&primary_char_M,
+                                ['A'] = &&primary_char_A,
+                                ['B'] = &&primary_char_B,
+                                ['C'] = &&primary_char_C,
+                                ['D'] = &&primary_char_D,
+                                ['7'] = &&primary_char_vii,
+                                ['8'] = &&primary_char_viii,
+                                ['c'] = &&primary_char_c,
                             };
+
+    static void         *interim_table[128] =
+                            {
+                                [0] = &&interim_char_none,
+                                [']'] = &&interim_rbracket,
+                                ['['] = &&interim_lbracket,
+                                [')'] = &&interim_rparth,
+                                ['('] = &&interim_lparth,
+                                ['P'] = &&interim_char_P,
+                            };
+
 
     firstchar = vterm->esbuf[0];
     lastchar = &vterm->esbuf[vterm->esbuf_len - 1];
@@ -93,117 +104,135 @@ vterm_interpret_escapes(vterm_t *vterm)
     // too early to do anything
     if(!firstchar) return;
 
-    SWITCH(table, (unsigned int)firstchar, 0);
+    SWITCH(primary_table, (unsigned int)firstchar, 0);
 
     // interpert ESC-M a line-feed (NEL)
-    first_char_E:
+    primary_char_E:
         interpret_esc_NEL(vterm);
         vterm_escape_cancel(vterm);
         return;
 
     // interpret ESC-M as reverse line-feed (RI)
-    first_char_M:
+    primary_char_M:
         interpret_esc_RI(vterm);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor up.  same as CUU which is ESC [ A
-    first_char_A:
+    primary_char_A:
         interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor down.  same as CUD which is ESC [ B
-    first_char_B:
+    primary_char_B:
         interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor right.  same as CUF which is ESC [ C
-    first_char_C:
+    primary_char_C:
         interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor left.  same as CUB which is ESC [ D
-    first_char_D:
+    primary_char_D:
         interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
-    first_char_vii:
+    primary_char_vii:
         interpret_csi_SAVECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
         return;
 
-    first_char_viii:
+    primary_char_viii:
         interpret_csi_RESTORECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // The ESC c sequence is RS1 reset for most
-    first_char_c:
+    primary_char_c:
         // push in "\ec" as a safety check
         interpret_csi_RS1_xterm(vterm, XTERM_RS1);
         vterm_escape_cancel(vterm);
         return;
 
-    first_char_default:
+    primary_char_default:
 
     /*
         start of check for interims.
         if it's not these, we don't have code to handle it.
     */
-    pos = interims;
+    // pos = interims;
 
     // look for intermediates we can handle
-    while(pos != end)
-    {
+    //while(pos != end)
+    //{
         // match found
-        if(firstchar == *pos) break;
-        pos++;
-    }
+    //    if(firstchar == *pos) break;
+    //    pos++;
+    //}
 
     // we didn't find a match.  end escape mode processing.
-    if(pos == end)
-    {
-        vterm_escape_cancel(vterm);
-        return;
-    }
+    //if(pos == end)
+    //{
+    //    vterm_escape_cancel(vterm);
+    //    return;
+    //}
     /* end interims check */
 
+    SWITCH(interim_table, (unsigned int)firstchar, 0);
+
     // looks like an complete xterm Operating System Command
-    if(firstchar == ']' && validate_xterm_escape_suffix(lastchar))
-    {
-        vterm->esc_handler = vterm_interpret_xterm_osc;
-    }
+    interim_rbracket:
+        if(validate_xterm_escape_suffix(lastchar))
+        {
+            vterm->esc_handler = vterm_interpret_xterm_osc;
+        }
+        goto interim_run;
 
     // we have a complete csi escape sequence: interpret it
-    if(firstchar == '[' && validate_csi_escape_suffix(lastchar))
-    {
-        vterm->esc_handler = vterm_interpret_esc_normal;
-    }
+    interim_lbracket:
+        if(validate_csi_escape_suffix(lastchar))
+        {
+            vterm->esc_handler = vterm_interpret_esc_normal;
+        }
+        goto interim_run;
 
     // SCS G0 sequence - discards for now
-    if(firstchar == '(' && validate_scs_escape_suffix(lastchar))
-    {
-        vterm->esc_handler = vterm_interpret_esc_scs;
-    }
+    interim_lparth:
+        if(validate_scs_escape_suffix(lastchar))
+        {
+            vterm->esc_handler = vterm_interpret_esc_scs;
+        }
+        goto interim_run;
 
     // SCS G1 sequence - discards for now
-    if(firstchar == ')' && validate_scs_escape_suffix(lastchar))
-    {
-        vterm->esc_handler = vterm_interpret_esc_scs;
-    }
+    interim_rparth:
+        if(validate_scs_escape_suffix(lastchar))
+        {
+            vterm->esc_handler = vterm_interpret_esc_scs;
+        }
+        goto interim_run;
+
 
     // DCS sequence - starts in P and ends in Esc backslash
-    if( firstchar == 'P'
-        && vterm->esbuf_len > 2
-        && vterm->esbuf[vterm->esbuf_len - 2] == '\x1B'
-        && *lastchar == '\\' )
-    {
-        vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
-    }
+    interim_char_P:
+        if( vterm->esbuf_len > 2
+            && vterm->esbuf[vterm->esbuf_len - 2] == '\x1B'
+            && *lastchar == '\\' )
+        {
+            vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
+        }
+        goto interim_run;
+
+    interim_char_none:
+        vterm_escape_cancel(vterm);
+        return;
+
+    interim_run:
 
     // if an escape handler has been configured, run it.
     if(vterm->esc_handler != NULL)
