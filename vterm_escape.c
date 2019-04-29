@@ -13,6 +13,7 @@
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_osc.h"
+#include "vterm_osc_DA.h"
 #include "vterm_render.h"
 #include "vterm_misc.h"
 #include "vterm_buffer.h"
@@ -67,24 +68,21 @@ vterm_escape_cancel(vterm_t *vterm)
 void
 vterm_interpret_escapes(vterm_t *vterm)
 {
-    // static char         interims[] = "[]P()";
-    // static char         *end = interims + ARRAY_SZ(interims);
     char                firstchar;
     char                *lastchar;
-    // char                *pos;
 
-    static void         *primary_table[128] =
+    static void         *simple_table[128] =
                             {
-                                [0] = &&primary_char_default,
-                                ['E'] = &&primary_char_E,
-                                ['M'] = &&primary_char_M,
-                                ['A'] = &&primary_char_A,
-                                ['B'] = &&primary_char_B,
-                                ['C'] = &&primary_char_C,
-                                ['D'] = &&primary_char_D,
-                                ['7'] = &&primary_char_vii,
-                                ['8'] = &&primary_char_viii,
-                                ['c'] = &&primary_char_c,
+                                [0] = &&simple_char_default,
+                                ['E'] = &&simple_char_E,
+                                ['M'] = &&simple_char_M,
+                                ['A'] = &&simple_char_A,
+                                ['B'] = &&simple_char_B,
+                                ['C'] = &&simple_char_C,
+                                ['D'] = &&simple_char_D,
+                                ['7'] = &&simple_char_vii,
+                                ['8'] = &&simple_char_viii,
+                                ['c'] = &&simple_char_c,
                             };
 
     static void         *interim_table[128] =
@@ -104,84 +102,63 @@ vterm_interpret_escapes(vterm_t *vterm)
     // too early to do anything
     if(!firstchar) return;
 
-    SWITCH(primary_table, (unsigned int)firstchar, 0);
+    SWITCH(simple_table, (unsigned int)firstchar, 0);
 
     // interpert ESC-M a line-feed (NEL)
-    primary_char_E:
+    simple_char_E:
         interpret_esc_NEL(vterm);
         vterm_escape_cancel(vterm);
         return;
 
     // interpret ESC-M as reverse line-feed (RI)
-    primary_char_M:
+    simple_char_M:
         interpret_esc_RI(vterm);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor up.  same as CUU which is ESC [ A
-    primary_char_A:
+    simple_char_A:
         interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor down.  same as CUD which is ESC [ B
-    primary_char_B:
+    simple_char_B:
         interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor right.  same as CUF which is ESC [ C
-    primary_char_C:
+    simple_char_C:
         interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // VT52, move cursor left.  same as CUB which is ESC [ D
-    primary_char_D:
+    simple_char_D:
         interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return;
 
-    primary_char_vii:
+    simple_char_vii:
         interpret_csi_SAVECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
         return;
 
-    primary_char_viii:
+    simple_char_viii:
         interpret_csi_RESTORECUR(vterm, 0, 0);
         vterm_escape_cancel(vterm);
         return;
 
     // The ESC c sequence is RS1 reset for most
-    primary_char_c:
+    simple_char_c:
         // push in "\ec" as a safety check
         interpret_csi_RS1_xterm(vterm, XTERM_RS1);
         vterm_escape_cancel(vterm);
         return;
 
-    primary_char_default:
+    simple_char_default:
 
-    /*
-        start of check for interims.
-        if it's not these, we don't have code to handle it.
-    */
-    // pos = interims;
-
-    // look for intermediates we can handle
-    //while(pos != end)
-    //{
-        // match found
-    //    if(firstchar == *pos) break;
-    //    pos++;
-    //}
-
-    // we didn't find a match.  end escape mode processing.
-    //if(pos == end)
-    //{
-    //    vterm_escape_cancel(vterm);
-    //    return;
-    //}
-    /* end interims check */
 
     SWITCH(interim_table, (unsigned int)firstchar, 0);
 
@@ -338,6 +315,12 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     // delegate handling depending on command character (verb)
     switch (verb)
     {
+        case 'c':
+        {
+            interpret_osc_DA(vterm);
+            break;
+        }
+
         case 'b':
         {
             interpret_csi_REP(vterm, csiparam, param_count);
