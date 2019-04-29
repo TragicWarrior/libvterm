@@ -4,6 +4,7 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 
+
 /* interprets an 'erase display' (ED) escape sequence */
 void
 interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
@@ -14,31 +15,39 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     int             start_row, start_col, end_row, end_col;
     int             idx;
 
+    unsigned int    p;
+
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
+    p = (pcount > 0 ? param[0] : 3);
+
     /* decide range */
-    if(pcount && param[0] == 2)
+    switch(p)
     {
-        start_row = 0;
-        start_col = 0;
-        end_row = v_desc->rows - 1;
-        end_col = v_desc->cols - 1;
-    }
-    else if(pcount && param[0] == 1)
-    {
-        start_row = 0;
-        start_col = 0;
-        end_row = v_desc->crow;
-        end_col = v_desc->ccol;
-    }
-    else
-    {
-        start_row = v_desc->crow;
-        start_col = v_desc->ccol;
-        end_row = v_desc->rows - 1;
-        end_col = v_desc->cols-1;
+        // case 2 is more prevalent and small switches don't convert to
+        // jump tables but rather conditional branching.
+        case 2:
+            start_row = 0;
+            start_col = 0;
+            end_row = v_desc->rows - 1;
+            end_col = v_desc->cols - 1;
+            break;
+
+        case 1:
+            start_row = 0;
+            start_col = 0;
+            end_row = v_desc->crow;
+            end_col = v_desc->ccol;
+            break;
+
+        default:
+            start_row = v_desc->crow;
+            start_col = v_desc->ccol;
+            end_row = v_desc->rows - 1;
+            end_col = v_desc->cols-1;
+            break;
     }
 
     /* clean range */
