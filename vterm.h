@@ -66,6 +66,8 @@ typedef chtype          attr_t;
 #define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100
 #define VTERM_FLAG_XTERM        (1 << 2)    // masquerade as xterm
 #define VTERM_FLAG_XTERM_256    (1 << 3)    // masquerade as xterm-256
+#define VTERM_FLAG_LINUX        (1 << 4)    // masquerade as linux
+
 #define VTERM_FLAG_NOPTY        (1 << 8)    // skip all the fd and pty stuff.
                                             // just render input args byte
                                             // stream to a buffer

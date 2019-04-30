@@ -121,6 +121,12 @@ int main(int argc, char **argv)
                 continue;
             }
 
+            if (strncmp(argv[i], "--linux", strlen("--linux")) == 0)
+            {
+                flags |= VTERM_FLAG_LINUX;
+                continue;
+            }
+
             if (strncmp(argv[i], "--exec", strlen("--exec")) == 0)
             {
                 // must have at least exec path
