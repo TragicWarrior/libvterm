@@ -14,6 +14,16 @@ specify the following:
 
 cmake -DDEFINE_CURSES=OFF
 
+A standard build goes something like this:
+
+cmake CMakeList.txt
+make
+sudo make install
+
+If you want to build a debian package then:
+
+sudo make package
+
 ## Performance Tuning ##
 
 A terminal emulation should be light and fast.  Whenever possible, the
