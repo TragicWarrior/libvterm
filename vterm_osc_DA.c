@@ -11,16 +11,20 @@
 int
 interpret_osc_DA(vterm_t *vterm)
 {
-    ssize_t     bytes_written = 0;
-    int         retval;
+    // ssize_t     bytes_written = 0;
+    // int         retval;
 
+    (void)vterm;
+
+/*
     bytes_written = write(vterm->pty_fd, OSC_DA_REPLY, sizeof(OSC_DA_REPLY));
     if(bytes_written != sizeof(OSC_DA_REPLY))
     {
         fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
     }
+*/
 
-   return retval;
+   return 0;
 }
 
