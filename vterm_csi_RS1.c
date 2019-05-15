@@ -40,6 +40,7 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 
         // reset the parser
         pos = RXVT_RS1;
+
         return 0;
     }
 
@@ -56,7 +57,7 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
     if(vterm == NULL) return -1;
 
     // safety check
-    if(strncmp(data, XTERM_RS1, sizeof(XTERM_RS1) - 1) != 0) return -1;
+    if(strncmp(data, XTERM_RS1, strlen(XTERM_RS1)) != 0) return -1;
 
     /*
         although the RXVT sequence is a bizarre signal for resetting the
