@@ -43,6 +43,7 @@ add_library(vterm-static STATIC
     vterm_erase.c
     vterm_escape.c
     vterm_escape_simple.c
+    vterm_escape_suffixes.c
     vterm_buffer.c
     vterm_colors.c
     vterm_csi_CBT.c
@@ -91,6 +92,7 @@ add_library(vterm.o OBJECT
     vterm_erase.c
     vterm_escape.c
     vterm_escape_simple.c
+    vterm_escape_suffixes.c
     vterm_exec.c
     vterm_colors.c
     vterm_csi_CBT.c
