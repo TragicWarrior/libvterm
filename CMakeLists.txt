@@ -40,6 +40,9 @@ add_library(vterm-static STATIC
     color_math.c
     vterm.c
     vterm_exec.c
+    vterm_erase.c
+    vterm_escape.c
+    vterm_escape_simple.c
     vterm_buffer.c
     vterm_colors.c
     vterm_csi_CBT.c
@@ -67,8 +70,6 @@ add_library(vterm-static STATIC
     vterm_esc_IND.c
     vterm_esc_NEL.c
     vterm_esc_RI.c
-    vterm_erase.c
-    vterm_escape.c
     vterm_hook.c
     vterm_misc.c
     vterm_osc.c
@@ -87,6 +88,9 @@ add_library(vterm.o OBJECT
     color_math.c
     vterm.c
     vterm_buffer.c
+    vterm_erase.c
+    vterm_escape.c
+    vterm_escape_simple.c
     vterm_exec.c
     vterm_colors.c
     vterm_csi_CBT.c
@@ -114,8 +118,6 @@ add_library(vterm.o OBJECT
     vterm_esc_IND.c
     vterm_esc_NEL.c
     vterm_esc_RI.c
-    vterm_erase.c
-    vterm_escape.c
     vterm_hook.c
     vterm_misc.c
     vterm_osc.c

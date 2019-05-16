@@ -11,6 +11,7 @@
 
 #include "vterm.h"
 #include "vterm_private.h"
+#include "vterm_escape.h"
 #include "vterm_csi.h"
 #include "vterm_osc.h"
 #include "vterm_osc_DA.h"
@@ -71,20 +72,6 @@ vterm_interpret_escapes(vterm_t *vterm)
     char                firstchar;
     char                *lastchar;
 
-    static void         *simple_table[128] =
-                            {
-                                [0] = &&simple_char_default,
-                                ['E'] = &&simple_char_E,
-                                ['M'] = &&simple_char_M,
-                                ['A'] = &&simple_char_A,
-                                ['B'] = &&simple_char_B,
-                                ['C'] = &&simple_char_C,
-                                ['D'] = &&simple_char_D,
-                                ['7'] = &&simple_char_vii,
-                                ['8'] = &&simple_char_viii,
-                                ['c'] = &&simple_char_c,
-                            };
-
     static void         *interim_table[128] =
                             {
                                 [0] = &&interim_char_none,
@@ -95,6 +82,8 @@ vterm_interpret_escapes(vterm_t *vterm)
                                 ['P'] = &&interim_char_P,
                             };
 
+    int                 retval = 0;
+
 
     firstchar = vterm->esbuf[0];
     lastchar = &vterm->esbuf[vterm->esbuf_len - 1];
@@ -102,68 +91,20 @@ vterm_interpret_escapes(vterm_t *vterm)
     // too early to do anything
     if(!firstchar) return;
 
-    SWITCH(simple_table, (unsigned int)firstchar, 0);
-
-    // interpert ESC-M a line-feed (NEL)
-    simple_char_E:
-        interpret_esc_NEL(vterm);
-        vterm_escape_cancel(vterm);
-        return;
-
-    // interpret ESC-M as reverse line-feed (RI)
-    simple_char_M:
-        interpret_esc_RI(vterm);
-        vterm_escape_cancel(vterm);
-        return;
-
-    // VT52, move cursor up.  same as CUU which is ESC [ A
-    simple_char_A:
-        interpret_csi_CUx(vterm, 'A', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-        return;
-
-    // VT52, move cursor down.  same as CUD which is ESC [ B
-    simple_char_B:
-        interpret_csi_CUx(vterm, 'B', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-        return;
-
-    // VT52, move cursor right.  same as CUF which is ESC [ C
-    simple_char_C:
-        interpret_csi_CUx(vterm, 'C', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-        return;
-
-    // VT52, move cursor left.  same as CUB which is ESC [ D
-    simple_char_D:
-        interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
-        vterm_escape_cancel(vterm);
-        return;
-
-    simple_char_vii:
-        interpret_csi_SAVECUR(vterm, 0, 0);
-        vterm_escape_cancel(vterm);
-        return;
-
-    simple_char_viii:
-        interpret_csi_RESTORECUR(vterm, 0, 0);
-        vterm_escape_cancel(vterm);
-        return;
-
-    // The ESC c sequence is RS1 reset for most
-    simple_char_c:
-        // push in "\ec" as a safety check
-        interpret_csi_RS1_xterm(vterm, XTERM_RS1);
-        vterm_escape_cancel(vterm);
-        return;
-
-    simple_char_default:
-
+    retval = vterm_interpret_escapes_simple(vterm);
+    if(retval > 0) return;
 
     SWITCH(interim_table, (unsigned int)firstchar, 0);
 
     // looks like an complete xterm Operating System Command
     interim_rbracket:
+        // term type linux sends this to reset FG and BG colors to default
+        if(*lastchar == 'R')
+        {
+            vterm_escape_cancel(vterm);
+            goto interim_run;
+        }
+
         if(validate_xterm_escape_suffix(lastchar))
         {
             vterm->esc_handler = vterm_interpret_xterm_osc;
@@ -317,6 +258,7 @@ vterm_interpret_esc_normal(vterm_t *vterm)
     {
         case 'c':
         {
+            // endwin(); exit(0);
             interpret_osc_DA(vterm);
             break;
         }
