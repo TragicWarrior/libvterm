@@ -1,3 +1,8 @@
+5.00
+
+* [Bryan Christ] Initial release with support for terinfo "linux" type
+  emulation -- currently regarded as alpha state.
+
 4.47
 
 * [Bryan Christ] Implement reply to OSC DA (device attribute) request
