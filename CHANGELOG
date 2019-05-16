@@ -1,3 +1,7 @@
+5.01
+
+* [Bryan Christ] Code cleanup and refactoring from linux compatibility mode.
+
 5.00
 
 * [Bryan Christ] Initial release with support for terinfo "linux" type
