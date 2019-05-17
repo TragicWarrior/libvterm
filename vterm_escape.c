@@ -21,7 +21,7 @@
 #include "macros.h"
 
 static int
-vterm_interpret_esc_normal(vterm_t *vterm);
+vterm_interpret_csi(vterm_t *vterm);
 
 static int
 vterm_interpret_esc_xterm_dsc(vterm_t *vterm);
@@ -107,7 +107,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     interim_lbracket:
         if(validate_csi_escape_suffix(lastchar))
         {
-            vterm->esc_handler = vterm_interpret_esc_normal;
+            vterm->esc_handler = vterm_interpret_csi;
         }
         goto interim_run;
 
@@ -184,7 +184,7 @@ vterm_interpret_esc_xterm_dsc(vterm_t *vterm)
 }
 
 int
-vterm_interpret_esc_normal(vterm_t *vterm)
+vterm_interpret_csi(vterm_t *vterm)
 {
     static int  csiparam[MAX_CSI_ES_PARAMS];
     int         param_count = 0;
