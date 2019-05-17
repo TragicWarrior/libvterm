@@ -39,6 +39,7 @@ endif()
 add_library(vterm-static STATIC
     color_math.c
     vterm.c
+    vterm_csi.c
     vterm_exec.c
     vterm_erase.c
     vterm_escape.c
@@ -89,6 +90,7 @@ add_library(vterm.o OBJECT
     color_math.c
     vterm.c
     vterm_buffer.c
+    vterm_csi.c
     vterm_erase.c
     vterm_escape.c
     vterm_escape_simple.c
