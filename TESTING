@@ -12,7 +12,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - myman
 5 - last file manager
 5 - ranger
-5 - midnight commander
+5 - midnight commander (see notes)
 5 - nano
 4 - links
 5 - lynx
@@ -43,20 +43,42 @@ Fidelity score: 5 = excellent, 1 = poor
 
 *** Test Notes ***
 
-Configuration for VLC:
+
+=== VLC ===
+
+Testing Configuration:
 
 vlc -V aa <file>
 vlc -V caca <file>
 
-Configuration for Mplayer:
+
+=== Mplayer ===
+
+Testing Configuration:
 
 mplayer -quiet -framedrop -monitorpixelaspect 0.5 -contrast 2 -vo aa:driver=curses
 
-Configuration for myman:
+
+=== myman ===
+
+Testing Configuration:
 
 myman -z big
 myman -2 -z big
 
-Configuration for aaxine 
+
+=== aaxine === 
+
+Testing Configuration:
 
 aaxine -reverse -dim -bold -A alsa <file>
+
+
+=== mc (midnight commander) ===
+
+Notes:
+
+When running in "linux" terminal emulation mode, the version of mc which
+ships with Ubuntu 18.04 LTS buffers keystrokes when mouse mode is enabled.
+Upgrading to a newer version of mc or staring in no mouse mode (-d) will
+alleviate the problem.
