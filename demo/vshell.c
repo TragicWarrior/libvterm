@@ -239,10 +239,13 @@ vshell_paint_screen(vterm_t *vterm)
     wattroff(screen_wnd, A_BOLD);
 
     // quick computer of title location
-    vterm_get_title(vterm, buf, sizeof(buf));
-    if(buf[0] != '\0')
+    if(vterm != NULL)
     {
-        sprintf(title, " %s ", buf);
+        vterm_get_title(vterm, buf, sizeof(buf));
+        if(buf[0] != '\0')
+        {
+            sprintf(title, " %s ", buf);
+        }
     }
 
     len = strlen(title);
