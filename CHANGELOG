@@ -1,3 +1,13 @@
+5.02
+
+* [Bryan Christ] Additional clean-up after adding linux term type
+  compatibility mode.
+* [Bryan Christ] Added stubs for bracketed paste mode.
+* [Bryan Christ] Moved standard CSI decoding to a separate file and forced
+  the compiler to create a jump table.
+* [Bryan Christ] Updated TESTING document with findings from testing
+  linux mode.
+
 5.01
 
 * [Bryan Christ] Code cleanup and refactoring from linux compatibility mode.
