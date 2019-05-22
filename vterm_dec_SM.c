@@ -5,6 +5,12 @@
 #include "vterm_buffer.h"
 #include "vterm_cursor.h"
 
+/*
+    Info on bracketed paste can be found here:
+
+    https://cirw.in/blog/bracketed-paste
+*/
+
 /* Interpret DEC SM (set mode) */
 void
 interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
@@ -70,6 +76,14 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             // check to see if we're already using the ALT buffer
             if(idx != VTERM_BUFFER_ALT)
                 vterm_buffer_set_active(vterm, VTERM_BUFFER_ALT);
+
+            continue;
+        }
+
+        // stub for enabling bracketed paste
+        if(param[i] == 2004)
+        {
+            // todo
 
             continue;
         }
