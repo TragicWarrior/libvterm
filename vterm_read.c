@@ -23,7 +23,7 @@
     a multiple of this to prevent blocking in the child
     process.
 */
-#define MAX_PIPE_READ   (PIPE_BUF * 4)
+#define MAX_PIPE_READ   (PIPE_BUF * 8)
 
 ssize_t
 vterm_read_pipe(vterm_t *vterm)
