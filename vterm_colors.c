@@ -1,9 +1,12 @@
 
-#include <malloc.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
+
+#ifndef __FreeBSD__
+#include <malloc.h>
+#endif
 
 #include "macros.h"
 #include "vterm.h"

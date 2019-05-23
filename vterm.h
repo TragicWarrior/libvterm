@@ -57,7 +57,15 @@ typedef chtype          attr_t;
 #define KEY_F(n)        ((n)>0 && (n)<50)?(n)+264:0
 
 #else
+
+#ifdef __linux__
 #include <ncursesw/curses.h>
+#endif
+
+#ifdef __FreeBSD__
+#include <ncurses/curses.h>
+#endif
+
 #endif
 
 #define LIBVTERM_VERSION        "5.03"

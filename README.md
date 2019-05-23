@@ -7,20 +7,24 @@ have allowed it to use a stream buffer for output.
 
 ## Building ##
 
-The build system for libvterm uses CMake and it automatically detects a
-variety of different settings and libraries.  A default build tries to
-include support for curses/ncurses.  If you want to suppress the behavior,
-specify the following:
-
-cmake -DDEFINE_CURSES=OFF
-
 A standard build goes something like this:
 
 cmake CMakeList.txt
 make
 sudo make install
 
-If you want to build a debian package then:
+# FreeBSD #
+
+CMake does not detect the ncurses or ncurses wide library correctly on
+FreeBSD.  Therefore, the CMake build check for ncurses is conditionally
+excluded on FreeBSD.  Therefore, the build process on FreeBSD blindly
+expects ncurses headers to be found at /usr/local/include/ncurses (which
+is where it gets installed via ports).
+
+# Debian Packages #
+
+If you want to build a deb package for Debian or Debian based systems
+(such as Ubuntu) then:
 
 sudo make package
 
