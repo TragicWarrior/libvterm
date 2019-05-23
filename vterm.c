@@ -1,18 +1,27 @@
 
 #include <stdlib.h>
-#include <pty.h>
 #include <stdio.h>
 #include <string.h>
 #include <term.h>
-#include <utmp.h>
 #include <termios.h>
 #include <signal.h>
 #include <limits.h>
 #include <unistd.h>
 #include <fcntl.h>
 
+#ifdef __linux__                // required for forkpty() in linux
+#include <pty.h>
+#include <utmp.h>
+#endif
+
+#ifdef __FreeBSD__              // required for forkpty() in freebsd
+#include <sys/ioctl.h>
+#include <libutil.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
+
 
 #include "vterm.h"
 #include "vterm_private.h"

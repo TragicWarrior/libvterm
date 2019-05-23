@@ -3,7 +3,15 @@
 #define _VTERM_RENDER_H_
 
 #ifndef NOCURSES
-#  include <ncursesw/curses.h>
+
+#ifdef __linux__
+#include <ncursesw/curses.h>
+#endif
+
+#ifdef __FreeBSD__
+#include <ncurses/curses.h>
+#endif
+
 #endif
 
 #include "vterm.h"

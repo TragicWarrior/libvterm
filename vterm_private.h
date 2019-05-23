@@ -9,7 +9,15 @@
 #include "vterm_colors.h"
 
 #ifndef NOCURSES
-#  include <ncursesw/curses.h>
+
+#ifdef __linux__
+#include <ncursesw/curses.h>
+#endif
+
+#ifdef __FREEBSD__
+#include <ncurses/cursesw.h>
+#endif
+
 #endif
 
 #define ESEQ_BUF_SIZE           128             // escape buffer max

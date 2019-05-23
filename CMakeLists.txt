@@ -22,19 +22,36 @@ add_definitions("-D_POSIX_C_SOURCE=200809L")
 # needed for cchar_t definition and turn on "wide support"
 add_definitions("-D_XOPEN_SOURCE_EXTENDED")
 
-# set these before running the find_package directive for Curses
-set(CURSES_NEED_NCURSES "TRUE")
-set(CURSES_NEED_WIDE "TRUE")
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+    add_definitions("-D__BSD_VISIBLE")
+endif()
 
-find_package(Curses)
+include_directories(
+    /usr/local/include
+    )
+
+link_directories(
+    /usr/local/lib
+    )
+
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    # set these before running the find_package directive for Curses
+    set(CURSES_NEED_NCURSES "TRUE")
+    set(CURSES_NEED_WIDE "TRUE")
+
+    find_package(Curses)
+
+    if (!Curses_FOUND)
+        add_definitions("-DNOCURSES")
+    endif()
+
+endif()
 
 if (!DEFINE_CURSES)
     add_definitions("-DNOCURSES")
 endif()
 
-if (!Curses_FOUND)
-    add_definitions("-DNOCURSES")
-endif()
 
 add_library(vterm-static STATIC
     color_math.c
@@ -140,18 +157,60 @@ add_library(vterm-shared SHARED
     $<TARGET_OBJECTS:vterm.o>
     )
 
-if (Curses_FOUND)
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
+    if (Curses_FOUND)
+        if(DEFINE_CURSES)
+            add_executable(vshell
+                demo/vshell.c
+                )
+        endif(DEFINE_CURSES)
+    endif()
+
+
+    if ((Curses_FOUND) AND (DEFINE_CURSES))
+        target_link_libraries(
+                    vshell
+                    vterm-shared
+                    vterm-static
+                    -lutil
+                    -lm
+                    ${CURSES_LIBRARIES})
+    else()
+        target_link_libraries(
+                    vterm-shared
+                    vterm-static
+                    -lutil
+                    -lm
+                    ${CURSES_LIBRARIES})
+    endif()
+endif()
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+
     if(DEFINE_CURSES)
         add_executable(vshell
             demo/vshell.c
             )
     endif(DEFINE_CURSES)
-endif()
 
-if ((Curses_FOUND) AND (DEFINE_CURSES))
-target_link_libraries(vshell vterm-shared vterm-static -lutil -lm ${CURSES_LIBRARIES} )
-else()
-target_link_libraries(vterm-shared vterm-static -lutil -lm ${CURSES_LIBRARIES} )
+    if (DEFINE_CURSES)
+        target_link_libraries(
+                    vshell
+                    vterm-shared
+                    vterm-static
+                    -lutil
+                    -lm
+                    -lncursesw)
+    else()
+        target_link_libraries(
+                    vterm-shared
+                    vterm-static
+                    -lutil
+                    -lm
+                    -lncursesw)
+    endif()
 endif()
 
 # CMake doesn't allow targets with the same name.  This renames them properly afterward.
@@ -170,10 +229,22 @@ configure_file(
   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
 )
 
-if (Curses_FOUND)
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
+    if (Curses_FOUND)
+        if(DEFINE_CURSES)
+            install (TARGETS vshell DESTINATION bin)
+        endif(DEFINE_CURSES)
+    endif()
+
+endif()
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+
     if(DEFINE_CURSES)
         install (TARGETS vshell DESTINATION bin)
     endif(DEFINE_CURSES)
+
 endif()
 
 install (TARGETS vterm-static vterm-shared DESTINATION lib)
