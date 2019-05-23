@@ -28,7 +28,9 @@ is where it gets installed via ports).
 If you want to build a deb package for Debian or Debian based systems
 (such as Ubuntu) then:
 
+```
 sudo make package
+```
 
 # Performance Tuning #
 
