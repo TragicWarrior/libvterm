@@ -68,7 +68,7 @@ typedef chtype          attr_t;
 
 #endif
 
-#define LIBVTERM_VERSION        "5.03"
+#define LIBVTERM_VERSION        "5.04"
 
 #define VTERM_FLAG_RXVT         (1 << 0)    // masquerade as rxvt (default)
 #define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100

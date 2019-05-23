@@ -1,3 +1,8 @@
+5.04
+
+* [Bryan Christ] Enable building on FreeBSD (version 12).
+* [Bryan Christ] Updated build instructions.
+
 5.03
 
 * [Bryan Christ] Fix bug in demo program with title bar.
