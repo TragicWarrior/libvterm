@@ -9,9 +9,9 @@ have allowed it to use a stream buffer for output.
 
 A standard build goes something like this:
 
-cmake CMakeList.txt
+```cmake CMakeList.txt
 make
-sudo make install
+sudo make install```
 
 ## FreeBSD ##
 
