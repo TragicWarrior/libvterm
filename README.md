@@ -19,7 +19,7 @@ sudo make install
 
 CMake does not detect the ncurses or ncurses wide library correctly on
 FreeBSD.  Therefore, the CMake build check for ncurses is conditionally
-excluded on FreeBSD.  Therefore, the build process on FreeBSD blindly
+excluded on FreeBSD.  As a result, the build process on FreeBSD blindly
 expects ncurses headers to be found at /usr/local/include/ncurses (which
 is where it gets installed via ports).
 
