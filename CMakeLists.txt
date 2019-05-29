@@ -164,6 +164,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
         if(DEFINE_CURSES)
             add_executable(vshell
                 demo/vshell.c
+                demo/ctimer.c
                 )
         endif(DEFINE_CURSES)
     endif()

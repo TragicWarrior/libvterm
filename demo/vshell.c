@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "ctimer.h"
 #include "../vterm.h"
 #include "../stringv.h"
 
@@ -58,18 +59,23 @@ color_mtx_t     *color_mtx;
 
 int main(int argc, char **argv)
 {
-    vterm_t     *vterm;
-    int 		i, ch;
-    ssize_t     bytes;
-    uint32_t    flags = 0;
-    testwin_t   *twin;
-    mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
+    vterm_t         *vterm;
+    int 		    i, ch;
+    ssize_t         bytes;
+    ssize_t         bytes_buffered = 0;
+    uint32_t        flags = 0;
+    testwin_t       *twin;
+    mmask_t         mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
     // mmask_t     mouse_mask = BUTTON1_CLICKED;
-    char        *exec_path = NULL;
-    char        **exec_argv = NULL;
-    char        *locale;
-    int         count = 1;
-    // int         fd;
+    char            *exec_path = NULL;
+    char            **exec_argv = NULL;
+    char            *locale;
+    int             count = 1;
+
+    // 1,000,000 usec = 1 sec
+    // effective 30000 usec = 30 fps
+    struct timeval  refresh_interval = { .tv_sec = 0, .tv_usec = 30000 };
+    ctimer_t        *refresh_timer;
 
     locale = getenv("LANG");
     if(locale == NULL) locale = "en_US.UTF-8";
@@ -183,6 +189,8 @@ int main(int argc, char **argv)
     vterm_set_event_mask(vterm, VTERM_MASK_BUFFER_ACTIVATED);
     vterm_install_hook(vterm, vshell_hook);
 
+    refresh_timer = ctimer_create();
+
     /*
         keep reading keypresses from the user and passing them to
         the terminal;  also, redraw the terminal to the window at each
@@ -192,12 +200,21 @@ int main(int argc, char **argv)
     while (TRUE)
     {
         bytes = vterm_read_pipe(vterm);
-        if(bytes > 0)
+        bytes_buffered += bytes;
+
+        if(ctimer_compare(refresh_timer, &refresh_interval) > 0)
         {
-            vterm_wnd_update(vterm);
-            touchwin(VWINDOW(twin));
-            wrefresh(VWINDOW(twin));
-            refresh();
+            if(bytes_buffered > 0)
+            {
+                vterm_wnd_update(vterm);
+                touchwin(VWINDOW(twin));
+                wrefresh(VWINDOW(twin));
+                refresh();
+
+                bytes_buffered = 0;
+            }
+
+            ctimer_reset(refresh_timer);
         }
 
         if(bytes == -1) break;
