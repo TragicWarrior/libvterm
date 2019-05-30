@@ -57,7 +57,7 @@ vterm_alloc(void)
 vterm_t*
 vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
 {
-    extern color_cache_t    *vterm_color_cache;
+    // extern color_cache_t    *vterm_color_cache;
     pid_t                   child_pid = 0;
     int                     master_fd;
     struct winsize          ws = {.ws_xpixel = 0,.ws_ypixel = 0};
