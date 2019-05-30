@@ -6,10 +6,10 @@ set(MINOR_VERSION 47)
 
 option(DEFINE_CURSES "Build with curses" ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC -fno-plt")
 set(PROJECT_DESCRIPTION "A rxvt/vt100 terminal emulator library written in C.")
 
-if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.0)))
+if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 6.0)))
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra")
 endif()
 
@@ -42,7 +42,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
     find_package(Curses)
 
-    if (!Curses_FOUND)
+    if (Curses_FOUND)
+    else()
         add_definitions("-DNOCURSES")
     endif()
 
@@ -164,6 +165,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
         if(DEFINE_CURSES)
             add_executable(vshell
                 demo/vshell.c
+                demo/ctimer.c
                 )
         endif(DEFINE_CURSES)
     endif()
@@ -192,6 +194,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     if(DEFINE_CURSES)
         add_executable(vshell
             demo/vshell.c
+            demo/ctimer.c
             )
     endif(DEFINE_CURSES)
 

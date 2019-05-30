@@ -7,6 +7,9 @@
 // calculate the number of elements in a static array (scalar)
 #define ARRAY_SZ(x)    (sizeof(x) / sizeof(x[0]))
 
+#define CALLOC_PTR(_ptr)                    \
+    (_ptr) = calloc(1, sizeof(*(_ptr)))
+
 
 #define SWITCH(jtable, idx, catchall)       \
             do                              \
