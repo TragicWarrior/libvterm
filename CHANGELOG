@@ -1,3 +1,9 @@
+5.05
+
+* [Bryan Christ] Tweak the demo program to better mimic what a real-world
+  implementation would look like.
+* [Bryan Christ] Fixed invalid logic operator in CMake script.
+
 5.04
 
 * [Bryan Christ] Enable building on FreeBSD (version 12).
