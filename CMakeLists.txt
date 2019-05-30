@@ -42,7 +42,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
     find_package(Curses)
 
-    if (!Curses_FOUND)
+    if (Curses_FOUND)
+    else()
         add_definitions("-DNOCURSES")
     endif()
 
