@@ -36,6 +36,7 @@ link_directories(
 
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
     # set these before running the find_package directive for Curses
     set(CURSES_NEED_NCURSES "TRUE")
     set(CURSES_NEED_WIDE "TRUE")
@@ -47,12 +48,14 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
         add_definitions("-DNOCURSES")
     endif()
 
-endif()
+else()
 
-if (!DEFINE_CURSES)
-    add_definitions("-DNOCURSES")
-endif()
+    set(CURSES_NEED_NCURSES "TRUE")
+    set(CURSES_NEED_WIDE "TRUE")
 
+    find_package(Curses)
+
+endif()
 
 add_library(vterm-static STATIC
     color_math.c

@@ -1,3 +1,4 @@
+#define _DARWIN_C_SOURCE                // for SIGWINCH on OSX
 
 #include <stdlib.h>
 #include <termios.h>
