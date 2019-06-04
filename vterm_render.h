@@ -9,7 +9,7 @@
 #endif
 
 #ifdef __FreeBSD__
-#include <ncurses/curses.h>
+#include <ncurses.h>
 #endif
 
 #endif
