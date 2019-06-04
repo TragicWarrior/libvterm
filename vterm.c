@@ -21,7 +21,7 @@
 #if defined(__APPLE__) && defined(__MACH__)     // forkpty() in osx
 #include <util.h>
 #else
-#include <ncurses/include/term.h>
+#include <term.h>
 #endif
 
 #include <sys/types.h>
