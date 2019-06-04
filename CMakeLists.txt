@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 
+# uncomment this to force build with gcc instead of clang
+#set(CMAKE_C_COMPILER "gcc")
+#set(CMAKE_CXX_COMPILER "g++")
+
+#set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
+
 project(libvterm)
 set(MAJOR_VERSION 4)
 set(MINOR_VERSION 47)
@@ -14,7 +20,7 @@ if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" ST
 endif()
 
 # the following is until we learn how to reorder the gcc arguments to correctly link on Ubuntu
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
 
 add_definitions("-D_REENTRANT")
 add_definitions("-D_POSIX_C_SOURCE=200809L")
@@ -26,16 +32,15 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     add_definitions("-D__BSD_VISIBLE")
 endif()
 
-include_directories(
-    /usr/local/include
-    )
+#include_directories(
+#    /usr/local/opt
+#    )
 
-link_directories(
-    /usr/local/lib
-    )
+#link_directories(
+#    /usr/local/opt/ncurses/lib/
+#    )
 
-
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+#if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
     # set these before running the find_package directive for Curses
     set(CURSES_NEED_NCURSES "TRUE")
@@ -43,19 +48,10 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
     find_package(Curses)
 
-    if (Curses_FOUND)
+    if (NOT CURSES_FOUND)
     else()
         add_definitions("-DNOCURSES")
     endif()
-
-else()
-
-    set(CURSES_NEED_NCURSES "TRUE")
-    set(CURSES_NEED_WIDE "TRUE")
-
-    find_package(Curses)
-
-endif()
 
 add_library(vterm-static STATIC
     color_math.c
@@ -219,6 +215,34 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     endif()
 endif()
 
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "APPLE")
+
+    if(DEFINE_CURSES)
+        add_executable(vshell
+            demo/vshell.c
+            demo/ctimer.c
+            )
+    endif(DEFINE_CURSES)
+
+    if (DEFINE_CURSES)
+        target_link_libraries(
+                    vshell
+                    vterm-shared
+                    vterm-static
+                    -lutil
+                    -lm
+                    -lncursesw)
+    else()
+        target_link_libraries(
+                    vterm-shared
+                    vterm-static
+                    -lutil
+                    -lm
+                    -lncursesw)
+    endif()
+endif()
+
+
 # CMake doesn't allow targets with the same name.  This renames them properly afterward.
 SET_TARGET_PROPERTIES(vterm-static PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUTPUT 1)
 SET_TARGET_PROPERTIES(vterm-shared PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUTPUT 1)
@@ -246,6 +270,14 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 endif()
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+
+    if(DEFINE_CURSES)
+        install (TARGETS vshell DESTINATION bin)
+    endif(DEFINE_CURSES)
+
+endif()
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "APPLE")
 
     if(DEFINE_CURSES)
         install (TARGETS vshell DESTINATION bin)
