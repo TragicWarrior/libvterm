@@ -10,6 +10,8 @@ project(libvterm)
 set(MAJOR_VERSION 4)
 set(MINOR_VERSION 47)
 
+message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+
 option(DEFINE_CURSES "Build with curses" ON)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC -fno-plt")
@@ -20,7 +22,6 @@ if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" ST
 endif()
 
 # the following is until we learn how to reorder the gcc arguments to correctly link on Ubuntu
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
 
 add_definitions("-D_REENTRANT")
 add_definitions("-D_POSIX_C_SOURCE=200809L")
@@ -32,26 +33,20 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     add_definitions("-D__BSD_VISIBLE")
 endif()
 
-#include_directories(
-#    /usr/local/opt
-#    )
 
-#link_directories(
-#    /usr/local/opt/ncurses/lib/
-#    )
+# set these before running the find_package directive for Curses
+set(CURSES_NEED_NCURSES "TRUE")
+set(CURSES_NEED_WIDE "TRUE")
 
-#if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 
-    # set these before running the find_package directive for Curses
-    set(CURSES_NEED_NCURSES "TRUE")
-    set(CURSES_NEED_WIDE "TRUE")
+    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-undefined -Wl,dynamic_lookup")
 
-    find_package(Curses)
+    set(CMAKE_PREFIX_PATH /usr/local/opt/ncurses)
 
-    if (NOT CURSES_FOUND)
-    else()
-        add_definitions("-DNOCURSES")
-    endif()
+endif() 
+
+find_package(Curses)
 
 add_library(vterm-static STATIC
     color_math.c
@@ -215,7 +210,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     endif()
 endif()
 
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "APPLE")
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 
     if(DEFINE_CURSES)
         add_executable(vshell
@@ -237,8 +232,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "APPLE")
                     vterm-shared
                     vterm-static
                     -lutil
-                    -lm
-                    -lncursesw)
+                    -lm)
     endif()
 endif()
 
