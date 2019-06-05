@@ -201,6 +201,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
                     -lm
                     -lncursesw)
     else()
+
         target_link_libraries(
                     vterm-shared
                     vterm-static
@@ -219,6 +220,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
             )
     endif(DEFINE_CURSES)
 
+    #link_directories(/usr/local/opt/ncurses/lib/)
+
     if (DEFINE_CURSES)
         target_link_libraries(
                     vshell
@@ -226,7 +229,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
                     vterm-static
                     -lutil
                     -lm
-                    -lncursesw)
+                    /usr/local/opt/ncurses/lib/libncursesw.dylib)
     else()
         target_link_libraries(
                     vterm-shared
@@ -271,7 +274,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
 
 endif()
 
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "APPLE")
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 
     if(DEFINE_CURSES)
         install (TARGETS vshell DESTINATION bin)
