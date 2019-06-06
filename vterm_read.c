@@ -77,18 +77,24 @@ vterm_read_pipe(vterm_t *vterm)
     retval = 0;
     bytes_peek = 0;
 
-#ifndef TIOCINQ
-    retval = ioctl(vterm->pty_fd, FIONREAD, &bytes_peek);
-#else
+#ifdef TIOCINQ
     retval = ioctl(vterm->pty_fd, TIOCINQ, &bytes_peek);
+#else
+    retval = ioctl(vterm->pty_fd, FIONREAD, &bytes_peek);
 #endif
 
-//#if defined(__APPLE__) && defined(__MACH__)
-//    if(retval > 0) bytes_peek = retval;
-//#endif
-
     if(retval == -1) return 0;
+
+
+#if defined(__APPLE__) && defined(__MACH__)
+    /*
+        the FIONREAD ioctl() seems to be busted on Mac OS and seems
+        to be related to a 1 byte read.
+    */
+    if(bytes_peek == 0) bytes_peek = 1;
+#else
     if(bytes_peek == 0) return 0;
+#endif
 
     bytes_waiting = bytes_peek;
 
@@ -97,7 +103,7 @@ vterm_read_pipe(vterm_t *vterm)
     bytes_remaining = bytes_waiting;
 
 	// 10 byte padding
-	buf = (char*)calloc(bytes_waiting + 10, sizeof(char));
+	buf = (char *)calloc(bytes_waiting + 10, sizeof(char));
     pos = buf;
 
     do
