@@ -23,6 +23,18 @@ excluded on FreeBSD.  As a result, the build process on FreeBSD blindly
 expects ncurses headers to be found at /usr/local/include/ncurses (which
 is where it gets installed via ports).
 
+## Mac OS ##
+
+Porting of libvterm was done on Mojave.  Mileage on other version of
+Mac OS may vary.  The version of ncurses which comes with XCode does
+not include support for wide characters which libterm needs to supprt
+utf-8 encoded Unicode.  As a result, the build environment is designed
+to look for the library in:
+
+/usr/local/opt/ncurses/
+
+The easiest way to get this is to install 'htop' via homembrew.
+
 ## Debian Packages ##
 
 If you want to build a deb package for Debian or Debian based systems

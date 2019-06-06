@@ -1,3 +1,8 @@
+5.06
+
+* [Bryan Christ] Ported the library to run on Mac OS (ported and tested
+  on Mojave).
+
 5.05
 
 * [Bryan Christ] Tweak the demo program to better mimic what a real-world
