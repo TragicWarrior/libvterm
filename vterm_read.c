@@ -28,7 +28,7 @@
 ssize_t
 vterm_read_pipe(vterm_t *vterm)
 {
-    struct pollfd   fd_array;
+    struct pollfd   fd_array[1];
     char 			*buf = NULL;
     char            *pos;
     int             bytes_peek = 0;
@@ -61,11 +61,11 @@ vterm_read_pipe(vterm_t *vterm)
         return -1;
     }
 
-    fd_array.fd = vterm->pty_fd;
-    fd_array.events = POLLIN;
+    fd_array[0].fd = vterm->pty_fd;
+    fd_array[0].events = POLLIN;
 
     // wait 10 millisecond for data on pty file descriptor.
-    retval = poll(&fd_array, 1, 10);
+    retval = poll(fd_array, 1, 10);
 
     // no data or poll() error.
     if(retval <= 0)
@@ -74,14 +74,27 @@ vterm_read_pipe(vterm_t *vterm)
         return retval;
     }
 
-#ifdef FIONREAD
-	retval = ioctl(vterm->pty_fd, FIONREAD, &bytes_peek);
+    retval = 0;
+    bytes_peek = 0;
+
+#ifdef TIOCINQ
+    retval = ioctl(vterm->pty_fd, TIOCINQ, &bytes_peek);
 #else
-	retval = ioclt(vterm->pty_fd, TIOCINQ, &bytes_peek);
+    retval = ioctl(vterm->pty_fd, FIONREAD, &bytes_peek);
 #endif
 
     if(retval == -1) return 0;
-	if(bytes_peek == 0) return 0;
+
+
+#if defined(__APPLE__) && defined(__MACH__)
+    /*
+        the FIONREAD ioctl() seems to be busted on Mac OS and seems
+        to be related to a 1 byte read.
+    */
+    if(bytes_peek == 0) bytes_peek = 1;
+#else
+    if(bytes_peek == 0) return 0;
+#endif
 
     bytes_waiting = bytes_peek;
 
@@ -90,7 +103,7 @@ vterm_read_pipe(vterm_t *vterm)
     bytes_remaining = bytes_waiting;
 
 	// 10 byte padding
-	buf = (char*)calloc(bytes_waiting + 10, sizeof(char));
+	buf = (char *)calloc(bytes_waiting + 10, sizeof(char));
     pos = buf;
 
     do

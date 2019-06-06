@@ -4,9 +4,9 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#ifndef __FreeBSD__
-#include <malloc.h>
-#endif
+// #ifndef __FreeBSD__
+// #include <malloc.h>
+// #endif
 
 #include "macros.h"
 #include "vterm.h"

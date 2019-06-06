@@ -85,6 +85,7 @@ int main(int argc, char **argv)
     screen_wnd = initscr();
     noecho();
     raw();
+    // cbreak();
     nodelay(stdscr, TRUE);              /*
                                            prevents getch() from blocking;
                                            rather it will return ERR when

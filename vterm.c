@@ -2,21 +2,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <term.h>
 #include <termios.h>
 #include <signal.h>
 #include <limits.h>
 #include <unistd.h>
 #include <fcntl.h>
 
-#ifdef __linux__                // required for forkpty() in linux
+#ifdef __linux__                                // forkpty() in linux
 #include <pty.h>
 #include <utmp.h>
 #endif
 
-#ifdef __FreeBSD__              // required for forkpty() in freebsd
+#ifdef __FreeBSD__                              // forkpty() in freebsd
 #include <sys/ioctl.h>
 #include <libutil.h>
+#endif
+
+#if defined(__APPLE__) && defined(__MACH__)     // forkpty() in osx
+#include <util.h>
+#else
+#include <term.h>
 #endif
 
 #include <sys/types.h>
