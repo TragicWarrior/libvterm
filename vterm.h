@@ -66,10 +66,6 @@ typedef chtype          attr_t;
 #include <ncurses.h>
 #endif
 
-//#if defined(__APPLE__) && defined(__MACH__)
-//#include <ncursesw/ncurses.h>
-//#endif
-
 #if defined(__APPLE__) && defined(__MACH__)
 #include <ncurses.h>
 #endif
