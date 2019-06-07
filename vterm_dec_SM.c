@@ -66,6 +66,22 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         }
 
         /*
+            not reall well documented but this code turns on the
+            meta key.  see terminfo(5).  we just pass this along
+            to ncurses via the meta() function.
+        */
+        if(param[i] == 1034)
+        {
+            /*
+                according to man pages for meta() "The window
+                argument, win, is always ignored."
+            */
+            meta(NULL, TRUE);
+
+            return;
+        }
+
+        /*
             nearly identical to ESC [ ? 47 h except it calls for
             saving the cursor first then switching to alt buffer.
         */
