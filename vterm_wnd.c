@@ -48,10 +48,17 @@ vterm_wnd_update(vterm_t *vterm)
         for(c = 0; c < v_desc->cols; c++)
         {
             // get character from wide storage
-            getcchar(&vcell->uch, wch, &attrs, (short *)&colors, NULL);
+            getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
 
-            VCELL_GET_ATTR((*vcell), &attrs);
             VCELL_GET_COLORS((*vcell), &colors);
+            VCELL_GET_ATTR((*vcell), &attrs);
+
+            /*
+                on Mac OS, the color attributes stored in the
+                cchar_t will trump what's set by wattr_set()
+                so we have to explicitly sync them
+            */
+            setcchar(&vcell->uch, wch, attrs, colors, NULL);
 
             wattr_set(vterm->window, attrs, colors, NULL);
             mvwadd_wch(vterm->window, r, c, &vcell->uch);

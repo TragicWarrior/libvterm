@@ -43,6 +43,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-undefined -Wl,dynamic_lookup")
 
     set(CMAKE_PREFIX_PATH /usr/local/opt/ncurses)
+    #set(CMAKE_PREFIX_PATH /usr/local/alt/)
 
 endif() 
 
