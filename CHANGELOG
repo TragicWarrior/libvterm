@@ -1,3 +1,9 @@
+
+5.08
+
+* [Bryan Christ] Fix line-art (ACS) handling on Mac OS.
+
+
 5.07
 
 * [Bryan Christ] Fix color handing on Mac OS with wide characters.
