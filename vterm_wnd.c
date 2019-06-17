@@ -30,7 +30,6 @@ vterm_wnd_update(vterm_t *vterm)
     int             idx;
     attr_t          attrs;
     short           colors;
-    // int             ext_color;
     wchar_t         wch[CCHARW_MAX];
 
     if(vterm == NULL) return;
@@ -51,13 +50,22 @@ vterm_wnd_update(vterm_t *vterm)
             getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
 
             VCELL_GET_COLORS((*vcell), &colors);
-            VCELL_GET_ATTR((*vcell), &attrs);
 
             /*
-                on Mac OS, the color attributes stored in the
-                cchar_t will trump what's set by wattr_set()
-                so we have to explicitly sync them
+                on Mac OS, the color and ACS attributes stored
+                in the cchar_t will trump what's set by
+                wattr_set() so we have to explicitly sync them
             */
+            if(attrs & A_ALTCHARSET)
+            {
+                VCELL_GET_ATTR((*vcell), &attrs);
+                attrs |= A_ALTCHARSET;
+            }
+            else
+            {
+                VCELL_GET_ATTR((*vcell), &attrs);
+            }
+
             setcchar(&vcell->uch, wch, attrs, colors, NULL);
 
             wattr_set(vterm->window, attrs, colors, NULL);
