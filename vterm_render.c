@@ -126,9 +126,9 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell = NULL;
-    // cchar_t         wcval;
     static char     vt100_acs[] = "`afgjklmnopqrstuvwxyz{|}~,+-.";
     static char     *end = vt100_acs + ARRAY_SZ(vt100_acs);
+    wchar_t         wacs[2];
     char            *pos = NULL;
     int             idx;
 
@@ -157,11 +157,9 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         {
             if((char)c == *pos)
             {
-                // copy cchar_t data into vcell struct cchar_t
-                memcpy(&vcell->uch, NCURSES_WACS(c), sizeof(vcell->uch));
-
-                // copy the wchar_t from the cchar struct into vcell wchar_t[]
-                getcchar(NCURSES_WACS(c), vcell->wch, NULL, NULL, NULL);
+                swprintf(wacs, 2, L"%c", c);
+                setcchar(&vcell->uch, wacs, A_ALTCHARSET,
+                    (short)vcell->colors, NULL);
 
                 break;
             }
