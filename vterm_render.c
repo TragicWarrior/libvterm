@@ -144,29 +144,20 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     */
     vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
-    // handle ACS mode scenario
-    if(IS_MODE_ACS(vterm) && wch == NULL)
-    {
-        // swprintf(vcell->wch, 2, L"%c", c);
-        VCELL_SET_CHAR((*vcell), c);
-
-        VCELL_SET_ATTR((*vcell), v_desc->curattr | A_ALTCHARSET);
-        VCELL_SET_COLORS((*vcell), v_desc);
-
-        // "remember" what was written in case the next call is csi REP.
-        memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
-
-        v_desc->ccol++;
-
-        return;
-    }
-
     // handle plain ASCII scenario
     if(wch == NULL)
     {
         VCELL_SET_CHAR((*vcell), c);
-        VCELL_SET_ATTR((*vcell), v_desc->curattr);
         VCELL_SET_COLORS((*vcell), v_desc);
+
+        if(IS_MODE_ACS(vterm))
+        {
+            VCELL_SET_ATTR((*vcell), v_desc->curattr | A_ALTCHARSET);
+        }
+        else
+        {
+            VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        }
 
         // "remember" what was written in case the next call is csi REP.
         memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));

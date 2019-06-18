@@ -30,8 +30,7 @@ vterm_wnd_update(vterm_t *vterm)
     int             idx;
     attr_t          attrs;
     short           colors;
-    // wchar_t         wch[CCHARW_MAX];
-    cchar_t         uch;
+    static cchar_t  uch;                    // Mac OS blows up if not static
 
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;
@@ -47,9 +46,6 @@ vterm_wnd_update(vterm_t *vterm)
 
         for(c = 0; c < v_desc->cols; c++)
         {
-            // get character from wide storage
-            // getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
-
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
 
@@ -78,8 +74,6 @@ vterm_wnd_update(vterm_t *vterm)
 
     return;
 }
-
-
 
 #endif
 
