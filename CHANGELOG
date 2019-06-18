@@ -1,3 +1,8 @@
+5.09
+
+* [Bryan Christ] Fix attribute handling on Mac OS.
+* [Bryan Christ] Optimized UTF-8 rendering code to save CPU cycles and
+  reduce code complexity.
 
 5.08
 
