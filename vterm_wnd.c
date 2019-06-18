@@ -30,7 +30,7 @@ vterm_wnd_update(vterm_t *vterm)
     int             idx;
     attr_t          attrs;
     short           colors;
-    wchar_t         wch[CCHARW_MAX];
+    static cchar_t  uch;                    // Mac OS blows up if not static
 
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;
@@ -46,30 +46,21 @@ vterm_wnd_update(vterm_t *vterm)
 
         for(c = 0; c < v_desc->cols; c++)
         {
-            // get character from wide storage
-            getcchar(&vcell->uch, wch, &attrs, &colors, NULL);
-
             VCELL_GET_COLORS((*vcell), &colors);
+            VCELL_GET_ATTR((*vcell), &attrs);
 
             /*
                 on Mac OS, the color and ACS attributes stored
                 in the cchar_t will trump what's set by
                 wattr_set() so we have to explicitly sync them
             */
-            if(attrs & A_ALTCHARSET)
+            if(setcchar(&uch, vcell->wch, attrs, colors, NULL) == ERR)
             {
-                VCELL_GET_ATTR((*vcell), &attrs);
-                attrs |= A_ALTCHARSET;
+                VCELL_SET_CHAR((*vcell), ' ');
             }
-            else
-            {
-                VCELL_GET_ATTR((*vcell), &attrs);
-            }
-
-            setcchar(&vcell->uch, wch, attrs, colors, NULL);
 
             wattr_set(vterm->window, attrs, colors, NULL);
-            mvwadd_wch(vterm->window, r, c, &vcell->uch);
+            mvwadd_wch(vterm->window, r, c, &uch);
 
             vcell++;
         }
@@ -83,8 +74,6 @@ vterm_wnd_update(vterm_t *vterm)
 
     return;
 }
-
-
 
 #endif
 

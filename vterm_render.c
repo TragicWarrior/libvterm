@@ -126,10 +126,6 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell = NULL;
-    static char     vt100_acs[] = "`afgjklmnopqrstuvwxyz{|}~,+-.";
-    static char     *end = vt100_acs + ARRAY_SZ(vt100_acs);
-    wchar_t         wacs[2];
-    char            *pos = NULL;
     int             idx;
 
     // set vterm desc buffer selector
@@ -148,40 +144,20 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     */
     vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
-    if(IS_MODE_ACS(vterm) && wch == NULL)
-    {
-        pos = vt100_acs;
-
-        // iternate through ACS looking for matches
-        while(pos != end)
-        {
-            if((char)c == *pos)
-            {
-                swprintf(wacs, 2, L"%c", c);
-                setcchar(&vcell->uch, wacs, A_ALTCHARSET,
-                    (short)vcell->colors, NULL);
-
-                break;
-            }
-            pos++;
-        }
-
-        VCELL_SET_ATTR((*vcell), v_desc->curattr);
-        VCELL_SET_COLORS((*vcell), v_desc);
-
-        // "remember" what was written in case the next call is csi REP.
-        memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
-
-        v_desc->ccol++;
-
-        return;
-    }
-
+    // handle plain ASCII scenario
     if(wch == NULL)
     {
         VCELL_SET_CHAR((*vcell), c);
-        VCELL_SET_ATTR((*vcell), v_desc->curattr);
         VCELL_SET_COLORS((*vcell), v_desc);
+
+        if(IS_MODE_ACS(vterm))
+        {
+            VCELL_SET_ATTR((*vcell), v_desc->curattr | A_ALTCHARSET);
+        }
+        else
+        {
+            VCELL_SET_ATTR((*vcell), v_desc->curattr);
+        }
 
         // "remember" what was written in case the next call is csi REP.
         memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
@@ -191,14 +167,8 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         return;
     }
 
-    // copy the widechar into the cell
-    memcpy(&vcell->wch, wch, sizeof(vcell->wch));
-
-    // if constructing the cchar_t fails, use a blank
-    if(setcchar(&vcell->uch, wch, 0, 0, NULL) == ERR)
-    {
-        VCELL_SET_CHAR((*vcell), ' ');
-    }
+    // handle wide character
+    memcpy(vcell->wch, wch, sizeof(vcell->wch));
 
     VCELL_SET_ATTR((*vcell), v_desc->curattr);
     VCELL_SET_COLORS((*vcell), v_desc);
