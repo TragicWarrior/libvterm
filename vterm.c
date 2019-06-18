@@ -70,7 +70,10 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     int                     retval;
 
     // rxvt emulation is the default if none specified
-    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT;
+    // if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT;
+
+    // xterm emulation is the default if none specified
+    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM;
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;

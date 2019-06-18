@@ -110,9 +110,9 @@ int main(int argc, char **argv)
                 continue;
             }
 
-            if (strncmp(argv[i], "--xterm", strlen("--xterm")) == 0)
+            if (strncmp(argv[i], "--rxvt", strlen("--rxvt")) == 0)
             {
-                flags |= VTERM_FLAG_XTERM;
+                flags |= VTERM_FLAG_RXVT;
                 continue;
             }
 
