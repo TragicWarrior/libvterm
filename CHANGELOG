@@ -1,3 +1,7 @@
+5.10
+
+* [Bryan Christ] Make xterm the default emulation mode instead of rxvt.
+
 5.09
 
 * [Bryan Christ] Fix attribute handling on Mac OS.
