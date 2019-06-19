@@ -238,6 +238,12 @@ int main(int argc, char **argv)
 
     vterm_destroy(vterm);
 
+    // print some debug info
+    printf("%s\n\r", locale);
+    printf("ncurses = %d.%d (%d)\n\r", NCURSES_VERSION_MAJOR,
+        NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
+    fflush(NULL);
+
     return 0;
 }
 
