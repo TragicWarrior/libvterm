@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10.2)
 
 # uncomment this to force build with gcc instead of clang
 #set(CMAKE_C_COMPILER "gcc")
