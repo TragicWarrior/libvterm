@@ -63,6 +63,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         v_desc->curattr = A_NORMAL;
         vterm->internal_state &= ~(STATE_ALT_CHARSET);
 
+        // v_desc->default_colors = COLOR_PAIR(0);
+        // v_desc->fg = COLOR_WHITE;
+        // v_desc->bg = COLOR_BLACK;
+
         _vterm_set_color_pair_safe(vterm, v_desc->default_colors,
             v_desc->fg, v_desc->bg);
 

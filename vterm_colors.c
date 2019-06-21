@@ -370,7 +370,7 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     colors = vterm_color_cache_find_pair(fg, bg);
     if(colors == -1) colors = 0;
 
-    v_desc->default_colors = colors;
+    v_desc->default_colors = (short)colors;
 
     return 0;
 }
