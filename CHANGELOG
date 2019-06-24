@@ -1,3 +1,8 @@
+5.11
+
+* [Bryan Christ] Fixed a long-standing color issue which surfaced on
+  FreeBSD.
+
 5.10
 
 * [Bryan Christ] Make xterm the default emulation mode instead of rxvt.
