@@ -59,7 +59,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
     if(pcount == 0)
     {
-        v_desc->curattr = A_NORMAL;         // reset attributes
+        // reset attributes
+        v_desc->curattr = A_NORMAL;
 
         _vterm_set_color_pair_safe(vterm, v_desc->default_colors,
             v_desc->fg, v_desc->bg);
@@ -74,7 +75,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         {
             case 0:
             {
-                v_desc->curattr = A_NORMAL;     // reset attributes
+                // reset attributes
+                v_desc->curattr = A_NORMAL;
 
                 _vterm_set_color_pair_safe(vterm, v_desc->default_colors,
                     v_desc->fg, v_desc->bg);
