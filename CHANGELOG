@@ -1,3 +1,8 @@
+5.12
+
+* [Bryan Christ] Fix color bug properly as it should have been in 5.11
+  but wasn't.
+
 5.11
 
 * [Bryan Christ] Fixed a long-standing color issue which surfaced on
