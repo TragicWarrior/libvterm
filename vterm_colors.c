@@ -561,26 +561,26 @@ _color_cache_profile_pair(color_pair_t *pair)
         ncurses uses a RGB range from 0 to 1000 but most "community" code
         use 0 - 256 so we'll normalize that by 0.25.
     */
-    rgb2hsl((float)r * 0.25, (float)g * 0.25, (float)b *0.25,
+    rgb2hsl(RGB_FLOAT((float)r * 0.25, (float)g * 0.25, (float)b *0.25),
         &pair->hsl_values[0].h,
         &pair->hsl_values[0].s,
         &pair->hsl_values[0].l);
 
     // store the CIE2000 lab foreground values
-    rgb2lab(r / 4, g / 4, b / 4,
+    rgb2lab(RGB_FLOAT(r / 4, g / 4, b / 4),
         &pair->cie_values[0].l,
         &pair->cie_values[0].a,
         &pair->cie_values[0].b);
 
 
     // store the HLS background values
-    rgb2hsl((float)r * 0.25, (float)g * 0.25, (float)b * 0.25,
+    rgb2hsl(RGB_FLOAT((float)r * 0.25, (float)g * 0.25, (float)b * 0.25),
         &pair->hsl_values[1].h,
         &pair->hsl_values[1].s,
         &pair->hsl_values[1].l);
 
     // store the CIE2000 lab background values
-    rgb2lab(r / 4, g / 4, b / 4,
+    rgb2lab(RGB_FLOAT(r / 4, g / 4, b / 4),
         &pair->cie_values[1].l,
         &pair->cie_values[1].a,
         &pair->cie_values[1].b);

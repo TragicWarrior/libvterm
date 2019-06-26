@@ -366,6 +366,63 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
                 break;
             }
+
+            // set 16 color fg (aixterm)
+            case 90:
+            case 91:
+            case 92:
+            case 93:
+            case 94:
+            case 95:
+            case 96:
+            case 97:
+            {
+                v_desc->fg = param[i] - 90;
+
+                // find the required pair in the cache
+                colors = vterm_color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+                if(colors == -1)
+                {
+                    colors = vterm_color_cache_add_pair(v_desc->fg,
+                        v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors,
+                    v_desc->fg, v_desc->bg);
+
+                break;
+            }
+
+            // set 16 color bg (aixterm)
+            case 100:
+            case 101:
+            case 102:
+            case 103:
+            case 104:
+            case 105:
+            case 106:
+            case 107:
+            {
+                v_desc->bg = param[i] - 100;
+
+                // find the required pair in the cache
+                colors = vterm_color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+                // no color pair found so we'll try and add it
+                if(colors == -1)
+                {
+                    colors = vterm_color_cache_add_pair(v_desc->fg,
+                        v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors,
+                    v_desc->fg, v_desc->bg);
+
+                break;
+            }
+
+
         }
     }
 }
