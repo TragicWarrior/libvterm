@@ -6,6 +6,13 @@
 
 #include "vterm.h"
 
+/*
+    ncurses RGB values range from 0 to 1000 while the rest of the world
+    pretty much uses 0 - 255 so we need to scale.
+*/
+#define NCURSES_RGB(x)              (((float)x / 1000.0) * 255.0)
+
+
 enum
 {
     PALETTE_HOST    =   0x00,
@@ -42,13 +49,19 @@ typedef struct _cie_values_s    cie_values_t;
 
 struct _color_pair_s
 {
-    uint8_t                 ref;
-
     int                     num;
     short                   fg;
     short                   bg;
 
-    bool                    unbound;
+    bool                    unbound;        /*
+                                                distinguishes colors that
+                                                were derived from the
+                                                host palette from those
+                                                that were added for guest
+                                                accomodations.  when unbound
+                                                is TRUE, it indicates the
+                                                latter.
+                                            */
 
     rgb_values_t            rgb_values[2];
     hsl_values_t            hsl_values[2];
@@ -107,11 +120,14 @@ vterm_color_cache_load_palette(int cache_id);
 void
 vterm_color_cache_free_palette(int cache_id);
 
+short
+vterm_color_cache_find_unused_pair(void);
+
 int
 vterm_color_cache_find_pair(short fg, short bg);
 
 int
-vterm_color_cache_find_exact_color(int color, short r, short g, short b);
+vterm_color_cache_find_exact_color(short r, short g, short b);
 
 int
 vterm_color_cache_find_nearest_color(short r, short g, short b);

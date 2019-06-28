@@ -41,7 +41,12 @@ void    rgb2lab(rgb_t rgb, float *l, float *a, float *b);
 // converts RGB values to Hue, Luminosity, Saturation values
 void    rgb2hsl(rgb_t rgb, float *h, float *l, float *s);
 
+// converts HSL values to Red, Green, Blue values
+void    hsl2rgb(float h, float s, float l, float *r, float *g, float *b);
+
 // compute the distance between to CIELAB colors using 1976 method
 float   cie76_delta(float l1, float a1, float b1, float l2, float a2, float b2);
+
+
 
 #endif

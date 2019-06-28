@@ -4,10 +4,6 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-// #ifndef __FreeBSD__
-// #include <malloc.h>
-// #endif
-
 #include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
@@ -182,26 +178,23 @@ vterm_color_cache_free_palette(int cache_id)
     return;
 }
 
-// use the pair at the end of the list as it's the lowest risk
-int
-vterm_color_cache_add_pair(short fg, short bg)
+short
+vterm_color_cache_find_unused_pair()
 {
     extern color_cache_t    *vterm_color_cache;
-    color_pair_t            *pair;
+    color_pair_t            pair;
     short                   i;
     int                     retval;
 
     i = vterm_color_cache->term_pairs - 1;
 
-    pair = (color_pair_t *)calloc(1, sizeof(color_pair_t));
-
     // start backward looking for an unenumerated pair.
     while(i > 0)
     {
-        memset(pair, 0, sizeof(color_pair_t));
+        memset(&pair, 0, sizeof(color_pair_t));
 
-        pair->num = i;
-        retval = pair_content(i, (short *)&pair->fg, (short *)&pair->bg);
+        pair.num = i;
+        retval = pair_content(i, (short *)&pair.fg, (short *)&pair.bg);
 
         // if we can't explode the pair, keep searching
         if(retval == -1)
@@ -221,10 +214,25 @@ vterm_color_cache_add_pair(short fg, short bg)
             FG and BG of zero would be a truly odd pair and almost certianly
             indicates an unused pair.
         */
-        if(pair->fg == 0 && pair->bg == 0) break;
+        if(pair.fg == 0 && pair.bg == 0) break;
 
         i--;
     }
+
+    return i;
+}
+
+// use the pair at the end of the list as it's the lowest risk
+int
+vterm_color_cache_add_pair(short fg, short bg)
+{
+    extern color_cache_t    *vterm_color_cache;
+    color_pair_t            *pair;
+    short                   i;
+
+    pair = vterm_color_cache->head[PALETTE_ACTIVE];
+
+    i = vterm_color_cache_find_unused_pair();
 
     /*
         we've exhausted the free slots, canibalize from least recently
@@ -232,10 +240,6 @@ vterm_color_cache_add_pair(short fg, short bg)
     */
     if(i <= 0)
     {
-        free(pair);
-
-        pair = vterm_color_cache->head[PALETTE_ACTIVE];
-
         for(;;)
         {
             // break out of an infitite loop scenario
@@ -257,6 +261,12 @@ vterm_color_cache_add_pair(short fg, short bg)
     }
     else
     {
+
+        CDL_SEARCH_SCALAR(vterm_color_cache->head[PALETTE_ACTIVE],
+            pair, num, i);
+
+        CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);
+
         pair->unbound = TRUE;
     }
 
@@ -396,7 +406,7 @@ vterm_get_colors(vterm_t *vterm)
 
 
 int
-vterm_color_cache_find_exact_color(int color, short r, short g, short b)
+vterm_color_cache_find_exact_color(short r, short g, short b)
 {
     extern color_cache_t    *vterm_color_cache;
     color_pair_t            *pair;
@@ -405,7 +415,7 @@ vterm_color_cache_find_exact_color(int color, short r, short g, short b)
     bool                    fg_found = FALSE;
     bool                    bg_found = FALSE;
 
-    color_content(color, &r, &g, &b);
+    // color_content(color, &r, &g, &b);
 
     CDL_FOREACH_SAFE(vterm_color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
     {
@@ -546,6 +556,17 @@ _color_cache_profile_pair(color_pair_t *pair)
     pair->rgb_values[0].g = g;
     pair->rgb_values[0].b = b;
 
+    rgb2hsl(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
+        &pair->hsl_values[0].h,
+        &pair->hsl_values[0].s,
+        &pair->hsl_values[0].l);
+
+    // store the CIE2000 lab foreground values
+    // rgb2lab(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
+    //    &pair->cie_values[0].l,
+    //    &pair->cie_values[0].a,
+    //    &pair->cie_values[0].b);
+
     // extract background RGB
     color_content(pair->bg, &r, &g, &b);
 
@@ -553,37 +574,17 @@ _color_cache_profile_pair(color_pair_t *pair)
     pair->rgb_values[1].g = g;
     pair->rgb_values[1].b = b;
 
-    return;
-
-    /*
-        store the HSL foreground values
-
-        ncurses uses a RGB range from 0 to 1000 but most "community" code
-        use 0 - 256 so we'll normalize that by 0.25.
-    */
-    rgb2hsl(RGB_FLOAT((float)r * 0.25, (float)g * 0.25, (float)b *0.25),
-        &pair->hsl_values[0].h,
-        &pair->hsl_values[0].s,
-        &pair->hsl_values[0].l);
-
-    // store the CIE2000 lab foreground values
-    rgb2lab(RGB_FLOAT(r / 4, g / 4, b / 4),
-        &pair->cie_values[0].l,
-        &pair->cie_values[0].a,
-        &pair->cie_values[0].b);
-
-
     // store the HLS background values
-    rgb2hsl(RGB_FLOAT((float)r * 0.25, (float)g * 0.25, (float)b * 0.25),
+    rgb2hsl(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
         &pair->hsl_values[1].h,
         &pair->hsl_values[1].s,
         &pair->hsl_values[1].l);
 
     // store the CIE2000 lab background values
-    rgb2lab(RGB_FLOAT(r / 4, g / 4, b / 4),
-        &pair->cie_values[1].l,
-        &pair->cie_values[1].a,
-        &pair->cie_values[1].b);
+    // rgb2lab(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
+    //    &pair->cie_values[1].l,
+    //    &pair->cie_values[1].a,
+    //    &pair->cie_values[1].b);
 
     return;
 }

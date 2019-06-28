@@ -45,6 +45,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
     int             colors;
+    short           mapped_color;
     static int      depth = 0;
     int             idx;
     short           fg, bg;
@@ -223,6 +224,9 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 38:
             {
                 fg = interpret_custom_color(vterm, param, pcount);
+                mapped_color = vterm_get_mapped_color(vterm, fg, 0, 0, 0);
+
+                if(mapped_color > 0) fg = mapped_color;
 
                 if(fg != -1)
                 {
@@ -310,6 +314,9 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 48:
             {
                 bg = interpret_custom_color(vterm, param, pcount);
+                mapped_color = vterm_get_mapped_color(vterm, bg, 0, 0, 0);
+
+                if(mapped_color > 0) bg = mapped_color;
 
                 if(bg != -1)
                 {
@@ -483,9 +490,10 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
     if(method == 5)
     {
         /*
-            without having initmate knowledge of the client application,
-            it's not possible to determine what color is being
-            requested.
+            normally the color number would be irrelevant because it
+            is internal to the guest application color table.  however,
+            xterm OSC ^]4 transmits color number and RGB values which
+            we interpret and set.
         */
         if(pcount < 3) return -1;
 

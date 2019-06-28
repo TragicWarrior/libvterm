@@ -59,8 +59,10 @@
 #include "color_math.h"
 
 
-
+// helper functions
 float   cielab2hue(float a, float b);
+float   hue2rgb(float v1, float v2, float vh);
+
 
 /*
     R, G and, B (Standard RGB) input range = 0 - 255
@@ -205,6 +207,35 @@ rgb2hsl(rgb_t rgb, float *h, float *s, float *l)
     return;
 }
 
+void
+hsl2rgb(float h, float s, float l, float *r, float *g, float *b)
+{
+    float   v1;
+    float   v2;
+
+    if(s == 0)
+    {
+        *r = l * 255;
+        *g = l * 255;
+        *b = l * 255;
+
+        return;
+    }
+
+    if(l < 0.5)
+        v2 = l * (1 + s);
+    else
+        v2 = (l + s) - (s * l);
+
+    v1 = (2 * l) - v2;
+
+    *r = 255 * hue2rgb(v1, v2, h + 0.3333333);
+    *g = 255 * hue2rgb(v1, v2, h);
+    *b = 255 * hue2rgb(v1, v2, h - 0.3333333);
+
+    return;
+}
+
 /*
     oldest standard (1976).  less accurate.  faster.
 
@@ -295,4 +326,21 @@ cielab2hue(float a, float b)
     return RAD2DEG(atanf(b / a)) + bias;
 }
 
- 
+float
+hue2rgb(float v1, float v2, float vh)
+{
+    if(vh < 0) vh += 1;
+
+    if(vh > 1) vh -= 1;
+
+    if(( 6 * vh ) < 1)
+        return (v1 + (v2 - v1) * 6 * vh);
+
+    if((2 * vh) < 1)
+        return v2;
+
+    if((3 * vh) < 2)
+        return (v1 + (v2 - v1) * ((2 / 3) - vh) * 6);
+
+    return v1;
+}

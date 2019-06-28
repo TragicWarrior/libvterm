@@ -430,6 +430,57 @@ int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
 long            vterm_get_colors(vterm_t *vterm);
 
 /*
+    add a new color to the instances private palette and map it global
+    color table.  this is done automatically when certain xterm OSC
+    color defining sequences are interpreted.
+
+    @params:
+        vterm       a valid vterm object handle
+        color       the color number according to the guest application
+        red         red RGB value ranging from 0 - 255
+        green       green RGB value ranging from 0 - 255
+        blue        blue RGB value ranging from 0 - 255
+
+    @return:        returns the number of the color mapping in the
+                    global color space.
+*/
+short           vterm_add_mapped_color(vterm_t *vterm, short color,
+                    float red, float green, float blue);
+
+/*
+    queries the vterm instance regarding specific non-standard color
+    mapping to determine the actual color number in the global
+    color table.
+
+    @params:
+        vterm       a valid vterm object handle
+        color       the color number according to the guest application.
+                    when this is a positive value, arguments red, green,
+                    and blue are ignored.
+        red         red RGB value ranging from 0 - 255
+        green       green RGB value ranging from 0 - 255
+        blue        blue RGB value ranging from 0 - 255
+
+    @return:        returns the number of the color mapping in the
+                    global color space.
+
+*/
+short               vterm_get_mapped_color(vterm_t *vterm, short color,
+                        float red, float green, float blue);
+
+/*
+    releases the color mapping table and frees the related entries in the
+    global color table.
+
+    @params:
+        vterm       a valid vterm object handle
+
+*/
+void                vterm_free_mapped_colors(vterm_t *vterm);
+
+
+
+/*
     erase the contents of the terminal.
 
     @params:

@@ -59,6 +59,7 @@ add_library(vterm-static STATIC
     vterm_escape_simple.c
     vterm_escape_suffixes.c
     vterm_buffer.c
+    vterm_color_map.c
     vterm_colors.c
     vterm_csi_CBT.c
     vterm_csi_CUP.c
@@ -109,6 +110,7 @@ add_library(vterm.o OBJECT
     vterm_escape_simple.c
     vterm_escape_suffixes.c
     vterm_exec.c
+    vterm_color_map.c
     vterm_colors.c
     vterm_csi_CBT.c
     vterm_csi_CUP.c

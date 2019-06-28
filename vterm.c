@@ -238,6 +238,8 @@ vterm_destroy(vterm_t *vterm)
         }
     }
 */
+    vterm_free_mapped_colors(vterm);
+
     vterm_color_cache_release();
 
     // todo:  do something more elegant in the future
