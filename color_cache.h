@@ -1,6 +1,6 @@
 
-#ifndef _VTERM_COLORS_H_
-#define _VTERM_COLORS_H_
+#ifndef _COLOR_CACHE_H_
+#define _COLOR_CACHE_H_
 
 #include <signal.h>
 
@@ -101,46 +101,46 @@ struct _color_cache_s
 typedef struct _color_cache_s   color_cache_t;
 
 void
-vterm_color_cache_init(void);
+color_cache_init(void);
 
 void
-vterm_color_cache_release();
+color_cache_release(void);
 
 void
-vterm_color_cache_save_palette(int cache_id);
+color_cache_save_palette(int cache_id);
 
 void
-vterm_color_cache_copy_palette(int source, int target);
+color_cache_copy_palette(int source, int target);
 
 void
-vterm_color_cache_load_palette(int cache_id);
+color_cache_load_palette(int cache_id);
 
 void
-vterm_color_cache_free_palette(int cache_id);
+color_cache_free_palette(int cache_id);
 
 int
-vterm_color_cache_add_pair(vterm_t *origin, short fg, short bg);
+color_cache_add_pair(vterm_t *origin, short fg, short bg);
 
 void
-vterm_color_cache_free_pairs(vterm_t *origin);
+color_cache_free_pairs(vterm_t *origin);
 
 short
 color_cache_find_lru_pair(void);
 
 short
-vterm_color_cache_find_unused_pair(void);
+color_cache_find_unused_pair(void);
 
 int
-vterm_color_cache_find_pair(short fg, short bg);
+color_cache_find_pair(short fg, short bg);
 
 int
-vterm_color_cache_find_exact_color(short r, short g, short b);
+color_cache_find_exact_color(short r, short g, short b);
 
 int
-vterm_color_cache_find_nearest_color(short r, short g, short b);
+color_cache_find_nearest_color(short r, short g, short b);
 
 int
-vterm_color_cache_split_pair(int pair_num, short *fg, short *bg);
+color_cache_split_pair(int pair_num, short *fg, short *bg);
 
 
 #define DEBUG_COLOR_PAIRS(cache, max)                                       \

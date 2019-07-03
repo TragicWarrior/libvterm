@@ -51,6 +51,7 @@ find_package(Curses)
 
 add_library(vterm-static STATIC
     color_math.c
+    color_cache.c
     vterm.c
     vterm_csi.c
     vterm_exec.c
@@ -60,7 +61,6 @@ add_library(vterm-static STATIC
     vterm_escape_suffixes.c
     vterm_buffer.c
     vterm_color_map.c
-    vterm_colors.c
     vterm_csi_CBT.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c
@@ -102,6 +102,7 @@ add_library(vterm-static STATIC
 
 add_library(vterm.o OBJECT
     color_math.c
+    color_cache.c
     vterm.c
     vterm_buffer.c
     vterm_csi.c
@@ -111,7 +112,6 @@ add_library(vterm.o OBJECT
     vterm_escape_suffixes.c
     vterm_exec.c
     vterm_color_map.c
-    vterm_colors.c
     vterm_csi_CBT.c
     vterm_csi_CUP.c
     vterm_csi_CUx.c

@@ -6,7 +6,7 @@
 
 #include <sys/types.h>
 
-#include "vterm_colors.h"
+#include "color_cache.h"
 
 #ifndef NOCURSES
 
