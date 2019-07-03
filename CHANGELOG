@@ -1,3 +1,11 @@
+5.13
+
+* [Bryan Christ] Improve color math routines.
+* [Bryan Christ] Manage the global color table better to reduce pair
+  and custom color collisions.
+* [Bryan Christ] Fix up the internal color cache API and move them
+  to a different namespace and convention.
+
 5.12
 
 * [Bryan Christ] Fix color bug properly as it should have been in 5.11
