@@ -33,8 +33,8 @@
 #include "vterm_write.h"
 #include "vterm_exec.h"
 #include "vterm_buffer.h"
-#include "vterm_colors.h"
 #include "vterm_csi.h"
+#include "color_cache.h"
 
 #include "utlist.h"
 
@@ -44,7 +44,7 @@
     as a shared library, it's necssary for all the terminals to be able to
     share color palette information.
 */
-color_cache_t   *vterm_color_cache = NULL;
+color_cache_t   *color_cache = NULL;
 
 void
 _vterm_set_env(uint16_t flags);
@@ -62,7 +62,6 @@ vterm_alloc(void)
 vterm_t*
 vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
 {
-    // extern color_cache_t    *vterm_color_cache;
     pid_t                   child_pid = 0;
     int                     master_fd;
     struct winsize          ws = {.ws_xpixel = 0,.ws_ypixel = 0};
@@ -89,7 +88,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
     vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
 
     // initializes the color cache or updates the ref count
-    vterm_color_cache_init();
+    color_cache_init();
 
     // default active colors
     // uses ncurses macros even if we aren't using ncurses.
@@ -238,7 +237,11 @@ vterm_destroy(vterm_t *vterm)
         }
     }
 */
-    vterm_color_cache_release();
+
+    color_cache_free_pairs(vterm);
+    vterm_free_mapped_colors(vterm);
+
+    color_cache_release();
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)

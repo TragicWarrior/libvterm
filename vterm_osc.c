@@ -202,18 +202,14 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
     g = (short)(strtol(params[3], NULL, 16));
     b = (short)(strtol(params[4], NULL, 16));
 
-    r = (r / 255.0) * 1000.0;
-    g = (g / 255.0) * 1000.0;
-    b = (b / 255.0) * 1000.0;
+    // r = (r / 255.0) * 1000.0;
+    // g = (g / 255.0) * 1000.0;
+    // b = (b / 255.0) * 1000.0;
 
     strfreev(params);
 
-    init_color(new_color, r, g, b);
-
-    // endwin();
-    // printf("new color: %d, r: %d, g: %d, b: %d\n\r",
-    //    new_color, r, g, b);
-    // exit(0);
+    // init_color(new_color, r, g, b);
+    vterm_add_mapped_color(vterm, new_color, (float)r, (float)g, (float)b);
 
     return;
 }

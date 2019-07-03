@@ -13,7 +13,7 @@
 #include "vterm_escape.h"
 #include "vterm_utf8.h"
 #include "vterm_buffer.h"
-#include "vterm_colors.h"
+#include "color_cache.h"
 #include "macros.h"
 
 static void

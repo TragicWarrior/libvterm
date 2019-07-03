@@ -28,8 +28,8 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
-#include "vterm_colors.h"
 #include "vterm_buffer.h"
+#include "color_cache.h"
 
 void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors, int fg, int bg);
@@ -45,6 +45,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
     int             colors;
+    short           mapped_color;
     static int      depth = 0;
     int             idx;
     short           fg, bg;
@@ -205,12 +206,12 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 v_desc->fg = param[i] - 30;
 
                 // find the required pair in the cache
-                colors = vterm_color_cache_find_pair(v_desc->fg, v_desc->bg);
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
                 if(colors == -1)
                 {
-                    colors = vterm_color_cache_add_pair(v_desc->fg,
-                        v_desc->bg);
+                    colors = color_cache_add_pair(vterm,
+                        v_desc->fg, v_desc->bg);
                 }
 
                 _vterm_set_color_pair_safe(vterm, colors,
@@ -223,18 +224,20 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 38:
             {
                 fg = interpret_custom_color(vterm, param, pcount);
+                mapped_color = vterm_get_mapped_color(vterm, fg, 0, 0, 0);
+
+                if(mapped_color > 0) fg = mapped_color;
 
                 if(fg != -1)
                 {
                     v_desc->fg = fg;
 
-                    colors = vterm_color_cache_find_pair(v_desc->fg,
-                        v_desc->bg);
+                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
                     if(colors == -1)
                     {
-                        colors = vterm_color_cache_add_pair(v_desc->fg,
-                            v_desc->bg);
+                        colors = color_cache_add_pair(vterm,
+                            v_desc->fg, v_desc->bg);
                     }
 
                     _vterm_set_color_pair_safe(vterm, colors,
@@ -248,15 +251,14 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset fg color
             case 39:
             {
-                retval = vterm_color_cache_split_pair(v_desc->default_colors,
+                retval = color_cache_split_pair(v_desc->default_colors,
                     &fg, &bg);
 
                 if(retval != -1)
                 {
                     v_desc->fg = fg;
 
-                    colors = vterm_color_cache_find_pair(v_desc->fg,
-                        v_desc->bg);
+                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -291,13 +293,13 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 v_desc->bg = param[i] - 40;
 
                 // find the required pair in the cache
-                colors = vterm_color_cache_find_pair(v_desc->fg, v_desc->bg);
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
                 // no color pair found so we'll try and add it
                 if(colors == -1)
                 {
-                    colors = vterm_color_cache_add_pair(v_desc->fg,
-                        v_desc->bg);
+                    colors = color_cache_add_pair(vterm,
+                        v_desc->fg, v_desc->bg);
                 }
 
                 _vterm_set_color_pair_safe(vterm, colors,
@@ -310,18 +312,20 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 48:
             {
                 bg = interpret_custom_color(vterm, param, pcount);
+                mapped_color = vterm_get_mapped_color(vterm, bg, 0, 0, 0);
+
+                if(mapped_color > 0) bg = mapped_color;
 
                 if(bg != -1)
                 {
                     v_desc->bg = bg;
 
-                    colors = vterm_color_cache_find_pair(v_desc->fg,
-                        v_desc->bg);
+                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
                     if(colors == -1)
                     {
-                        colors = vterm_color_cache_add_pair(v_desc->fg,
-                            v_desc->bg);
+                        colors = color_cache_add_pair(vterm,
+                            v_desc->fg, v_desc->bg);
                     }
 
                     _vterm_set_color_pair_safe(vterm, colors,
@@ -337,15 +341,14 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset bg color
             case 49:
             {
-                retval = vterm_color_cache_split_pair(v_desc->default_colors,
+                retval = color_cache_split_pair(v_desc->default_colors,
                     &fg, &bg);
 
                 if(retval != -1)
                 {
                     v_desc->bg = bg;
 
-                    colors = vterm_color_cache_find_pair(v_desc->fg,
-                        v_desc->bg);
+                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
                 }
                 else
                 {
@@ -366,6 +369,63 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
                 break;
             }
+
+            // set 16 color fg (aixterm)
+            case 90:
+            case 91:
+            case 92:
+            case 93:
+            case 94:
+            case 95:
+            case 96:
+            case 97:
+            {
+                v_desc->fg = param[i] - 90;
+
+                // find the required pair in the cache
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+                if(colors == -1)
+                {
+                    colors = color_cache_add_pair(vterm,
+                        v_desc->fg, v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors,
+                    v_desc->fg, v_desc->bg);
+
+                break;
+            }
+
+            // set 16 color bg (aixterm)
+            case 100:
+            case 101:
+            case 102:
+            case 103:
+            case 104:
+            case 105:
+            case 106:
+            case 107:
+            {
+                v_desc->bg = param[i] - 100;
+
+                // find the required pair in the cache
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+                // no color pair found so we'll try and add it
+                if(colors == -1)
+                {
+                    colors = color_cache_add_pair(vterm,
+                        v_desc->fg, v_desc->bg);
+                }
+
+                _vterm_set_color_pair_safe(vterm, colors,
+                    v_desc->fg, v_desc->bg);
+
+                break;
+            }
+
+
         }
     }
 }
@@ -426,9 +486,10 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
     if(method == 5)
     {
         /*
-            without having initmate knowledge of the client application,
-            it's not possible to determine what color is being
-            requested.
+            normally the color number would be irrelevant because it
+            is internal to the guest application color table.  however,
+            xterm OSC ^]4 transmits color number and RGB values which
+            we interpret and set.
         */
         if(pcount < 3) return -1;
 
