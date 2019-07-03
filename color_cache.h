@@ -6,6 +6,12 @@
 
 #include "vterm.h"
 
+#define X16(a, b, c, d) a,
+enum {
+#include "x16_color.def"
+};
+#undef X16
+
 /*
     ncurses RGB values range from 0 to 1000 while the rest of the world
     pretty much uses 0 - 255 so we need to scale.
