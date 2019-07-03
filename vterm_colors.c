@@ -22,6 +22,9 @@
 #define PAIR_BG_B(_pair_ptr)    (_pair_ptr->rgb_values[1].b)
 
 void
+_color_cache_reset_pair(color_pair_t *pair);
+
+void
 _color_cache_profile_pair(color_pair_t *pair);
 
 void
@@ -193,7 +196,6 @@ vterm_color_cache_find_unused_pair()
     {
         memset(&pair, 0, sizeof(color_pair_t));
 
-        pair.num = i;
         retval = pair_content(i, (short *)&pair.fg, (short *)&pair.bg);
 
         // if we can't explode the pair, keep searching
@@ -222,60 +224,108 @@ vterm_color_cache_find_unused_pair()
     return i;
 }
 
+short
+color_cache_find_lru_pair()
+{
+    extern color_cache_t    *vterm_color_cache;
+    color_pair_t            *pair;
+
+    pair = vterm_color_cache->head[PALETTE_ACTIVE];
+
+    for(;;)
+    {
+        // break out of an infitite loop scenario
+        if(pair->prev == vterm_color_cache->head[PALETTE_ACTIVE])
+        {
+             // no free pairs
+             return -1;
+        }
+
+        pair = pair->prev;
+
+        // if this is the reserve pair, keep going
+        if(pair->num == vterm_color_cache->reserved_pair) continue;
+
+        /*
+            From the ncurses man pages:
+
+            color pair 0 is special; it denotes “no color”.
+
+            Color pair 0 is assumed to be white on black, but is
+            actually whatever the terminal implements before color is
+            initialized.  It  cannot be modified by the application.
+        */
+        if(pair->num == 0) continue;
+
+        // make sure the pair is not part of the system palette
+        if(pair->custom == TRUE) break;
+    }
+
+    return pair->num;
+}
+
 // use the pair at the end of the list as it's the lowest risk
 int
-vterm_color_cache_add_pair(short fg, short bg)
+vterm_color_cache_add_pair(vterm_t *origin, short fg, short bg)
 {
     extern color_cache_t    *vterm_color_cache;
     color_pair_t            *pair;
     short                   i;
 
-    pair = vterm_color_cache->head[PALETTE_ACTIVE];
-
     i = vterm_color_cache_find_unused_pair();
 
-    /*
-        we've exhausted the free slots, canibalize from least recently
-        used (LRU) item, which should be the tail.
-    */
     if(i <= 0)
     {
-        for(;;)
-        {
-            // break out of an infitite loop scenario
-            if(pair->prev == vterm_color_cache->head[PALETTE_ACTIVE])
-            {
-                // no recourse for this, just return pair 1
-                return 1;
-            }
-
-            pair = pair->prev;
-
-            if(pair->unbound == TRUE)
-            {
-                if(pair->num != vterm_color_cache->reserved_pair) break;
-            }
-        }
-
-        CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);
+        i = color_cache_find_lru_pair();
     }
-    else
+
+    // we've exhausted all options.  return pair 0.
+    if(i <= 0) return 0;
+
+    CDL_SEARCH_SCALAR(vterm_color_cache->head[PALETTE_ACTIVE],
+        pair, num, i);
+
+    if(pair != NULL)
     {
-
-        CDL_SEARCH_SCALAR(vterm_color_cache->head[PALETTE_ACTIVE],
-            pair, num, i);
-
         CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);
 
-        pair->unbound = TRUE;
+        pair->origin = origin;
+        pair->custom = TRUE;
+        pair->num = i;
+
+        init_pair(pair->num, fg, bg);
+        _color_cache_profile_pair(pair);
+
+        CDL_PREPEND(vterm_color_cache->head[PALETTE_ACTIVE], pair);
+
+        return i;
     }
 
-    init_pair(pair->num, fg, bg);
-    _color_cache_profile_pair(pair);
+    return 0;
+}
 
-    CDL_PREPEND(vterm_color_cache->head[PALETTE_ACTIVE], pair);
+void
+vterm_color_cache_free_pairs(vterm_t *origin)
+{
+    extern color_cache_t    *vterm_color_cache;
+    color_pair_t            *pair;
 
-    return i;
+    if(vterm_color_cache == NULL) return;
+    if(origin == NULL) return;
+
+    CDL_FOREACH(vterm_color_cache->head[PALETTE_ACTIVE], pair)
+    {
+        // safety check.  pair should never be a system pair
+        if(pair->custom == FALSE) continue;
+
+        // only origin matters
+        if(pair->origin == origin)
+        {
+            _color_cache_reset_pair(pair);
+        }
+    }
+
+    return;
 }
 
 
@@ -477,7 +527,6 @@ vterm_color_cache_find_pair(short fg, short bg)
     color_pair_t            *pair;
     color_pair_t            *tmp1;
     color_pair_t            *tmp2;
-    bool                    found = FALSE;
 
     // iterate through the cache looking for a match
     CDL_FOREACH_SAFE(vterm_color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
@@ -486,21 +535,18 @@ vterm_color_cache_find_pair(short fg, short bg)
         {
             // unlink the node so we can prepend it
             CDL_DELETE(vterm_color_cache->head[PALETTE_ACTIVE], pair);
-            found = TRUE;
-            break;
+
+            /*
+                push the pair to the front of the list to make subseqent
+                look-ups faster.
+            */
+            CDL_PREPEND(vterm_color_cache->head[PALETTE_ACTIVE], pair);
+
+            return pair->num;
         }
     }
 
-    // match wasn't found
-    if(found == FALSE) return -1;
-
-    /*
-        push the pair to the front of the list to make subseqent look-ups
-        faster.
-    */
-    CDL_PREPEND(vterm_color_cache->head[PALETTE_ACTIVE], pair);
-
-    return pair->num;
+    return -1;
 }
 
 int
@@ -541,7 +587,6 @@ vterm_color_cache_split_pair(int pair_num, short *fg, short *bg)
 void
 _color_cache_profile_pair(color_pair_t *pair)
 {
-    // int             retval;
     short           r, g, b;
 
     if(pair == NULL) return;
@@ -585,6 +630,23 @@ _color_cache_profile_pair(color_pair_t *pair)
     //    &pair->cie_values[1].l,
     //    &pair->cie_values[1].a,
     //    &pair->cie_values[1].b);
+
+    return;
+}
+
+void
+_color_cache_reset_pair(color_pair_t *pair)
+{
+    if(pair == NULL) return;
+
+    pair->origin = NULL;
+    pair->fg = 0;
+    pair->bg = 0;
+
+    memset(pair->rgb_values, 0, sizeof(pair->rgb_values));
+    memset(pair->hsl_values, 0, sizeof(pair->hsl_values));
+
+    init_pair(pair->num, 0, 0);
 
     return;
 }

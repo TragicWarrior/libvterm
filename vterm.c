@@ -238,6 +238,8 @@ vterm_destroy(vterm_t *vterm)
         }
     }
 */
+
+    vterm_color_cache_free_pairs(vterm);
     vterm_free_mapped_colors(vterm);
 
     vterm_color_cache_release();

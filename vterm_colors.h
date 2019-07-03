@@ -53,20 +53,21 @@ struct _color_pair_s
     short                   fg;
     short                   bg;
 
-    bool                    unbound;        /*
-                                                distinguishes colors that
-                                                were derived from the
-                                                host palette from those
-                                                that were added for guest
-                                                accomodations.  when unbound
-                                                is TRUE, it indicates the
-                                                latter.
-                                            */
-
     rgb_values_t            rgb_values[2];
     hsl_values_t            hsl_values[2];
     cie_values_t            cie_values[2];
 
+    vterm_t                 *origin;        /*
+                                                indicates which instance
+                                                added the pair to the
+                                                global table.
+                                            */
+
+    bool                    custom;         /*
+                                                indicates if the pair was
+                                                loaded from the host
+                                                palette.
+                                            */
     struct _color_pair_s    *next;
     struct _color_pair_s    *prev;
 };
@@ -102,9 +103,6 @@ typedef struct _color_cache_s   color_cache_t;
 void
 vterm_color_cache_init(void);
 
-int
-vterm_color_cache_add_pair(short fg, short bg);
-
 void
 vterm_color_cache_release();
 
@@ -119,6 +117,15 @@ vterm_color_cache_load_palette(int cache_id);
 
 void
 vterm_color_cache_free_palette(int cache_id);
+
+int
+vterm_color_cache_add_pair(vterm_t *origin, short fg, short bg);
+
+void
+vterm_color_cache_free_pairs(vterm_t *origin);
+
+short
+color_cache_find_lru_pair(void);
 
 short
 vterm_color_cache_find_unused_pair(void);
