@@ -8,7 +8,7 @@ other programs with libvterm, feel free to update this list.
 Fidelity score: 5 = excellent, 1 = poor
 ---
 
-## Linux Testing ##
+### Linux Testing ###
 
 ```
 5 - hexedit
@@ -49,7 +49,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - pamix
 ```
 
-## Mac OS Testing ##
+### Mac OS Testing ###
 
 ```
 5 - htop
