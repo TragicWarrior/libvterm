@@ -31,6 +31,8 @@
 #include "vterm_buffer.h"
 #include "color_cache.h"
 
+
+
 void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors, int fg, int bg);
 
@@ -41,6 +43,7 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount);
 void
 interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
+    extern short    rRGB[], gRGB[], bRGB[];
     vterm_desc_t    *v_desc = NULL;
     int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
@@ -380,7 +383,16 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 96:
             case 97:
             {
-                v_desc->fg = param[i] - 90;
+                if(vterm->flags & VTERM_FLAG_C16)
+                {
+                    fg = param[i] - 90;
+                    v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
+                        rRGB[fg], gRGB[fg], bRGB[fg]);
+                }
+                else
+                {
+                    v_desc->fg = (param[i] - 90) + 8;
+                }
 
                 // find the required pair in the cache
                 colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
@@ -407,7 +419,16 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 106:
             case 107:
             {
-                v_desc->bg = param[i] - 100;
+                if(vterm->flags & VTERM_FLAG_C16)
+                {
+                    bg = param[i] - 100;
+                    v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
+                        rRGB[bg], gRGB[bg], bRGB[bg]);
+                }
+                else
+                {
+                    v_desc->bg = (param[i] - 100) + 8;
+                }
 
                 // find the required pair in the cache
                 colors = color_cache_find_pair(v_desc->fg, v_desc->bg);

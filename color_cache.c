@@ -21,6 +21,24 @@
 #define PAIR_BG_G(_pair_ptr)    (_pair_ptr->rgb_values[1].g)
 #define PAIR_BG_B(_pair_ptr)    (_pair_ptr->rgb_values[1].b)
 
+#define C16(a, b, c, d) b,
+short rRGB[] = {
+#include "c16_color.def"
+};
+#undef C16
+
+#define C16(a, b, c, d) c,
+short gRGB[] = {
+#include "c16_color.def"
+};
+#undef C16
+
+#define C16(a, b, c, d) d,
+short bRGB[] = {
+#include "c16_color.def"
+};
+#undef C16
+
 void
 _color_cache_reset_pair(color_pair_t *pair);
 

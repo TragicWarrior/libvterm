@@ -134,6 +134,12 @@ int main(int argc, char **argv)
                 continue;
             }
 
+            if (strncmp(argv[i], "--c16", strlen("--c16")) == 0)
+            {
+                flags |= VTERM_FLAG_C16;
+                continue;
+            }
+
             if (strncmp(argv[i], "--exec", strlen("--exec")) == 0)
             {
                 // must have at least exec path
