@@ -383,9 +383,16 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 96:
             case 97:
             {
-                fg = param[i] - 90;
-                v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
-                    rRGB[fg], gRGB[fg], bRGB[fg]);
+                if(vterm->flags & VTERM_FLAG_C16)
+                {
+                    fg = param[i] - 90;
+                    v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
+                        rRGB[fg], gRGB[fg], bRGB[fg]);
+                }
+                else
+                {
+                    v_desc->fg = (param[i] - 90) + 8;
+                }
 
                 // find the required pair in the cache
                 colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
@@ -412,9 +419,16 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             case 106:
             case 107:
             {
-                bg = param[i] - 100;
-                v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
-                    rRGB[bg], gRGB[bg], bRGB[bg]);
+                if(vterm->flags & VTERM_FLAG_C16)
+                {
+                    bg = param[i] - 100;
+                    v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
+                        rRGB[bg], gRGB[bg], bRGB[bg]);
+                }
+                else
+                {
+                    v_desc->bg = (param[i] - 100) + 8;
+                }
 
                 // find the required pair in the cache
                 colors = color_cache_find_pair(v_desc->fg, v_desc->bg);

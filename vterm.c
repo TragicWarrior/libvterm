@@ -301,13 +301,15 @@ _vterm_set_env(uint16_t flags)
 
     if(flags & VTERM_FLAG_XTERM_256)
     {
-        if(term_colors > 8)
+        setenv("TERM", "xterm", 1);
+
+        if(term_colors == 16)
+            setenv("TERM", "xterm-16color", 1);
+
+        if(term_colors > 16 ) 
             setenv("TERM", "xterm-256color", 1);
-        else
-        {
-            setenv("TERM", "xterm", 1);
-            setenv("COLORTERM", "xterm", 1);
-        }
+
+        setenv("COLORTERM", "xterm", 1);
     }
 
     if(flags & VTERM_FLAG_LINUX)

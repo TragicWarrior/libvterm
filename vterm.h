@@ -74,23 +74,34 @@ typedef chtype          attr_t;
 
 #define LIBVTERM_VERSION        "5.13"
 
-#define VTERM_FLAG_RXVT         (1 << 0)    // masquerade as rxvt (default)
-#define VTERM_FLAG_VT100        (1 << 1)    // masquerade as vt100
-#define VTERM_FLAG_XTERM        (1 << 2)    // masquerade as xterm
-#define VTERM_FLAG_XTERM_256    (1 << 3)    // masquerade as xterm-256
-#define VTERM_FLAG_LINUX        (1 << 4)    // masquerade as linux
+#define VTERM_FLAG_RXVT         (1 << 0)    //  masquerade as rxvt (default)
+#define VTERM_FLAG_VT100        (1 << 1)    //  masquerade as vt100
+#define VTERM_FLAG_XTERM        (1 << 2)    //  masquerade as xterm
+#define VTERM_FLAG_XTERM_256    (1 << 3)    //  masquerade as xterm-256
+#define VTERM_FLAG_LINUX        (1 << 4)    //  masquerade as linux
 
-#define VTERM_FLAG_NOPTY        (1 << 8)    // skip all the fd and pty stuff.
-                                            // just render input args byte
-                                            // stream to a buffer
+#define VTERM_FLAG_NOPTY        (1 << 8)    /*
+                                                skip all the fd and pty stuff.
+                                                just render input args byte
+                                                stream to a buffer.
+                                            */
 
-#define VTERM_FLAG_NOCURSES     (1 << 9)    // skip the curses WINDOW stuff.
-                                            // return the char cell array if
-                                            // required
+#define VTERM_FLAG_NOCURSES     (1 << 9)    /*
+                                                skip the curses WINDOW stuff.
+                                                return the char cell array if
+                                                required.
+                                            */
 
-#define VTERM_FLAG_DUMP         (1 << 10)    // tell libvterm to write
-                                            // stream data to a dump file
-                                            // for debugging
+#define VTERM_FLAG_C16          (1 << 15)   /*
+                                                emulate aixterm 16 colors
+                                                with mapped colors.
+                                            */
+
+#define VTERM_FLAG_DUMP         (1 << 31)   /*
+                                                tell libvterm to write
+                                                stream data to a dump file
+                                                for debugging.
+                                            */
 
 
 // #define VCELL_TYPE_SIMPLE       0

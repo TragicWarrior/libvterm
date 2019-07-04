@@ -6,11 +6,11 @@
 
 #include "vterm.h"
 
-#define X16(a, b, c, d) a,
+#define C16(a, b, c, d) a,
 enum {
-#include "x16_color.def"
+#include "c16_color.def"
 };
-#undef X16
+#undef C16
 
 /*
     ncurses RGB values range from 0 to 1000 while the rest of the world

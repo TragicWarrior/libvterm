@@ -1,0 +1,16 @@
+/*
+    Names and values based on tool found here--although there are a few
+    excpetions.  In those cases, a search for something like
+    "shades of green" on Wikipedia will locate the releveant the color.
+
+    http://www.procato.com/rgbfind/
+*/
+
+C16(COLOR_SLATE, 54, 54, 54)  
+C16(COLOR_PINK, 255, 192, 203)  
+C16(COLOR_MALACHITE, 11, 218, 81) 
+C16(COLOR_CREAM, 255, 253, 208) 
+C16(COLOR_AZURE, 0, 127, 255) 
+C16(COLOR_MAUVE, 224, 176, 255) 
+C16(COLOR_CELESTE, 178, 255, 255)
+C16(COLOR_SILVER, 150, 150, 150)
