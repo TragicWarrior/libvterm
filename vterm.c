@@ -60,7 +60,7 @@ vterm_alloc(void)
 }
 
 vterm_t*
-vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint16_t flags)
+vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 {
     pid_t                   child_pid = 0;
     int                     master_fd;
