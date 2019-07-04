@@ -1,3 +1,8 @@
+5.15
+
+* [Bryan Christ] Fixed a type size issue that was discarding flags with
+  bit values beyond the 16 bit range.
+
 5.14
 
 * [Bryan Christ] Support 16 colors when the underlying terminal has the
