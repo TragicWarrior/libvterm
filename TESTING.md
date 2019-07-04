@@ -68,7 +68,7 @@ Fidelity score: 5 = excellent, 1 = poor
 # Test Notes #
 
 
-## VLC ##
+### VLC ###
 
 Testing Configuration:
 
@@ -77,7 +77,7 @@ vlc -V aa <file>
 vlc -V caca <file>
 ```
 
-## Mplayer ##
+### Mplayer ###
 
 Testing Configuration:
 
@@ -85,7 +85,7 @@ Testing Configuration:
 mplayer -quiet -framedrop -monitorpixelaspect 0.5 -contrast 2 -vo aa:driver=curses
 ```
 
-## myman ##
+### myman ###
 
 Testing Configuration:
 
@@ -94,7 +94,7 @@ myman -z big
 myman -2 -z big
 ```
 
-## aaxine ## 
+### aaxine ### 
 
 Testing Configuration:
 
@@ -102,7 +102,7 @@ Testing Configuration:
 aaxine -reverse -dim -bold -A alsa <file>
 ```
 
-## Midnight commander ##
+### Midnight Commander ###
 
 Notes:
 
