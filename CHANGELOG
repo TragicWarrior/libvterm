@@ -1,3 +1,13 @@
+5.14
+
+* [Bryan Christ] Support 16 colors when the underlying terminal has the
+  capability to support it.
+* [Bryan Christ] Fixed some bugs with highcolor mode.
+* [Bryan Christ] Added a flag to cause emulation of 16 color mode using
+  the hicolor palette.
+* [Bryan Christ] Added --c16 flag to demo program to invoke 16 color
+  emulation mode.
+
 5.13
 
 * [Bryan Christ] Improve color math routines.
