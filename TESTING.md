@@ -10,6 +10,7 @@ Fidelity score: 5 = excellent, 1 = poor
 
 ## Linux Testing ##
 
+```
 5 - hexedit
 5 - cdw
 5 - htop
@@ -46,9 +47,11 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - asciijump
 5 - vlc
 5 - pamix
+```
 
 ## Mac OS Testing ##
 
+```
 5 - htop
 5 - vitetris
 4 - homebrew
@@ -60,7 +63,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - lynx
 4 - links
 5 - mutt
-
+```
 
 # Test Notes #
 
