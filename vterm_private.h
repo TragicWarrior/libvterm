@@ -45,9 +45,9 @@
                                                     type.
                                                 */
 
-#define VTERM_MOUSE_X10         9
-#define VTERM_MOUSE_VT200       1000
-#define VTERM_MOUSE_SGR         1006
+#define VTERM_MOUSE_X10         (1 << 1)
+#define VTERM_MOUSE_VT200       (1 << 2)
+#define VTERM_MOUSE_SGR         (1 << 15)
 
 typedef struct _vterm_cmap_s   vterm_cmap_t;
 
@@ -149,7 +149,7 @@ struct _vterm_s
     uint32_t        flags;                      //  user options
     unsigned int    internal_state;             //  internal state control
 
-    unsigned int    mouse;                      //  mouse mode
+    uint16_t        mouse;                      //  mouse mode
 
     char            *exec_path;                 //  optional binary path to use
     char            **exec_argv;                //  instead of starting shell.

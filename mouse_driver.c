@@ -32,7 +32,7 @@ mouse_driver_SGR(vterm_t *vterm)
     MEVENT  mouse_event;
     char    *buffer = NULL;
 
-    if(vterm->mouse == VTERM_MOUSE_SGR)
+    if(vterm->mouse & VTERM_MOUSE_SGR)
     {
         getmouse(&mouse_event);
 

@@ -61,7 +61,7 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1006)
         {
-            vterm->mouse = VTERM_MOUSE_SGR;
+            vterm->mouse |= VTERM_MOUSE_SGR;
             continue;
         }
 
