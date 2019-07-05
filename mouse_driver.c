@@ -42,7 +42,7 @@ mouse_driver_SGR(vterm_t *vterm)
                 (char)(0),
                 (char)(mouse_event.x),
                 (char)(mouse_event.y),
-                (char)(0),
+                (char)(0 + 0x40),
                 (char)(mouse_event.x),
                 (char)(mouse_event.y));
         }
