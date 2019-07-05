@@ -9,6 +9,7 @@
 #include "vterm_private.h"
 #include "vterm_write.h"
 #include "strings.h"
+#include "stringv.h"
 
 int
 vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
@@ -167,11 +168,12 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
-    // char                    *mouse = NULL;
+    char                    *dynbuf = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
     int                     retval = 0;
-    // MEVENT                  mouse_event;
+    MEVENT                  mouse_event;
+    static int              mcount = 0;
 
     tcgetattr(vterm->pty_fd,&term_state);
 
@@ -205,7 +207,27 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        case KEY_MOUSE:     buffer = "\e[M";    break;
+        case KEY_MOUSE:
+        {
+            if(has_mouse() == TRUE && vterm->mouse == VTERM_MOUSE_VT200)
+            {
+                if(getmouse(&mouse_event) == OK)
+                {
+                    if(mouse_event.bstate & BUTTON1_CLICKED)
+                    {
+                        dynbuf = strdup_printf("\e[M%c%c%c\e[M%c%c%c",
+                            (char)(32 + 0 + 0),
+                            (char)(32 + mouse_event.x),
+                            (char)(32 + mouse_event.y),
+                            (char)(32 + 0 + 0x40),
+                            (char)(32 + mouse_event.x),
+                            (char)(32 + mouse_event.y));
+                    }
+                    buffer = dynbuf;
+                }
+            }
+            break;
+        }
     }
 
     // send a special sequence
@@ -216,6 +238,11 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
+        }
+
+        if(dynbuf != NULL)
+        {
+            free(dynbuf);
         }
 
         return retval;

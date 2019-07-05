@@ -51,7 +51,7 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1000)
         {
-            vterm->mouse = VTERM_MOUSE_VT2000;
+            vterm->mouse = VTERM_MOUSE_VT200;
             continue;
         }
 

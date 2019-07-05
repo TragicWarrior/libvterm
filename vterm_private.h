@@ -46,7 +46,7 @@
                                                 */
 
 #define VTERM_MOUSE_X10         9
-#define VTERM_MOUSE_VT2000      1000
+#define VTERM_MOUSE_VT200       1000
 #define VTERM_MOUSE_SGR         1006
 
 typedef struct _vterm_cmap_s   vterm_cmap_t;
