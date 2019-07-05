@@ -48,5 +48,5 @@ mouse_driver_SGR(vterm_t *vterm)
         }
     }
 
-
+    return buffer;
 }
