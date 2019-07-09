@@ -38,71 +38,43 @@ ssize_t
 mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 {
     MEVENT      mouse_event;
+    int         b_event = 0;
 
     getmouse(&mouse_event);
 
-    // endwin(); exit(0);
-
-    // printf("x: %d, y: %d\n\r", mouse_event.x, mouse_event.y);
-
-/*
     if(mouse_event.bstate & BUTTON1_CLICKED)
     {
-        buf[0] = '\033';
-        buf[1] = '[';
-        buf[2] = 'M';
-        buf[3] = ' ' + 0;
-        buf[4] = ' ' + 6;
-        buf[5] = ' ' + 6;
-        buf[6] = '\033';
-        buf[7] = '[';
-        buf[8] = 'M';
-        buf[9] = ' ' + 0x40;
-        buf[10] = ' ' + 6;
-        buf[11] = ' ' + 6;
+        sprintf((char *)buf, "\e[M%c%c%c\e[M%c%c%c",
+            32 + 0,
+            32 + mouse_event.x,
+            32 + mouse_event.y,
+            32 + 0x3,
+            32 + mouse_event.x,
+            32 + mouse_event.y);
 
         return 12;
     }
-*/
 
-
-    if(mouse_event.bstate & BUTTON1_CLICKED)
-    {
-        buf[0] = '\033';
-        buf[1] = '[';
-        buf[2] = 'M';
-        buf[3] = ' ' + 0;
-        buf[4] = ' ' + mouse_event.x;
-        buf[5] = ' ' + mouse_event.y;
-        buf[6] = '\033';
-        buf[7] = '[';
-        buf[8] = 'M';
-        buf[9] = ' ' + 0x3;
-        buf[10] = ' ' + mouse_event.x;
-        buf[11] = ' ' + mouse_event.y;
-
-        return 12;
-    }
 
 /*
     if(mouse_event.bstate & BUTTON1_PRESSED)
     {
-        buffer = strdup_printf("\e[M%c%c%c",
-            (char)(' ' + 0 + 0),
-            (char)(' ' + mouse_event.x),
-            (char)(' ' + mouse_event.y));
+        sprintf((char *)buf, "\e[M%c%c%c",
+            32 + 0,
+            32 + mouse_event.x,
+            32 + mouse_event.y);
 
-        return buffer;
+        return 6;
     }
 
     if(mouse_event.bstate & BUTTON1_RELEASED)
     {
-        buffer = strdup_printf("\e[M%c%c%c",
-            (char)(' ' + 0 + 0x40),
-            (char)(' ' + mouse_event.x),
-            (char)(' ' + mouse_event.y));
+        sprintf((char *)buf, "\e[M%c%c%c",
+            32 + 0x3,
+            32 + mouse_event.x,
+            32 + mouse_event.y);
 
-        return buffer;
+        return 6;
     }
 */
 
@@ -121,18 +93,18 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     getmouse(&mouse_event);
 
-/*
     if(mouse_event.bstate & BUTTON1_CLICKED)
     {
-        buffer = strdup_printf("\e[<%c;%c;%cM\e[<%c;%c;%cm",
+        sprintf((char *)buf, "\e[<%c;%c;%cM\e[<%c;%c;%cm",
             (char)(1),
             (char)(mouse_event.x),
             (char)(mouse_event.y),
             (char)(1),
             (char)(mouse_event.x),
             (char)(mouse_event.y));
+
+        return 12;
     }
-*/
 
     return 0;
 }
