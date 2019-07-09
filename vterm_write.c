@@ -158,6 +158,7 @@ vterm_write_linux(vterm_t *vterm, uint32_t keycode)
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
         }
+        // flushinp();
     }
 
    return retval;
@@ -168,9 +169,10 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
-    char                    *dynbuf = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
+    unsigned char           mouse_buf[64];
+    ssize_t                 mbytes = 0;
     int                     retval = 0;
 
     tcgetattr(vterm->pty_fd,&term_state);
@@ -207,8 +209,10 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(12):     buffer = "\e[24~";  break;
         case KEY_MOUSE:
         {
-            dynbuf = vterm->mouse_driver(vterm);
-            buffer = dynbuf;
+            if(vterm->mouse_driver != NULL)
+            {
+                mbytes = vterm->mouse_driver(vterm, mouse_buf);
+            }
             break;
         }
     }
@@ -223,9 +227,16 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
             retval = -1;
         }
 
-        if(dynbuf != NULL)
+        return retval;
+    }
+
+    // not keystroks but a mouse event
+    if(mbytes > 0)
+    {
+        bytes_written = write(vterm->pty_fd, mouse_buf, mbytes);
+        if(bytes_written != mbytes)
         {
-            free(dynbuf);
+            return -1;
         }
 
         return retval;

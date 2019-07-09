@@ -48,6 +48,7 @@
 #define VTERM_MOUSE_X10         (1 << 1)
 #define VTERM_MOUSE_VT200       (1 << 2)
 #define VTERM_MOUSE_SGR         (1 << 7)
+#define VTERM_MOUSE_HIGHLIGHT   (1 << 12)
 
 typedef struct _vterm_cmap_s   vterm_cmap_t;
 
@@ -167,7 +168,7 @@ struct _vterm_s
     int             (*write)            (vterm_t *, uint32_t);
     int             (*esc_handler)      (vterm_t *);
     int             (*rs1_reset)        (vterm_t *, char *);
-    char*           (*mouse_driver)     (vterm_t *);
+    ssize_t         (*mouse_driver)     (vterm_t *, unsigned char *);
 
     // callbacks that the implementer can specify
     void            (*event_hook)       (vterm_t *, int, void *);

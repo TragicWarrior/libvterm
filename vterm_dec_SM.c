@@ -4,6 +4,7 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 #include "vterm_cursor.h"
+#include "mouse_driver.h"
 
 /*
     Info on bracketed paste can be found here:
@@ -46,22 +47,34 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         }
 
         /*
-            set mouse mode VT200
+            set mouse mode VT200 and installs the generic mouse driver
             this is a varation of the X10 protocol with tracking
         */
         if(param[i] == 1000)
         {
+            mouse_driver_init();
+
             vterm->mouse |= VTERM_MOUSE_VT200;
+            vterm->mouse_driver = mouse_driver_default;
+            continue;
+        }
+
+        if(param[i] == 1001)
+        {
+            vterm->mouse |= VTERM_MOUSE_HIGHLIGHT;
             continue;
         }
 
         /*
-            set mouse mode SGR
+            set mouse mode SGR and installs the generic mouse driver
             the most ubiquitous mouse mode handling > 223 x 223 coord
         */
         if(param[i] == 1006)
         {
+            mouse_driver_init();
+
             vterm->mouse |= VTERM_MOUSE_SGR;
+            vterm->mouse_driver = mouse_driver_default;
             continue;
         }
 

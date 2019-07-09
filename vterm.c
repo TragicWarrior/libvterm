@@ -68,7 +68,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     struct winsize          ws = {.ws_xpixel = 0,.ws_ypixel = 0};
     char                    *pos = NULL;
     int                     retval;
-    char                    *kmous_str = NULL;
 
     // rxvt emulation is the default if none specified
     // if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT;
@@ -195,22 +194,6 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 
     if(flags & VTERM_FLAG_LINUX)
         vterm->write = vterm_write_linux;
-
-    /*
-        configure the mouse mode driver.
-        default is vt200.
-    */
-    vterm->mouse_driver = mouse_driver_vt200;
-
-    kmous_str = tigetstr("kmous");
-
-    if(kmous_str != 0 && kmous_str != (char *)-1)
-    {
-        if(strncmp(kmous_str, "\e[<", strlen("\e[<")) == 0)
-        {
-            vterm->mouse_driver = mouse_driver_SGR;
-        }
-    }
 
     return vterm;
 }
