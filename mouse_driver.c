@@ -55,28 +55,24 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
         return 12;
     }
 
+// only the newer ABI supports the wheel mous properly
+#if NCURSES_MOUSE_VERSION > 1
 
-/*
-    if(mouse_event.bstate & BUTTON1_PRESSED)
+    if(mouse_event.bstate & BUTTON4_PRESSED)
     {
-        sprintf((char *)buf, "\e[M%c%c%c",
-            32 + 0,
-            32 + mouse_event.x,
-            32 + mouse_event.y);
+        sprintf((char *)buf, "\eOA");
 
-        return 6;
+        return 3;
     }
 
-    if(mouse_event.bstate & BUTTON1_RELEASED)
+    if(mouse_event.bstate & BUTTON5_PRESSED)
     {
-        sprintf((char *)buf, "\e[M%c%c%c",
-            32 + 0x3,
-            32 + mouse_event.x,
-            32 + mouse_event.y);
+        sprintf((char *)buf, "\eOB");
 
-        return 6;
+        return 3;
     }
-*/
+
+#endif
 
     return 0;
 }
