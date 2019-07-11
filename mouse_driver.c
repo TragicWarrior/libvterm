@@ -146,6 +146,8 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
     int     x, y;
 
     getmouse(&mouse_event);
+    x = mouse_event.x;
+    y = mouse_event.y;
 
     if(vterm->window != NULL)
     {
