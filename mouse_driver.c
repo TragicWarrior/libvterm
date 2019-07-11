@@ -91,16 +91,35 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON1_CLICKED)
     {
-        sprintf((char *)buf, "\e[<%c;%c;%cM\e[<%c;%c;%cm",
-            (char)(1),
-            (char)(mouse_event.x),
-            (char)(mouse_event.y),
-            (char)(1),
-            (char)(mouse_event.x),
-            (char)(mouse_event.y));
+        sprintf((char *)buf, "\e[<%d;%d;%dM\e[<%d;%d;%dm",
+            32 + 0,
+            mouse_event.x,
+            mouse_event.y,
+            32 + 0,
+            mouse_event.x,
+            mouse_event.y);
 
-        return 12;
+        return strlen((char *)buf);
     }
+
+// only the newer ABI supports the wheel mous properly
+#if NCURSES_MOUSE_VERSION > 1
+
+    if(mouse_event.bstate & BUTTON4_PRESSED)
+    {
+        sprintf((char *)buf, "\eOA");
+
+        return 3;
+    }
+
+    if(mouse_event.bstate & BUTTON5_PRESSED)
+    {
+        sprintf((char *)buf, "\eOB");
+
+        return 3;
+    }
+
+#endif
 
     return 0;
 }
