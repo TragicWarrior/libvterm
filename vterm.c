@@ -35,6 +35,7 @@
 #include "vterm_buffer.h"
 #include "vterm_csi.h"
 #include "color_cache.h"
+#include "mouse_driver.h"
 
 #include "utlist.h"
 

@@ -9,6 +9,7 @@
 #include "vterm_private.h"
 #include "vterm_write.h"
 #include "strings.h"
+#include "stringv.h"
 
 int
 vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
@@ -157,6 +158,7 @@ vterm_write_linux(vterm_t *vterm, uint32_t keycode)
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
         }
+        // flushinp();
     }
 
    return retval;
@@ -167,11 +169,11 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 {
     ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
-    // char                    *mouse = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
+    unsigned char           mouse_buf[64];
+    ssize_t                 mbytes = 0;
     int                     retval = 0;
-    // MEVENT                  mouse_event;
 
     tcgetattr(vterm->pty_fd,&term_state);
 
@@ -205,7 +207,14 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        case KEY_MOUSE:     buffer = "\e[M";    break;
+        case KEY_MOUSE:
+        {
+            if(vterm->mouse_driver != NULL)
+            {
+                mbytes = vterm->mouse_driver(vterm, mouse_buf);
+            }
+            break;
+        }
     }
 
     // send a special sequence
@@ -216,6 +225,18 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         {
             fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
             retval = -1;
+        }
+
+        return retval;
+    }
+
+    // not keystroks but a mouse event
+    if(mbytes > 0)
+    {
+        bytes_written = write(vterm->pty_fd, mouse_buf, mbytes);
+        if(bytes_written != mbytes)
+        {
+            return -1;
         }
 
         return retval;

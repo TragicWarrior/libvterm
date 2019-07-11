@@ -52,6 +52,7 @@ find_package(Curses)
 add_library(vterm-static STATIC
     color_math.c
     color_cache.c
+    mouse_driver.c
     vterm.c
     vterm_csi.c
     vterm_exec.c
@@ -103,6 +104,7 @@ add_library(vterm-static STATIC
 add_library(vterm.o OBJECT
     color_math.c
     color_cache.c
+    mouse_driver.c
     vterm.c
     vterm_buffer.c
     vterm_csi.c

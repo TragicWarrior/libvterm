@@ -4,6 +4,7 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 #include "vterm_cursor.h"
+#include "mouse_driver.h"
 
 /* Interpret the DEC RM (reset mode) */
 void
@@ -32,6 +33,13 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
             if(idx == VTERM_BUFFER_STD) continue;
 
             vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+            continue;
+        }
+
+        // shutdown whatever mouse driver is installed
+        if(param[i] == 1000 || param[i] == 1005 || param[i] == 1006)
+        {
+            mouse_driver_unset(vterm);
             continue;
         }
 
