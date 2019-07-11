@@ -45,6 +45,32 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 
     getmouse(&mouse_event);
 
+    if(mouse_event.bstate & BUTTON1_PRESSED)
+    {
+        sprintf((char *)buf, "\e[M%c%c%c",
+            32 + 0x0,
+            32 + mouse_event.x,
+            32 + mouse_event.y);
+
+        retval = strlen((char *)buf);
+
+        return retval;
+    }
+
+    if(mouse_event.bstate & BUTTON1_RELEASED)
+    {
+        sprintf((char *)buf, "\e[M%c%c%c",
+            32 + 0x3,
+            32 + mouse_event.x,
+            32 + mouse_event.y);
+
+        retval = strlen((char *)buf);
+
+        return retval;
+    }
+
+
+/*
     if(mouse_event.bstate & BUTTON1_CLICKED)
     {
         sprintf((char *)buf, "\e[M%c%c%c\e[M%c%c%c",
@@ -59,6 +85,7 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 
         return retval;
     }
+*/
 
 // only the newer ABI supports the wheel mous properly
 #if NCURSES_MOUSE_VERSION > 1
