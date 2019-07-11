@@ -2,7 +2,8 @@
 
 * [Bryan Christ] Introduced support for mouse operations with Button 1 and
   the mouse wheel.  The mouse driver currently supports the X10 and SGR
-  protocols which are the most common.
+  protocols which are the most common.  Support is for xterm emulation
+  mode only.
 
 5.15
 
