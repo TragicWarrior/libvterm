@@ -90,7 +90,6 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
         return retval;
     }
 
-
 /*
     if(mouse_event.bstate & BUTTON1_CLICKED)
     {
