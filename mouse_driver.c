@@ -10,6 +10,7 @@ mouse_driver_init(void)
     mmask_t     mouse_mask = ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION;
 
     mousemask(mouse_mask, NULL);
+    mouseinterval(0);
 
     return;
 }
@@ -19,26 +20,28 @@ mouse_driver_default(vterm_t *vterm, unsigned char *buf)
 {
     ssize_t     mbytes = 0;
 
-    if(vterm->mouse & VTERM_MOUSE_VT200)
-    {
-        vterm->mouse_driver = mouse_driver_vt200;
-    }
-
+    // SGR is a special variant of VT200
     if(vterm->mouse & VTERM_MOUSE_SGR)
     {
-        vterm->mouse_driver = mouse_driver_SGR;
+        mbytes = mouse_driver_SGR(vterm, buf);
+        return mbytes;
     }
 
-    mbytes = vterm->mouse_driver(vterm, buf);
+    if(vterm->mouse & VTERM_MOUSE_VT200)
+    {
+        mbytes = mouse_driver_vt200(vterm, buf);
+        return mbytes;
+    }
 
-    return mbytes;
+
+    return 0;
 }
 
 ssize_t
 mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 {
     MEVENT      mouse_event;
-    int         b_event = 0;
+    int         retval = 0;
 
     getmouse(&mouse_event);
 
@@ -52,7 +55,9 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
             32 + mouse_event.x,
             32 + mouse_event.y);
 
-        return 12;
+        retval = strlen((char *)buf);
+
+        return retval;
     }
 
 // only the newer ABI supports the wheel mous properly
@@ -62,14 +67,18 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
     {
         sprintf((char *)buf, "\eOA");
 
-        return 3;
+        retval = strlen((char *)buf);
+
+        return retval;
     }
 
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
         sprintf((char *)buf, "\eOB");
 
-        return 3;
+        retval = strlen((char *)buf);
+
+        return retval;
     }
 
 #endif
@@ -86,20 +95,47 @@ ssize_t
 mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 {
     MEVENT  mouse_event;
+    int     retval = 0;
 
     getmouse(&mouse_event);
+
+    if(mouse_event.bstate & BUTTON1_PRESSED)
+    {
+        sprintf((char *)buf, "\e[<%d;%d;%dM",
+            0,
+            mouse_event.x,
+            mouse_event.y);
+
+        retval = strlen((char *)buf);
+
+        return retval;
+    }
+
+    if(mouse_event.bstate & BUTTON1_RELEASED)
+    {
+        sprintf((char *)buf, "\e[<%d;%d;%dm",
+            0,
+            mouse_event.x,
+            mouse_event.y);
+
+        retval = strlen((char *)buf);
+
+        return retval;
+    }
 
     if(mouse_event.bstate & BUTTON1_CLICKED)
     {
         sprintf((char *)buf, "\e[<%d;%d;%dM\e[<%d;%d;%dm",
-            32 + 0,
+            0,
             mouse_event.x,
             mouse_event.y,
-            32 + 0,
+            0,
             mouse_event.x,
             mouse_event.y);
 
-        return strlen((char *)buf);
+        retval = strlen((char *)buf);
+
+        return retval;
     }
 
 // only the newer ABI supports the wheel mous properly
@@ -109,14 +145,18 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
     {
         sprintf((char *)buf, "\eOA");
 
-        return 3;
+        retval = strlen((char *)buf);
+
+        return retval;
     }
 
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
         sprintf((char *)buf, "\eOB");
 
-        return 3;
+        retval = strlen((char *)buf);
+
+        return retval;
     }
 
 #endif
