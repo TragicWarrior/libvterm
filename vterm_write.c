@@ -12,6 +12,9 @@
 #include "stringv.h"
 
 int
+_vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes);
+
+int
 vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
 {
     int     retval;
@@ -34,10 +37,11 @@ vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
 int
 vterm_write_rxvt(vterm_t *vterm, uint32_t keycode)
 {
-    ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
+    unsigned char           buf[64];
+    int                     bytes = 0;
     int                     retval = 0;
 
     tcgetattr(vterm->pty_fd, &term_state);
@@ -72,9 +76,37 @@ vterm_write_rxvt(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        case KEY_MOUSE:     buffer = "\e[M";    break;
     }
 
+    if(keycode == KEY_MOUSE)
+    {
+        if(vterm->mouse_driver != NULL)
+        {
+            bytes = vterm->mouse_driver(vterm, buf);
+        }
+    }
+
+    if(buffer != NULL)
+    {
+        bytes = strlen(buffer);
+        memcpy(buf, buffer, bytes);
+    }
+
+    if(keycode != KEY_MOUSE && buffer == NULL)
+    {
+        bytes = sizeof(char);
+        memcpy(buf, &keycode, bytes);
+    }
+
+    if(bytes > 0)
+    {
+        retval = _vterm_write_pty(vterm, buf, bytes);
+    }
+
+   return retval;
+
+
+/*
     if(buffer == NULL)
     {
         bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
@@ -94,16 +126,19 @@ vterm_write_rxvt(vterm_t *vterm, uint32_t keycode)
         }
     }
 
-   return retval;
+    return reval;
+*/
+
 }
 
 int
 vterm_write_linux(vterm_t *vterm, uint32_t keycode)
 {
-    ssize_t                 bytes_written = 0;
     char                    *buffer = NULL;
     static struct termios   term_state;
     static char             backspace[8] = "\b";
+    unsigned char           buf[64];
+    int                     bytes = 0;
     int                     retval = 0;
 
     tcgetattr(vterm->pty_fd, &term_state);
@@ -138,27 +173,31 @@ vterm_write_linux(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        case KEY_MOUSE:     buffer = "\e[M";    break;
     }
 
-    if(buffer == NULL)
+    if(keycode == KEY_MOUSE)
     {
-        bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
-        if( bytes_written != sizeof(char) )
+        if(vterm->mouse_driver != NULL)
         {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
+            bytes = vterm->mouse_driver(vterm, buf);
         }
     }
-    else
+
+    if(buffer != NULL)
     {
-        bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
-        if( bytes_written != (ssize_t)strlen(buffer) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-        // flushinp();
+        bytes = strlen(buffer);
+        memcpy(buf, buffer, bytes);
+    }
+
+    if(keycode != KEY_MOUSE && buffer == NULL)
+    {
+        bytes = sizeof(char);
+        memcpy(buf, &keycode, bytes);
+    }
+
+    if(bytes > 0)
+    {
+        retval = _vterm_write_pty(vterm, buf, bytes);
     }
 
    return retval;
@@ -167,15 +206,14 @@ vterm_write_linux(vterm_t *vterm, uint32_t keycode)
 int
 vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
 {
-    ssize_t                 bytes_written = 0;
-    char                    *buffer = NULL;
     static struct termios   term_state;
+    char                    *buffer = NULL;
     static char             backspace[8] = "\b";
-    unsigned char           mouse_buf[64];
-    ssize_t                 mbytes = 0;
+    unsigned char           buf[64];
+    ssize_t                 bytes = 0;
     int                     retval = 0;
 
-    tcgetattr(vterm->pty_fd,&term_state);
+    tcgetattr(vterm->pty_fd, &term_state);
 
     if(term_state.c_cc[VERASE] != '0')
         sprintf(backspace, "%c", term_state.c_cc[VERASE]);
@@ -207,50 +245,34 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         case KEY_F(10):     buffer = "\e[21~";  break;
         case KEY_F(11):     buffer = "\e[23~";  break;
         case KEY_F(12):     buffer = "\e[24~";  break;
-        case KEY_MOUSE:
+    }
+
+    if(keycode == KEY_MOUSE)
+    {
+        if(vterm->mouse_driver != NULL)
         {
-            if(vterm->mouse_driver != NULL)
-            {
-                mbytes = vterm->mouse_driver(vterm, mouse_buf);
-            }
-            break;
+            bytes = vterm->mouse_driver(vterm, buf);
         }
     }
 
-    // send a special sequence
     if(buffer != NULL)
     {
-        bytes_written = write(vterm->pty_fd, buffer, strlen(buffer));
-        if( bytes_written != (ssize_t)strlen(buffer) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-
-        return retval;
+        bytes = strlen(buffer);
+        memcpy(buf, buffer, bytes);
     }
 
-    // not keystroks but a mouse event
-    if(mbytes > 0)
+    if(keycode != KEY_MOUSE && buffer == NULL)
     {
-        bytes_written = write(vterm->pty_fd, mouse_buf, mbytes);
-        if(bytes_written != mbytes)
-        {
-            return -1;
-        }
-
-        return retval;
+        bytes = sizeof(char);
+        memcpy(buf, &keycode, bytes);
     }
 
-    // default... send keystroke
-    bytes_written = write(vterm->pty_fd, &keycode, sizeof(char));
-    if( bytes_written != sizeof(char) )
+    if(bytes > 0)
     {
-        fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-        retval = -1;
+        retval = _vterm_write_pty(vterm, buf, bytes);
     }
 
-   return retval;
+    return retval;
 }
 
 
@@ -317,3 +339,20 @@ vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
     return retval;
 }
 
+int
+_vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes)
+{
+    ssize_t bytes_written = 0;
+    int     retval = 0;
+
+    if(buf == NULL) return -1;
+
+    bytes_written = write(vterm->pty_fd, buf, bytes);
+    if(bytes_written != bytes)
+    {
+        fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
+        retval = -1;
+    }
+
+    return retval;
+}
