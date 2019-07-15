@@ -220,14 +220,14 @@ vterm_write_linux(vterm_t *vterm, uint32_t keycode)
 }
 
 #define KEYMAP(k, s)    k,
-uint32_t xterm_keymap_val[] = {
-#include "xterm_keymap.def"
+uint32_t keymap_xterm_val[] = {
+#include "keymap_xterm.def"
 };
 #undef KEYMAP
 
 #define KEYMAP(k, s)    s,
-char *xterm_keymap_str[] = {
-#include "xterm_keymap.def"
+char *keymap_xterm_str[] = {
+#include "keymap_xterm.def"
 };
 #undef KEYMAP
 
@@ -239,17 +239,17 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
     unsigned char           buf[64];
     ssize_t                 bytes = 0;
     int                     retval = 0;
-    static int              array_sz = ARRAY_SZ(xterm_keymap_val);
+    static int              array_sz = ARRAY_SZ(keymap_xterm_val);
     int                     i;
 
     // look in KEYMAP x-macro table for a match
     for(i = 0; i < array_sz; i++)
     {
         // the key keycode is a match
-        if(keycode == xterm_keymap_val[i])
+        if(keycode == keymap_xterm_val[i])
         {
-            bytes = strlen(xterm_keymap_str[i]);
-            strncpy((char *)buf, xterm_keymap_str[i], bytes);
+            bytes = strlen(keymap_xterm_str[i]);
+            strncpy((char *)buf, keymap_xterm_str[i], bytes);
             break;
         }
     }
@@ -275,12 +275,14 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         }
     }
 
+    // if bytes is > 0 we've arleady found something to write
     if(bytes > 0)
     {
         retval = _vterm_write_pty(vterm, buf, bytes);
         return retval;
     }
 
+    // if bytes == 0 then no special handling, just pass the key through
     bytes = sizeof(char);
     memcpy(buf, &keycode, bytes);
     retval = _vterm_write_pty(vterm, buf, bytes);
