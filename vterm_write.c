@@ -111,30 +111,35 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     unsigned char           buf[64];
     ssize_t                 bytes = 0;
     int                     retval = 0;
-    char                    **keymap_str;
-    uint32_t                *keymap_val;
-    int                     array_sz;
+    static char             **keymap_str;
+    static uint32_t         *keymap_val;
+    static int              array_sz = 0;
     int                     i;
 
-    if(vterm->flags & VTERM_FLAG_XTERM || vterm->flags & VTERM_FLAG_XTERM_256)
+    // if the array size is 0 then we need to setup our map pointers
+    if(array_sz == 0)
     {
-        array_sz = ARRAY_SZ(keymap_xterm_val);
-        keymap_str = keymap_xterm_str;
-        keymap_val = keymap_xterm_val;
-    }
+        if(vterm->flags & VTERM_FLAG_XTERM ||
+            vterm->flags & VTERM_FLAG_XTERM_256)
+        {
+            array_sz = ARRAY_SZ(keymap_xterm_val);
+            keymap_str = keymap_xterm_str;
+            keymap_val = keymap_xterm_val;
+        }
 
-    if(vterm->flags & VTERM_FLAG_RXVT)
-    {
-        array_sz = ARRAY_SZ(keymap_rxvt_val);
-        keymap_str = keymap_rxvt_str;
-        keymap_val = keymap_rxvt_val;
-    }
+        if(vterm->flags & VTERM_FLAG_RXVT)
+        {
+            array_sz = ARRAY_SZ(keymap_rxvt_val);
+            keymap_str = keymap_rxvt_str;
+            keymap_val = keymap_rxvt_val;
+        }
 
-    if(vterm->flags & VTERM_FLAG_LINUX)
-    {
-        array_sz = ARRAY_SZ(keymap_linux_val);
-        keymap_str = keymap_linux_str;
-        keymap_val = keymap_linux_val;
+        if(vterm->flags & VTERM_FLAG_LINUX)
+        {
+            array_sz = ARRAY_SZ(keymap_linux_val);
+            keymap_str = keymap_linux_str;
+            keymap_val = keymap_linux_val;
+        }
     }
 
     // look in KEYMAP x-macro table for a match
