@@ -93,6 +93,11 @@ typedef chtype          attr_t;
                                                     cell array if required.
                                                 */
 
+#define VTERM_FLAG_C8           (1UL << 14)     /*
+                                                    never try to used extended
+                                                    colors (aixterm 16 colors).
+                                                */
+
 #define VTERM_FLAG_C16          (1UL << 15)     /*
                                                     emulate aixterm 16 colors
                                                     with mapped colors.
