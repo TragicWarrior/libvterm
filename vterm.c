@@ -48,7 +48,7 @@
 color_cache_t   *color_cache = NULL;
 
 void
-_vterm_set_env(uint16_t flags);
+_vterm_set_env(vterm_t *vterm);
 
 vterm_t*
 vterm_alloc(void)
@@ -70,10 +70,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     int                     retval;
 
     // rxvt emulation is the default if none specified
-    // if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_RXVT;
 
     // xterm emulation is the default if none specified
-    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM;
+    if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM_256;
 
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
@@ -158,7 +157,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         {
             signal(SIGINT, SIG_DFL);
 
-            _vterm_set_env(flags);
+            _vterm_set_env(vterm);
 
             retval = vterm_exec_binary(vterm);
 
@@ -271,44 +270,51 @@ vterm_get_ttyname(vterm_t *vterm)
 }
 
 void
-_vterm_set_env(uint16_t flags)
+_vterm_set_env(vterm_t *vterm)
 {
     int     term_colors = 0;
 
     term_colors = tigetnum("colors");
 
-    if(flags & VTERM_FLAG_RXVT)
+    if(vterm->flags & VTERM_FLAG_RXVT)
     {
         setenv("TERM", "rxvt", 1);
         setenv("COLORTERM", "rxvt", 1);
     }
 
-    if(flags & VTERM_FLAG_XTERM)
+    if(vterm->flags & VTERM_FLAG_XTERM)
     {
         setenv("TERM", "xterm", 1);
         setenv("COLORTERM", "xterm", 1);
     }
 
-    if(flags & VTERM_FLAG_XTERM_256)
+    if(vterm->flags & VTERM_FLAG_XTERM_256)
     {
         setenv("TERM", "xterm", 1);
+
+        // bad value passed.  fallback to normal xterm mode
+        if(term_colors < 16)
+        {
+            vterm->flags &= ~VTERM_FLAG_XTERM_256;
+            vterm->flags |= VTERM_FLAG_XTERM;
+        }
 
         if(term_colors == 16)
             setenv("TERM", "xterm-16color", 1);
 
-        if(term_colors > 16 ) 
+        if(term_colors > 16) 
             setenv("TERM", "xterm-256color", 1);
 
         setenv("COLORTERM", "xterm", 1);
     }
 
-    if(flags & VTERM_FLAG_LINUX)
+    if(vterm->flags & VTERM_FLAG_LINUX)
     {
         setenv("TERM", "linux", 1);
         unsetenv("COLORTERM");
     }
 
-    if(flags & VTERM_FLAG_VT100)
+    if(vterm->flags & VTERM_FLAG_VT100)
     {
         setenv("TERM", "vt100", 1);
         unsetenv("COLORTERM");
