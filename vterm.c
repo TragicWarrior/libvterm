@@ -48,7 +48,10 @@
 color_cache_t   *color_cache = NULL;
 
 void
-_vterm_set_env(vterm_t *vterm);
+_vterm_set_guest_env(vterm_t *vterm);
+
+void
+_vterm_set_host_env(vterm_t *vterm);
 
 vterm_t*
 vterm_alloc(void)
@@ -157,7 +160,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         {
             signal(SIGINT, SIG_DFL);
 
-            _vterm_set_env(vterm);
+            _vterm_set_guest_env(vterm);
 
             retval = vterm_exec_binary(vterm);
 
@@ -167,6 +170,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         }
 
         vterm->child_pid = child_pid;
+        _vterm_set_host_env(vterm);
 
         if(flags & VTERM_FLAG_DUMP)
         {
@@ -270,7 +274,36 @@ vterm_get_ttyname(vterm_t *vterm)
 }
 
 void
-_vterm_set_env(vterm_t *vterm)
+_vterm_set_host_env(vterm_t *vterm)
+{
+    int     term_colors = 0;
+    int     broken_bits = 0;
+
+    term_colors = tigetnum("colors");
+    broken_bits = tigetnum("ncv");
+
+    // bad value passed.  fallback to normal xterm mode
+    if(term_colors < 16)
+    {
+        vterm->flags &= ~VTERM_FLAG_XTERM_256;
+        vterm->flags |= VTERM_FLAG_XTERM;
+    }
+
+    // probably not safe to use 16-colors
+    if(broken_bits > 0)
+    {
+        if((term_colors < 16) && (broken_bits & 0x10))
+        {
+            vterm->flags |= VTERM_FLAG_C8;
+            vterm->flags &= ~VTERM_FLAG_C16;
+        }
+    }
+
+    return;
+}
+
+void
+_vterm_set_guest_env(vterm_t *vterm)
 {
     int     term_colors = 0;
 
@@ -292,17 +325,10 @@ _vterm_set_env(vterm_t *vterm)
     {
         setenv("TERM", "xterm", 1);
 
-        // bad value passed.  fallback to normal xterm mode
-        if(term_colors < 16)
-        {
-            vterm->flags &= ~VTERM_FLAG_XTERM_256;
-            vterm->flags |= VTERM_FLAG_XTERM;
-        }
-
         if(term_colors == 16)
             setenv("TERM", "xterm-16color", 1);
 
-        if(term_colors > 16) 
+        if(term_colors > 16)
             setenv("TERM", "xterm-256color", 1);
 
         setenv("COLORTERM", "xterm", 1);

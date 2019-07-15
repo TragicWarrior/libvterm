@@ -391,7 +391,12 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 }
                 else
                 {
-                    v_desc->fg = (param[i] - 90) + 8;
+                    if(vterm->flags & VTERM_FLAG_C8)
+                        v_desc->fg = param[i] - 90;
+                    else
+                    {
+                        v_desc->fg = (param[i] - 90) + 8;
+                    }
                 }
 
                 // find the required pair in the cache
@@ -427,7 +432,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 }
                 else
                 {
-                    v_desc->bg = (param[i] - 100) + 8;
+                    v_desc->bg = param[i] - 100;
+                    if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg += 8;
                 }
 
                 // find the required pair in the cache
