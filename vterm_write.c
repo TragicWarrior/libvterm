@@ -10,6 +10,75 @@
 #include "vterm_write.h"
 #include "strings.h"
 #include "stringv.h"
+#include "macros.h"
+
+// necessary for KEYMAP x-macro to work correctly
+#define KEY_F1      KEY_F(1)
+#define KEY_F2      KEY_F(2)
+#define KEY_F3      KEY_F(3)
+#define KEY_F4      KEY_F(4)
+#define KEY_F5      KEY_F(5)
+#define KEY_F6      KEY_F(6)
+#define KEY_F7      KEY_F(7)
+#define KEY_F8      KEY_F(8)
+#define KEY_F9      KEY_F(9)
+#define KEY_F10     KEY_F(10)
+#define KEY_F11     KEY_F(11)
+#define KEY_F12     KEY_F(12)
+
+
+// load keymap table for xterm and xterm256
+#define KEYMAP(k, s)    k,
+uint32_t keymap_xterm_val[] = {
+#include "keymap_xterm.def"
+};
+#undef KEYMAP
+
+#define KEYMAP(k, s)    s,
+char *keymap_xterm_str[] = {
+#include "keymap_xterm.def"
+};
+#undef KEYMAP
+
+// load keymap table for rxvt
+#define KEYMAP(k, s)    k,
+uint32_t keymap_rxvt_val[] = {
+#include "keymap_rxvt.def"
+};
+#undef KEYMAP
+
+#define KEYMAP(k, s)    s,
+char *keymap_rxvt_str[] = {
+#include "keymap_rxvt.def"
+};
+#undef KEYMAP
+
+// load keymap table for linux
+#define KEYMAP(k, s)    k,
+uint32_t keymap_linux_val[] = {
+#include "keymap_linux.def"
+};
+#undef KEYMAP
+
+#define KEYMAP(k, s)    s,
+char *keymap_linux_str[] = {
+#include "keymap_linux.def"
+};
+#undef KEYMAP
+
+// load keymap table for vt100
+#define KEYMAP(k, s)    k,
+uint32_t keymap_vt100_val[] = {
+#include "keymap_vt100.def"
+};
+#undef KEYMAP
+
+#define KEYMAP(k, s)    s,
+char *keymap_vt100_str[] = {
+#include "keymap_vt100.def"
+};
+#undef KEYMAP
+
 
 int
 _vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes);
@@ -34,218 +103,69 @@ vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
     return retval;
 }
 
-int
-vterm_write_rxvt(vterm_t *vterm, uint32_t keycode)
-{
-    char                    *buffer = NULL;
-    static struct termios   term_state;
-    static char             backspace[8] = "\b";
-    unsigned char           buf[64];
-    int                     bytes = 0;
-    int                     retval = 0;
-
-    tcgetattr(vterm->pty_fd, &term_state);
-
-    if(term_state.c_cc[VERASE] != '0')
-        sprintf(backspace, "%c", term_state.c_cc[VERASE]);
-
-    switch(keycode)
-    {
-        case '\n':          buffer = "\r";      break;
-        case KEY_UP:        buffer = "\e[A";    break;
-        case KEY_DOWN:      buffer = "\e[B";    break;
-        case KEY_RIGHT:     buffer = "\e[C";    break;
-        case KEY_LEFT:      buffer = "\e[D";    break;
-        case KEY_BACKSPACE: buffer = backspace; break;
-        case KEY_IC:        buffer = "\e[2~";   break;
-        case KEY_DC:        buffer = "\e[3~";   break;
-        case KEY_HOME:      buffer = "\e[7~";   break;
-        case KEY_END:       buffer = "\e[8~";   break;
-        case KEY_PPAGE:     buffer = "\e[5~";   break;
-        case KEY_NPAGE:     buffer = "\e[6~";   break;
-        case KEY_SUSPEND:   buffer = "\x1A";    break;      // ctrl-z
-        case KEY_F(1):      buffer = "\e[11~";  break;
-        case KEY_F(2):      buffer = "\e[12~";  break;
-        case KEY_F(3):      buffer = "\e[13~";  break;
-        case KEY_F(4):      buffer = "\e[14~";  break;
-        case KEY_F(5):      buffer = "\e[15~";  break;
-        case KEY_F(6):      buffer = "\e[17~";  break;
-        case KEY_F(7):      buffer = "\e[18~";  break;
-        case KEY_F(8):      buffer = "\e[19~";  break;
-        case KEY_F(9):      buffer = "\e[20~";  break;
-        case KEY_F(10):     buffer = "\e[21~";  break;
-        case KEY_F(11):     buffer = "\e[23~";  break;
-        case KEY_F(12):     buffer = "\e[24~";  break;
-    }
-
-    if(keycode == KEY_MOUSE)
-    {
-        if(vterm->mouse_driver != NULL)
-        {
-            bytes = vterm->mouse_driver(vterm, buf);
-        }
-    }
-
-    if(buffer != NULL)
-    {
-        bytes = strlen(buffer);
-        memcpy(buf, buffer, bytes);
-    }
-
-    if(keycode != KEY_MOUSE && buffer == NULL)
-    {
-        bytes = sizeof(char);
-        memcpy(buf, &keycode, bytes);
-    }
-
-    if(bytes > 0)
-    {
-        retval = _vterm_write_pty(vterm, buf, bytes);
-    }
-
-   return retval;
-
-
-/*
-    if(buffer == NULL)
-    {
-        bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
-        if( bytes_written != sizeof(char) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-    }
-    else
-    {
-        bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
-        if( bytes_written != (ssize_t)strlen(buffer) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-    }
-
-    return reval;
-*/
-
-}
 
 int
-vterm_write_linux(vterm_t *vterm, uint32_t keycode)
-{
-    char                    *buffer = NULL;
-    static struct termios   term_state;
-    static char             backspace[8] = "\b";
-    unsigned char           buf[64];
-    int                     bytes = 0;
-    int                     retval = 0;
-
-    tcgetattr(vterm->pty_fd, &term_state);
-
-    if(term_state.c_cc[VERASE] != '0')
-        sprintf(backspace, "%c", term_state.c_cc[VERASE]);
-
-    switch(keycode)
-    {
-        case '\n':          buffer = "\r";      break;
-        case KEY_UP:        buffer = "\e[A";    break;
-        case KEY_DOWN:      buffer = "\e[B";    break;
-        case KEY_RIGHT:     buffer = "\e[C";    break;
-        case KEY_LEFT:      buffer = "\e[D";    break;
-        case KEY_BACKSPACE: buffer = backspace; break;
-        case KEY_IC:        buffer = "\e[2~";   break;
-        case KEY_DC:        buffer = "\e[3~";   break;
-        case KEY_HOME:      buffer = "\e[7~";   break;
-        case KEY_END:       buffer = "\e[8~";   break;
-        case KEY_PPAGE:     buffer = "\e[5~";   break;
-        case KEY_NPAGE:     buffer = "\e[6~";   break;
-        case KEY_SUSPEND:   buffer = "\x1A";    break;      // ctrl-z
-        case KEY_F(1):      buffer = "\e[11~";  break;
-        case KEY_F(2):      buffer = "\e[12~";  break;
-        case KEY_F(3):      buffer = "\e[13~";  break;
-        case KEY_F(4):      buffer = "\e[14~";  break;
-        case KEY_F(5):      buffer = "\e[15~";  break;
-        case KEY_F(6):      buffer = "\e[17~";  break;
-        case KEY_F(7):      buffer = "\e[18~";  break;
-        case KEY_F(8):      buffer = "\e[19~";  break;
-        case KEY_F(9):      buffer = "\e[20~";  break;
-        case KEY_F(10):     buffer = "\e[21~";  break;
-        case KEY_F(11):     buffer = "\e[23~";  break;
-        case KEY_F(12):     buffer = "\e[24~";  break;
-    }
-
-    if(keycode == KEY_MOUSE)
-    {
-        if(vterm->mouse_driver != NULL)
-        {
-            bytes = vterm->mouse_driver(vterm, buf);
-        }
-    }
-
-    if(buffer != NULL)
-    {
-        bytes = strlen(buffer);
-        memcpy(buf, buffer, bytes);
-    }
-
-    if(keycode != KEY_MOUSE && buffer == NULL)
-    {
-        bytes = sizeof(char);
-        memcpy(buf, &keycode, bytes);
-    }
-
-    if(bytes > 0)
-    {
-        retval = _vterm_write_pty(vterm, buf, bytes);
-    }
-
-   return retval;
-}
-
-int
-vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
+vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
 {
     static struct termios   term_state;
-    char                    *buffer = NULL;
-    static char             backspace[8] = "\b";
     unsigned char           buf[64];
     ssize_t                 bytes = 0;
     int                     retval = 0;
+    static char             **keymap_str;
+    static uint32_t         *keymap_val;
+    static int              array_sz = 0;
+    int                     i;
 
-    tcgetattr(vterm->pty_fd, &term_state);
-
-    if(term_state.c_cc[VERASE] != '0')
-        sprintf(backspace, "%c", term_state.c_cc[VERASE]);
-
-    switch(keycode)
+    // if the array size is 0 then we need to setup our map pointers
+    if(array_sz == 0)
     {
-        case '\n':          buffer = "\r";      break;
-        case KEY_UP:        buffer = "\eOA";    break;
-        case KEY_DOWN:      buffer = "\eOB";    break;
-        case KEY_RIGHT:     buffer = "\eOC";    break;
-        case KEY_LEFT:      buffer = "\eOD";    break;
-        case KEY_BACKSPACE: buffer = backspace; break;
-        case KEY_IC:        buffer = "\e[2~";   break;
-        case KEY_DC:        buffer = "\e[3~";   break;
-        case KEY_HOME:      buffer = "\eOH";    break;
-        case KEY_END:       buffer = "\eOF";    break;
-        case KEY_PPAGE:     buffer = "\e[5~";   break;
-        case KEY_NPAGE:     buffer = "\e[6~";   break;
-        case KEY_SUSPEND:   buffer = "\x1A";    break;      // ctrl-z
-        case KEY_F(1):      buffer = "\eOP";    break;
-        case KEY_F(2):      buffer = "\eOQ";    break;
-        case KEY_F(3):      buffer = "\eOR";    break;
-        case KEY_F(4):      buffer = "\eOS";    break;
-        case KEY_F(5):      buffer = "\e[15~";  break;
-        case KEY_F(6):      buffer = "\e[17~";  break;
-        case KEY_F(7):      buffer = "\e[18~";  break;
-        case KEY_F(8):      buffer = "\e[19~";  break;
-        case KEY_F(9):      buffer = "\e[20~";  break;
-        case KEY_F(10):     buffer = "\e[21~";  break;
-        case KEY_F(11):     buffer = "\e[23~";  break;
-        case KEY_F(12):     buffer = "\e[24~";  break;
+        if(vterm->flags & VTERM_FLAG_XTERM ||
+            vterm->flags & VTERM_FLAG_XTERM_256)
+        {
+            array_sz = ARRAY_SZ(keymap_xterm_val);
+            keymap_str = keymap_xterm_str;
+            keymap_val = keymap_xterm_val;
+        }
+
+        if(vterm->flags & VTERM_FLAG_RXVT)
+        {
+            array_sz = ARRAY_SZ(keymap_rxvt_val);
+            keymap_str = keymap_rxvt_str;
+            keymap_val = keymap_rxvt_val;
+        }
+
+        if(vterm->flags & VTERM_FLAG_LINUX)
+        {
+            array_sz = ARRAY_SZ(keymap_linux_val);
+            keymap_str = keymap_linux_str;
+            keymap_val = keymap_linux_val;
+        }
     }
+
+    // look in KEYMAP x-macro table for a match
+    for(i = 0; i < array_sz; i++)
+    {
+        // the key keycode is a match
+        if(keycode == keymap_val[i])
+        {
+            bytes = strlen(keymap_xterm_str[i]);
+            strncpy((char *)buf, keymap_str[i], bytes);
+            break;
+        }
+    }
+
+    if(keycode == KEY_BACKSPACE)
+    {
+        tcgetattr(vterm->pty_fd, &term_state);
+
+        if(term_state.c_cc[VERASE] != '0')
+            sprintf((char *)buf, "%c", term_state.c_cc[VERASE]);
+        else
+            sprintf((char *)buf, "\b");
+
+        bytes = strlen((char *)buf);
+    }
+
 
     if(keycode == KEY_MOUSE)
     {
@@ -255,86 +175,17 @@ vterm_write_xterm(vterm_t *vterm, uint32_t keycode)
         }
     }
 
-    if(buffer != NULL)
-    {
-        bytes = strlen(buffer);
-        memcpy(buf, buffer, bytes);
-    }
-
-    if(keycode != KEY_MOUSE && buffer == NULL)
-    {
-        bytes = sizeof(char);
-        memcpy(buf, &keycode, bytes);
-    }
-
+    // if bytes is > 0 we've arleady found something to write
     if(bytes > 0)
     {
         retval = _vterm_write_pty(vterm, buf, bytes);
+        return retval;
     }
 
-    return retval;
-}
-
-
-int
-vterm_write_vt100(vterm_t *vterm,uint32_t keycode)
-{
-    ssize_t                 bytes_written = 0;
-    char                    *buffer = NULL;
-    static struct termios   term_state;
-    static char             backspace[8] = "\b";
-    int                     retval = 0;
-
-    tcgetattr(vterm->pty_fd,&term_state);
-
-    if(term_state.c_cc[VERASE] != '0')
-        sprintf(backspace,"%c",term_state.c_cc[VERASE]);
-
-    switch(keycode)
-    {
-        case '\n':          buffer = "\r";      break;
-        case KEY_UP:        buffer = "\e[A";    break;
-        case KEY_DOWN:      buffer = "\e[B";    break;
-        case KEY_RIGHT:     buffer = "\e[C";    break;
-        case KEY_LEFT:      buffer = "\e[D";    break;
-        case KEY_BACKSPACE: buffer = backspace; break;
-        case KEY_IC:        buffer = "\e[2~";   break;
-        case KEY_DC:        buffer = "\e[3~";   break;
-        case KEY_HOME:      buffer = "\e[7~";   break;
-        case KEY_END:       buffer = "\e[8~";   break;
-        case KEY_PPAGE:     buffer = "\e[5~";   break;
-        case KEY_NPAGE:     buffer = "\e[6~";   break;
-        case KEY_SUSPEND:   buffer = "\x1A";    break;      // ctrl-z
-        case KEY_F(1):      buffer = "\e[[A";   break;
-        case KEY_F(2):      buffer = "\e[[B";   break;
-        case KEY_F(3):      buffer = "\e[[C";   break;
-        case KEY_F(4):      buffer = "\e[[D";   break;
-        case KEY_F(5):      buffer = "\e[[E";   break;
-        case KEY_F(6):      buffer = "\e[17~";  break;
-        case KEY_F(7):      buffer = "\e[18~";  break;
-        case KEY_F(8):      buffer = "\e[19~";  break;
-        case KEY_F(9):      buffer = "\e[20~";  break;
-        case KEY_F(10):     buffer = "\e[21~";  break;
-    }
-
-    if(buffer == NULL)
-    {
-        bytes_written = write(vterm->pty_fd,&keycode,sizeof(char));
-        if( bytes_written != sizeof(char) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-    }
-    else
-    {
-        bytes_written = write(vterm->pty_fd,buffer,strlen(buffer));
-        if( bytes_written != (ssize_t)strlen(buffer) )
-        {
-            fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-            retval = -1;
-        }
-    }
+    // if bytes == 0 then no special handling, just pass the key through
+    bytes = sizeof(char);
+    memcpy(buf, &keycode, bytes);
+    retval = _vterm_write_pty(vterm, buf, bytes);
 
     return retval;
 }
