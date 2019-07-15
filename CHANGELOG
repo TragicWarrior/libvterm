@@ -1,3 +1,7 @@
+6.2
+
+* [Bryan Christ] Simplify and reduce footprint of pty write functions.
+
 6.1
 
 * [Bryan Christ] Expand basic mouse support to rxvt and linux emulation
