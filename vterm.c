@@ -182,18 +182,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         }
     }
 
-    // set for the default which is RXVT
-    if(flags & VTERM_FLAG_RXVT)
-        vterm->write = vterm_write_rxvt;
-
-    if(flags & VTERM_FLAG_VT100)
-        vterm->write = vterm_write_vt100;
-
-    if(flags & VTERM_FLAG_XTERM || flags & VTERM_FLAG_XTERM_256)
-        vterm->write = vterm_write_xterm;
-
-    if(flags & VTERM_FLAG_LINUX)
-        vterm->write = vterm_write_linux;
+    vterm->write = vterm_write_keymap;
 
     return vterm;
 }
