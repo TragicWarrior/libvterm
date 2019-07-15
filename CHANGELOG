@@ -1,3 +1,11 @@
+6.3                                                                             
+                                                                                
+* [Bryan Christ] Make xterm 256 color mode the default if the underlying        
+  terminal supports it.                                                         
+* [Bryan Christ] Fixed a bug introduced with 16-color mode support.             
+* [Bryan Christ] Added logic to detect terminals with broken capabilites        
+  of certain attributes with color.
+
 6.2
 
 * [Bryan Christ] Simplify and reduce footprint of pty write functions.
