@@ -12,6 +12,8 @@
 #include "stringv.h"
 #include "macros.h"
 
+#define KEY_DYNAMIC (KEY_MAX + 1)
+
 // necessary for KEYMAP x-macro to work correctly
 // standard function keys
 #define KEY_F1          KEY_F(1)
@@ -55,58 +57,57 @@
 #define CTRL_KEY_F11    KEY_F(35)
 #define CTRL_KEY_F12    KEY_F(36)
 
-#define CTRL_HOME       0x217
-#define CTRL_END        0x212
-
+#define CTRL_HOME       KEY_DYNAMIC
+#define CTRL_END        KEY_DYNAMIC
 
 // load keymap table for xterm and xterm256
 #define KEYMAP(k, s)    k,
-uint32_t keymap_xterm_val[] = {
+static uint32_t keymap_xterm_val[] = {
 #include "keymap_xterm.def"
 };
 #undef KEYMAP
 
 #define KEYMAP(k, s)    s,
-char *keymap_xterm_str[] = {
+static char *keymap_xterm_str[] = {
 #include "keymap_xterm.def"
 };
 #undef KEYMAP
 
 // load keymap table for rxvt
 #define KEYMAP(k, s)    k,
-uint32_t keymap_rxvt_val[] = {
+static uint32_t keymap_rxvt_val[] = {
 #include "keymap_rxvt.def"
 };
 #undef KEYMAP
 
 #define KEYMAP(k, s)    s,
-char *keymap_rxvt_str[] = {
+static char *keymap_rxvt_str[] = {
 #include "keymap_rxvt.def"
 };
 #undef KEYMAP
 
 // load keymap table for linux
 #define KEYMAP(k, s)    k,
-uint32_t keymap_linux_val[] = {
+static uint32_t keymap_linux_val[] = {
 #include "keymap_linux.def"
 };
 #undef KEYMAP
 
 #define KEYMAP(k, s)    s,
-char *keymap_linux_str[] = {
+static char *keymap_linux_str[] = {
 #include "keymap_linux.def"
 };
 #undef KEYMAP
 
 // load keymap table for vt100
 #define KEYMAP(k, s)    k,
-uint32_t keymap_vt100_val[] = {
+static uint32_t keymap_vt100_val[] = {
 #include "keymap_vt100.def"
 };
 #undef KEYMAP
 
 #define KEYMAP(k, s)    s,
-char *keymap_vt100_str[] = {
+static char *keymap_vt100_str[] = {
 #include "keymap_vt100.def"
 };
 #undef KEYMAP
@@ -148,6 +149,7 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     static int              array_sz = 0;
     int                     i;
 
+
     // if the array size is 0 then we need to setup our map pointers
     if(array_sz == 0)
     {
@@ -172,11 +174,24 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
             keymap_str = keymap_linux_str;
             keymap_val = keymap_linux_val;
         }
+
+        if(vterm->flags & VTERM_FLAG_VT100)
+        {
+            array_sz = ARRAY_SZ(keymap_vt100_val);
+            keymap_str = keymap_vt100_str;
+            keymap_val = keymap_vt100_val;
+        }
+
     }
 
     // look in KEYMAP x-macro table for a match
     for(i = 0; i < array_sz; i++)
     {
+        if(keymap_val[i] == (KEY_MAX + 1))
+        {
+            keymap_val[i] = key_defined(keymap_str[i]);
+        }
+
         // the key keycode is a match
         if(keycode == keymap_val[i])
         {
@@ -218,11 +233,6 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     bytes = sizeof(char);
     memcpy(buf, &keycode, bytes);
     retval = _vterm_write_pty(vterm, buf, bytes);
-
-    // fprintf(stdout, "%04x, \n", (int)keycode);
-    // endwin(); exit(0);
-
-    // if(keycode == 0x217 || keycode == 0x212) { endwin(); exit(0); }
 
     return retval;
 }
