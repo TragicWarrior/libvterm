@@ -1,3 +1,9 @@
+6.4
+
+* [Bryan Christ] Added dynamic support for extended keycode mappings.  This
+  enables combinations such as ctrl-home and ctrl-end on terminals modes
+  that support it (such as xterm).
+
 6.3                                                                             
                                                                                 
 * [Bryan Christ] Make xterm 256 color mode the default if the underlying        
