@@ -13,18 +13,50 @@
 #include "macros.h"
 
 // necessary for KEYMAP x-macro to work correctly
-#define KEY_F1      KEY_F(1)
-#define KEY_F2      KEY_F(2)
-#define KEY_F3      KEY_F(3)
-#define KEY_F4      KEY_F(4)
-#define KEY_F5      KEY_F(5)
-#define KEY_F6      KEY_F(6)
-#define KEY_F7      KEY_F(7)
-#define KEY_F8      KEY_F(8)
-#define KEY_F9      KEY_F(9)
-#define KEY_F10     KEY_F(10)
-#define KEY_F11     KEY_F(11)
-#define KEY_F12     KEY_F(12)
+// standard function keys
+#define KEY_F1          KEY_F(1)
+#define KEY_F2          KEY_F(2)
+#define KEY_F3          KEY_F(3)
+#define KEY_F4          KEY_F(4)
+#define KEY_F5          KEY_F(5)
+#define KEY_F6          KEY_F(6)
+#define KEY_F7          KEY_F(7)
+#define KEY_F8          KEY_F(8)
+#define KEY_F9          KEY_F(9)
+#define KEY_F10         KEY_F(10)
+#define KEY_F11         KEY_F(11)
+#define KEY_F12         KEY_F(12)
+
+// shift + function keys
+#define SHIFT_KEY_F1    KEY_F(13)
+#define SHIFT_KEY_F2    KEY_F(14)
+#define SHIFT_KEY_F3    KEY_F(15)
+#define SHIFT_KEY_F4    KEY_F(16)
+#define SHIFT_KEY_F5    KEY_F(17)
+#define SHIFT_KEY_F6    KEY_F(18)
+#define SHIFT_KEY_F7    KEY_F(19)
+#define SHIFT_KEY_F8    KEY_F(20)
+#define SHIFT_KEY_F9    KEY_F(21)
+#define SHIFT_KEY_F10   KEY_F(22)
+#define SHIFT_KEY_F11   KEY_F(23)
+#define SHIFT_KEY_F12   KEY_F(24)
+
+// ctrl + function keys
+#define CTRL_KEY_F1     KEY_F(25)
+#define CTRL_KEY_F2     KEY_F(26)
+#define CTRL_KEY_F3     KEY_F(27)
+#define CTRL_KEY_F4     KEY_F(28)
+#define CTRL_KEY_F5     KEY_F(29)
+#define CTRL_KEY_F6     KEY_F(30)
+#define CTRL_KEY_F7     KEY_F(31)
+#define CTRL_KEY_F8     KEY_F(32)
+#define CTRL_KEY_F9     KEY_F(33)
+#define CTRL_KEY_F10    KEY_F(34)
+#define CTRL_KEY_F11    KEY_F(35)
+#define CTRL_KEY_F12    KEY_F(36)
+
+#define CTRL_HOME       0x217
+#define CTRL_END        0x212
 
 
 // load keymap table for xterm and xterm256
@@ -186,6 +218,11 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     bytes = sizeof(char);
     memcpy(buf, &keycode, bytes);
     retval = _vterm_write_pty(vterm, buf, bytes);
+
+    // fprintf(stdout, "%04x, \n", (int)keycode);
+    // endwin(); exit(0);
+
+    // if(keycode == 0x217 || keycode == 0x212) { endwin(); exit(0); }
 
     return retval;
 }
