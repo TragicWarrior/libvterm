@@ -185,6 +185,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         }
     }
 
+    use_extended_names(TRUE);
     vterm->write = vterm_write_keymap;
 
     return vterm;

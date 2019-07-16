@@ -92,7 +92,6 @@ int main(int argc, char **argv)
 
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
-    // mousemask(mouse_mask, NULL);
 
     twin = (testwin_t*)calloc(1, sizeof(testwin_t));
 
