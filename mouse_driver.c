@@ -90,23 +90,6 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
         return retval;
     }
 
-/*
-    if(mouse_event.bstate & BUTTON1_CLICKED)
-    {
-        sprintf((char *)buf, "\e[M%c%c%c\e[M%c%c%c",
-            32 + 0,
-            32 + mouse_event.x,
-            32 + mouse_event.y,
-            32 + 0x3,
-            32 + mouse_event.x,
-            32 + mouse_event.y);
-
-        retval = strlen((char *)buf);
-
-        return retval;
-    }
-*/
-
 // only the newer ABI supports the wheel mous properly
 #if NCURSES_MOUSE_VERSION > 1
 
@@ -141,9 +124,10 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 ssize_t
 mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 {
-    MEVENT  mouse_event;
-    int     retval = 0;
-    int     x, y;
+    MEVENT          mouse_event;
+    unsigned int    button = 0;
+    int             retval = 0;
+    int             x, y;
 
     getmouse(&mouse_event);
     x = mouse_event.x;
@@ -161,6 +145,10 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
         x++;
         y++;
     }
+
+    if(mouse_event.bstate & BUTTON_SHIFT) button |= 4;
+    if(mouse_event.bstate & BUTTON_CTRL) button |= 8;
+    if(mouse_event.bstate & BUTTON_ALT) button |= 16;
 
     if(mouse_event.bstate & BUTTON1_PRESSED)
     {
@@ -180,23 +168,6 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
         return retval;
     }
 
-/*
-    if(mouse_event.bstate & BUTTON1_CLICKED)
-    {
-        sprintf((char *)buf, "\e[<%d;%d;%dM\e[<%d;%d;%dm",
-            0,
-            mouse_event.x,
-            mouse_event.y,
-            0,
-            mouse_event.x,
-            mouse_event.y);
-
-        retval = strlen((char *)buf);
-
-        return retval;
-    }
-*/
-
 // only the newer ABI supports the wheel mous properly
 #if NCURSES_MOUSE_VERSION > 1
 
@@ -205,7 +176,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
         if(vterm->mouse & VTERM_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\eOA");
         else
-            sprintf((char *)buf, "\e[<%d;%d;%dM", 64 + 4, x, y);
+            sprintf((char *)buf, "\e[<%d;%d;%dM", button + 64 + 4, x, y);
 
         retval = strlen((char *)buf);
 
@@ -217,7 +188,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
         if(vterm->mouse & VTERM_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\eOB");
         else
-            sprintf((char *)buf, "\e[<%d;%d;%dM", 64 + 5, x, y);
+            sprintf((char *)buf, "\e[<%d;%d;%dM", button + 64 + 5, x, y);
 
         retval = strlen((char *)buf);
 
