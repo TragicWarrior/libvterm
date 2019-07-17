@@ -53,6 +53,8 @@ add_library(vterm-static STATIC
     color_math.c
     color_cache.c
     mouse_driver.c
+    mouse_driver_X10.c
+    mouse_driver_SGR.c
     vterm.c
     vterm_csi.c
     vterm_exec.c
@@ -105,6 +107,8 @@ add_library(vterm.o OBJECT
     color_math.c
     color_cache.c
     mouse_driver.c
+    mouse_driver_X10.c
+    mouse_driver_SGR.c
     vterm.c
     vterm_buffer.c
     vterm_csi.c

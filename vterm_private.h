@@ -49,6 +49,7 @@
 #define VTERM_MOUSE_VT200       (1 << 2)
 #define VTERM_MOUSE_SGR         (1 << 7)
 #define VTERM_MOUSE_HIGHLIGHT   (1 << 12)
+#define VTERM_MOUSE_ALTSCROLL   (1 << 13)
 
 typedef struct _vterm_cmap_s   vterm_cmap_t;
 

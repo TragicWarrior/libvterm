@@ -79,6 +79,17 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         }
 
         /*
+            turn on alternate scroll mode.  this causes cursor up and
+            cursor down to be emitted instead of the actual button
+            values when the wheel mouse is used.
+        */
+        if(param[i] == 1007)
+        {
+            vterm->mouse |= VTERM_MOUSE_ALTSCROLL;
+            continue;
+        }
+
+        /*
             not reall well documented but this code turns on the
             meta key.  see terminfo(5).  we just pass this along
             to ncurses via the meta() function.
