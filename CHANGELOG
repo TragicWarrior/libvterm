@@ -1,3 +1,9 @@
+6.5
+
+* [Bryan Christ] Clean-up codebase related to mouse drivers and separate
+  them into distinct files for easier support.
+* [Bryan Christ] Handle Alternate Scroll mechanism in SGR mouse mode.
+
 6.4
 
 * [Bryan Christ] Added dynamic support for extended keycode mappings.  This
