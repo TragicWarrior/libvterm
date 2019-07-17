@@ -202,7 +202,10 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON4_PRESSED)
     {
-        sprintf((char *)buf, "\eOA");
+        if(vterm->mouse & VTERM_MOUSE_ALTSCROLL)
+            sprintf((char *)buf, "\eOA");
+        else
+            sprintf((char *)buf, "\e[<%d;%d;%dM", 64 + 4, x, y);
 
         retval = strlen((char *)buf);
 
@@ -211,7 +214,10 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
-        sprintf((char *)buf, "\eOB");
+        if(vterm->mouse & VTERM_MOUSE_ALTSCROLL)
+            sprintf((char *)buf, "\eOB");
+        else
+            sprintf((char *)buf, "\e[<%d;%d;%dM", 64 + 5, x, y);
 
         retval = strlen((char *)buf);
 
