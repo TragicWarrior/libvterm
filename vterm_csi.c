@@ -36,19 +36,19 @@ vterm_interpret_csi(vterm_t *vterm)
                         ['a'] = &&csi_CUx,
                         ['d'] = &&csi_CUx,
                         ['`'] = &&csi_CUx,
-                        ['K'] = &&csi_char_K,
+                        ['K'] = &&csi_EL,
                         ['@'] = &&csi_char_sym_at,
                         ['P'] = &&csi_char_P,
                         ['L'] = &&csi_char_L,
                         ['M'] = &&csi_char_M,
-                        ['X'] = &&csi_char_X,
+                        ['X'] = &&csi_ECH,
                         ['r'] = &&csi_char_r,
                         ['s'] = &&csi_char_s,
                         ['u'] = &&csi_char_u,
                         ['^'] = &&csi_SD,
                         ['T'] = &&csi_SD,
                         ['Z'] = &&csi_char_Z,
-                        ['S'] = &&csi_char_S,
+                        ['S'] = &&csi_SU,
                     };
 
     p = vterm->esbuf + 1;
@@ -144,7 +144,7 @@ vterm_interpret_csi(vterm_t *vterm)
         interpret_csi_CUx(vterm, verb, csiparam, param_count);
         return 0;
 
-    csi_char_K:
+    csi_EL:
         interpret_csi_EL(vterm, csiparam, param_count);
         return 0;
 
@@ -164,7 +164,7 @@ vterm_interpret_csi(vterm_t *vterm)
         interpret_csi_DL(vterm, csiparam, param_count);
         return 0;
 
-    csi_char_X:
+    csi_ECH:
         interpret_csi_ECH(vterm, csiparam, param_count);
         return 0;
 
@@ -174,11 +174,6 @@ vterm_interpret_csi(vterm_t *vterm)
 
     csi_char_s:
         interpret_csi_SAVECUR(vterm, csiparam, param_count);
-        return 0;
-
-    csi_char_S:
-        // S is defined as scroll up (SU) for both VT420 and ECMA-48
-        interpret_csi_SU(vterm, csiparam, param_count);
         return 0;
 
     csi_char_u:
@@ -191,6 +186,12 @@ vterm_interpret_csi(vterm_t *vterm)
 
     csi_SD:
         interpret_csi_SD(vterm, csiparam, param_count);
+        // interpret_csi_SU(vterm, csiparam, param_count);
+        return 0;
+
+    csi_SU:
+        // interpret_csi_SD(vterm, csiparam, param_count);
+        interpret_csi_SU(vterm, csiparam, param_count);
         return 0;
 
     csi_char_unknown:

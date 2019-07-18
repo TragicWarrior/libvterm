@@ -70,7 +70,7 @@ vterm_erase_row(vterm_t *vterm, int row)
     {
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), A_NORMAL);
-        VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
+        // VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
         vcell++;
     }

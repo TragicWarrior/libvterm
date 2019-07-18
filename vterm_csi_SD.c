@@ -6,10 +6,11 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 
+
 /*
     Interpret a 'scroll down' sequence (SD)
 
-    ESC [ n ^
+    ESC [ n T
 
     n = number of lines to scroll
 */
@@ -18,10 +19,14 @@ void
 interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
+    vterm_cell_t    *vcell;
     int             r;
     int             n = 1;          // number of scroll lines
     int             idx;
+    int             bottom_row;
     int             top_row;
+    int             stride;
+    int             i;
 
     // set selector for buffer description
     idx = vterm_buffer_get_active(vterm);
@@ -32,13 +37,34 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
         if(param[0] > 0) n = param[0];
     }
 
-    top_row = v_desc->scroll_min + n;
+    top_row = v_desc->scroll_min + (n - 1);
+    bottom_row = v_desc->scroll_max;
+    stride = sizeof(vterm_cell_t) * v_desc->cols;
 
-    for(r = top_row; r <= v_desc->scroll_max; r++)
+    for(r = bottom_row; r > top_row; r--)
     {
-        memcpy(v_desc->cells[r], v_desc->cells[r - n],
-                sizeof(vterm_cell_t) * v_desc->cols);
+        memcpy(v_desc->cells[r], v_desc->cells[r - n], stride);
+    }
+
+    top_row = v_desc->scroll_min;
+    bottom_row = top_row + (n - 1);
+
+    for(r = top_row; r < bottom_row + 1; r++)
+    {
+        vcell = &v_desc->cells[r][0];
+
+        for(i = 0; i < v_desc->cols; i++)
+        {
+
+            VCELL_SET_CHAR((*vcell), ' ');
+            // VCELL_SET_CHAR((*vcell), 48 + n);
+            VCELL_SET_ATTR((*vcell), v_desc->curattr);
+            VCELL_SET_COLORS((*vcell), v_desc);
+
+            vcell++;
+        }
     }
 
     return;
 }
+

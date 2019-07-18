@@ -69,6 +69,7 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
     {
         vcell = &v_desc->cells[v_desc->crow][i];
 
+        // VCELL_SET_CHAR((*vcell), 'x');
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
         VCELL_SET_COLORS((*vcell), v_desc);
