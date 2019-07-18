@@ -1,5 +1,12 @@
 6.5
 
+* [Bryan Christ] Better handling of scroll mouse.
+* [Bryan Christ] Fix a long standing issue with scroll up and scroll
+  down CSI commands.
+* [Bryan Christ] Minor bug fix with erase row routine.
+
+6.5
+
 * [Bryan Christ] Clean-up codebase related to mouse drivers and separate
   them into distinct files for easier support.
 * [Bryan Christ] Handle Alternate Scroll mechanism in SGR mouse mode.
