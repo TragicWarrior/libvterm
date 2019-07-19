@@ -52,7 +52,8 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1000)
         {
-            mouse_driver_init();
+            mouse_driver_init(vterm);
+            mouse_driver_start(vterm);
 
             vterm->mouse |= VTERM_MOUSE_VT200;
             vterm->mouse_driver = mouse_driver_default;
@@ -71,7 +72,8 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1006)
         {
-            mouse_driver_init();
+            mouse_driver_init(vterm);
+            mouse_driver_start(vterm);
 
             vterm->mouse |= VTERM_MOUSE_SGR;
             vterm->mouse_driver = mouse_driver_default;

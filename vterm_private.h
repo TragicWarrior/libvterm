@@ -6,6 +6,7 @@
 
 #include <sys/types.h>
 
+#include "mouse_driver.h"
 #include "color_cache.h"
 
 #ifndef NOCURSES
@@ -51,6 +52,7 @@
 #define VTERM_MOUSE_HIGHLIGHT   (1 << 12)
 #define VTERM_MOUSE_ALTSCROLL   (1 << 13)
 
+
 typedef struct _vterm_cmap_s   vterm_cmap_t;
 
 struct _vterm_cmap_s
@@ -61,7 +63,7 @@ struct _vterm_cmap_s
                                                     to use.
                                                 */
 
-    short           global_color;             /*
+    short           global_color;               /*
                                                     the internal color number
                                                     we have mapped the
                                                     private_color to.
@@ -152,6 +154,12 @@ struct _vterm_s
     unsigned int    internal_state;             //  internal state control
 
     uint16_t        mouse;                      //  mouse mode
+    mouse_config_t  *mouse_config;              /*
+                                                    saves and restores the
+                                                    state of the mouse
+                                                    if we are sharing it with
+                                                    others.
+                                                */
 
     char            *exec_path;                 //  optional binary path to use
     char            **exec_argv;                //  instead of starting shell.

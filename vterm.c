@@ -40,10 +40,9 @@
 #include "utlist.h"
 
 /*
-    the one and only global
-
     as a shared library, it's necssary for all the terminals to be able to
-    share color palette information.
+    share color palette and mouse state information because these are
+    shared resources.
 */
 color_cache_t   *color_cache = NULL;
 
@@ -58,7 +57,7 @@ vterm_alloc(void)
 {
     vterm_t *vterm;
 
-    vterm = (vterm_t*)calloc(1,sizeof(vterm_t));
+    vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
     return  vterm;
 }
@@ -234,8 +233,10 @@ vterm_destroy(vterm_t *vterm)
 
     color_cache_free_pairs(vterm);
     vterm_free_mapped_colors(vterm);
-
     color_cache_release();
+
+    // unload the mouse driver on exit
+    mouse_driver_free(vterm);
 
     // todo:  do something more elegant in the future
     for(i = 0; i < 2; i++)
