@@ -1,3 +1,10 @@
+6.8
+
+* [Bryan Christ] Fixed an issue where multiple instances could trample the
+  key map tables of their siblings.
+* [Bryan Christ] Update the API to accomodate an csi EL corner-case which
+  manifested in nano.
+
 6.7
 
 * [Bryan Christ] Implement a shared resource mechanism to make sure that the
