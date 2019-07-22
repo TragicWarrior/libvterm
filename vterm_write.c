@@ -12,7 +12,9 @@
 #include "stringv.h"
 #include "macros.h"
 
-#define KEY_DYNAMIC (KEY_MAX + 1)
+#define KEY_BUFFER_SZ   64
+
+#define KEY_DYNAMIC     (KEY_MAX + 1)
 
 // necessary for KEYMAP x-macro to work correctly
 // standard function keys
@@ -140,7 +142,7 @@ vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
 int
 vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
 {
-    unsigned char           buf[64];
+    unsigned char           buf[KEY_BUFFER_SZ];
     ssize_t                 bytes = 0;
     int                     retval = 0;
     int                     i;
@@ -186,8 +188,11 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         // the key keycode is a match
         if(keycode == vterm->keymap_val[i])
         {
-            // cant imagine a sequence longer than 10 bytes
-            strncpy((char *)buf, vterm->keymap_str[i], 10);
+            // cant imagine a sequence longer than 16 bytes
+            bytes = strlen(vterm->keymap_str[i]);
+            if(bytes > 16) bytes = 16;
+
+            strcpy((char *)buf, vterm->keymap_str[i]);
             break;
         }
     }
