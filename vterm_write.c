@@ -140,70 +140,64 @@ vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
 int
 vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
 {
-    static struct termios   term_state;
     unsigned char           buf[64];
     ssize_t                 bytes = 0;
     int                     retval = 0;
-    static char             **keymap_str;
-    static uint32_t         *keymap_val;
-    static int              array_sz = 0;
     int                     i;
 
-
-    // if the array size is 0 then we need to setup our map pointers
-    if(array_sz == 0)
+    // set the default to Xterm handler
+    if(vterm->keymap_str == NULL)
     {
-        // set the default to Xterm handler
-        array_sz = ARRAY_SZ(keymap_xterm_val);
-        keymap_str = keymap_xterm_str;
-        keymap_val = keymap_xterm_val;
+        // default keymap is xterm unless set differently via below
+        vterm->keymap_size = ARRAY_SZ(keymap_xterm_val);
+        vterm->keymap_str = keymap_xterm_str;
+        vterm->keymap_val = keymap_xterm_val;
 
         if(vterm->flags & VTERM_FLAG_RXVT)
         {
-            array_sz = ARRAY_SZ(keymap_rxvt_val);
-            keymap_str = keymap_rxvt_str;
-            keymap_val = keymap_rxvt_val;
+            vterm->keymap_size = ARRAY_SZ(keymap_rxvt_val);
+            vterm->keymap_str = keymap_rxvt_str;
+            vterm->keymap_val = keymap_rxvt_val;
         }
 
         if(vterm->flags & VTERM_FLAG_LINUX)
         {
-            array_sz = ARRAY_SZ(keymap_linux_val);
-            keymap_str = keymap_linux_str;
-            keymap_val = keymap_linux_val;
+            vterm->keymap_size = ARRAY_SZ(keymap_linux_val);
+            vterm->keymap_str = keymap_linux_str;
+            vterm->keymap_val = keymap_linux_val;
         }
 
         if(vterm->flags & VTERM_FLAG_VT100)
         {
-            array_sz = ARRAY_SZ(keymap_vt100_val);
-            keymap_str = keymap_vt100_str;
-            keymap_val = keymap_vt100_val;
+            vterm->keymap_size = ARRAY_SZ(keymap_vt100_val);
+            vterm->keymap_str = keymap_vt100_str;
+            vterm->keymap_val = keymap_vt100_val;
         }
-
     }
 
     // look in KEYMAP x-macro table for a match
-    for(i = 0; i < array_sz; i++)
+    for(i = 0; i < vterm->keymap_size; i++)
     {
-        if(keymap_val[i] == (KEY_MAX + 1))
+        if(vterm->keymap_val[i] == (KEY_MAX + 1))
         {
-            keymap_val[i] = key_defined(keymap_str[i]);
+            vterm->keymap_val[i] = key_defined(vterm->keymap_str[i]);
         }
 
         // the key keycode is a match
-        if(keycode == keymap_val[i])
+        if(keycode == vterm->keymap_val[i])
         {
-            bytes = strlen(keymap_xterm_str[i]);
-            strncpy((char *)buf, keymap_str[i], bytes);
+            bytes = strlen(vterm->keymap_str[i]);
+            strncpy((char *)buf, vterm->keymap_str[i], bytes);
             break;
         }
     }
 
     if(keycode == KEY_BACKSPACE)
     {
-        tcgetattr(vterm->pty_fd, &term_state);
+        tcgetattr(vterm->pty_fd, &vterm->term_state);
 
-        if(term_state.c_cc[VERASE] != '0')
-            sprintf((char *)buf, "%c", term_state.c_cc[VERASE]);
+        if(vterm->term_state.c_cc[VERASE] != '0')
+            sprintf((char *)buf, "%c", vterm->term_state.c_cc[VERASE]);
         else
             sprintf((char *)buf, "\b");
 
