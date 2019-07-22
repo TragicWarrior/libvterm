@@ -186,8 +186,8 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         // the key keycode is a match
         if(keycode == vterm->keymap_val[i])
         {
-            bytes = strlen(vterm->keymap_str[i]);
-            strncpy((char *)buf, vterm->keymap_str[i], bytes);
+            // cant imagine a sequence longer than 10 bytes
+            strncpy((char *)buf, vterm->keymap_str[i], 10);
             break;
         }
     }
