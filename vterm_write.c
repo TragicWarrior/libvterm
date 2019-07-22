@@ -153,13 +153,10 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     // if the array size is 0 then we need to setup our map pointers
     if(array_sz == 0)
     {
-        if(vterm->flags & VTERM_FLAG_XTERM ||
-            vterm->flags & VTERM_FLAG_XTERM_256)
-        {
-            array_sz = ARRAY_SZ(keymap_xterm_val);
-            keymap_str = keymap_xterm_str;
-            keymap_val = keymap_xterm_val;
-        }
+        // set the default to Xterm handler
+        array_sz = ARRAY_SZ(keymap_xterm_val);
+        keymap_str = keymap_xterm_str;
+        keymap_val = keymap_xterm_val;
 
         if(vterm->flags & VTERM_FLAG_RXVT)
         {
