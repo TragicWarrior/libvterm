@@ -202,12 +202,13 @@ vterm_t*        vterm_alloc(void);
     if need be.
 
     @params:
-        vterm       handle an already alloc'd vterm object
-        width       desired width
-        height      desired height
-        flags       defined above as VTERM_FLAG_*
+        vterm           handle an already alloc'd vterm object
+        width           desired width
+        height          desired height
+        flags           defined above as VTERM_FLAG_*
 
-    @return:        a handle to a newly alloc'd vterm object if not provided.
+    @return:            a handle to a newly alloc'd vterm object if not
+                        provided.
 */
 vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     uint32_t flags);
@@ -216,12 +217,12 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
     convenience macro for alloc-ing a ready to use terminal object.
 
     @params:
-        width       desired width
-        height      desired height
-        flags       defined above as VTERM_FLAG_*
+        width           desired width
+        height          desired height
+        flags           defined above as VTERM_FLAG_*
 
-    @return:        a handle to a newly alloc'd vterm object initialized using
-                    the specified values.
+    @return:            a handle to a newly alloc'd vterm object initialized
+                        using the specified values.
 */
 #define         vterm_create(width, height, flags) \
                     vterm_init(NULL, width, height, flags)
@@ -234,9 +235,9 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
     a better way so this interface allows a different function to be set.
 
     @params:
-        vterm       handle an already alloc'd vterm object
-        ps          a callback which returns the index of a defined
-                    color pair.
+        vterm           handle an already alloc'd vterm object
+        ps              a callback which returns the index of a defined
+                        color pair.
 
 */
 void            vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps);
@@ -246,9 +247,9 @@ void            vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps);
     default is basically a wrapper which leverages pair_content().
 
     @params:
-        vterm       handle an already alloc'd vterm object
+        vterm           handle an already alloc'd vterm object
 
-    @return:        a function pointer of the type VtermPairSelect
+    @return:            a function pointer of the type VtermPairSelect
 */
 VtermPairSelect vterm_get_pair_selector(vterm_t *vterm);
 
@@ -259,9 +260,9 @@ VtermPairSelect vterm_get_pair_selector(vterm_t *vterm);
     foreground and background colors.
 
     @params:
-        vterm       handle an already alloc'd vterm object
-        ps          a callback which splits a color pair into its
-                    respective foreground and background colorsl
+        vterm           handle an already alloc'd vterm object
+        ps              a callback which splits a color pair into its
+                        respective foreground and background colorsl
 */
 void            vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps);
 
@@ -270,9 +271,9 @@ void            vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps);
     default is basically a wrapper for pair_content().
 
     @params:
-        vterm       handle an already alloc'd vterm object
+        vterm           handle an already alloc'd vterm object
 
-    @return:        a function pointer of the type VtermPairSplit
+    @return:            a function pointer of the type VtermPairSplit
 */
 VtermPairSplit  vterm_get_pair_splitter(vterm_t *vterm);
 
@@ -280,7 +281,7 @@ VtermPairSplit  vterm_get_pair_splitter(vterm_t *vterm);
     destroy a terminal object.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 */
 void            vterm_destroy(vterm_t *vterm);
 
@@ -288,9 +289,9 @@ void            vterm_destroy(vterm_t *vterm);
     fetch the process id (pid) of the terminal.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        the process id of the terminal.
+    @return:            the process id of the terminal.
 */
 pid_t           vterm_get_pid(vterm_t *vterm);
 
@@ -298,9 +299,9 @@ pid_t           vterm_get_pid(vterm_t *vterm);
     get the file descriptor of the pty.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        the file descriptor of the terminal.
+    @return:            the file descriptor of the terminal.
 */
 int             vterm_get_pty_fd(vterm_t *vterm);
 
@@ -308,10 +309,10 @@ int             vterm_get_pty_fd(vterm_t *vterm);
     get the name of the tty.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        the name of the tty.  it should be copied elsewhere
-                    if intended to be used longterm.
+    @return:            the name of the tty.  it should be copied elsewhere
+                        if intended to be used longterm.
 */
 const char*     vterm_get_ttyname(vterm_t *vterm);
 
@@ -319,11 +320,11 @@ const char*     vterm_get_ttyname(vterm_t *vterm);
     get the name of the window title (if set by OSC command)
 
     @params:
-        vterm       a valid vterm object handle.
-        buf         a buffer provided by the caller which the window
-                    title will be copied into.
-        buf_sz      the size of the caller provided buffer.  the
-                    usable space will be buf_sz - 1 for null termination.
+        vterm           a valid vterm object handle.
+        buf             a buffer provided by the caller which the window
+                        title will be copied into.
+        buf_sz          the size of the caller provided buffer.  the
+                        usable space will be buf_sz - 1 for null termination.
 */
 void            vterm_get_title(vterm_t *vterm, char *buf, int buf_sz);
 
@@ -331,11 +332,11 @@ void            vterm_get_title(vterm_t *vterm, char *buf, int buf_sz);
     set a binary and args to launch instead of a shell.
 
     @params:
-        vterm       a valid vterm object handle.
-        path        the complete path to the binary (including the binary
-                    itself.
-        argv        a null-terminated vector of arguments to pass to the
-                    binary.
+        vterm           a valid vterm object handle.
+        path            the complete path to the binary (including the binary
+                        itself.
+        argv            a null-terminated vector of arguments to pass to the
+                        binary.
 */
 void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);
 
@@ -343,11 +344,11 @@ void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);
     read bytes from the terminal.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        the amount of bytes read from running program output.
-                    this is somewhat analogous to stdout.  returns -1
-                    on error.
+    @return:            the amount of bytes read from running program output.
+                        this is somewhat analogous to stdout.  returns -1
+                        on error.
 */
 ssize_t         vterm_read_pipe(vterm_t *vterm);
 
@@ -355,9 +356,9 @@ ssize_t         vterm_read_pipe(vterm_t *vterm);
     write a keystroke to the terminal.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        returns 0 on success and -1 on error.
+    @return:            returns 0 on success and -1 on error.
 */
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
@@ -365,8 +366,8 @@ int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
     installs an event hook.
 
     @params:
-        vterm       a valid vterm object handle.
-        hook        a callback that will be invoked by certain events.
+        vterm           a valid vterm object handle.
+        hook            a callback that will be invoked by certain events.
 */
 void            vterm_install_hook(vterm_t *vterm, VtermEventHook hook);
 
@@ -374,9 +375,9 @@ void            vterm_install_hook(vterm_t *vterm, VtermEventHook hook);
     returns the current event mask.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        retursn the bitmask of subscribed events
+    @return:            returns the bitmask of subscribed events
 */
 uint32_t        vterm_get_event_mask(vterm_t *vterm);
 
@@ -385,9 +386,9 @@ uint32_t        vterm_get_event_mask(vterm_t *vterm);
     installed via vterm_install_hook().
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-        mask        a bitmask of events to subscribe to.
+        mask            a bitmask of events to subscribe to.
 */
 void            vterm_set_event_mask(vterm_t *vterm, uint32_t mask);
 
@@ -397,8 +398,8 @@ void            vterm_set_event_mask(vterm_t *vterm, uint32_t mask);
     set the WINDOW * to that the terminal will use for output.
 
     @params:
-        vterm       a valid vterm object handle.
-        window      a ncurses WINDOW to use as a rendering surface
+        vterm           a valid vterm object handle.
+        window          a ncurses WINDOW to use as a rendering surface
 */
 void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
 
@@ -406,10 +407,10 @@ void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
     get the WINDOW* that the terminal is using.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        a pointer to the WINDOW which is set as a rendering
-                    surface.  returns null if none is set.
+    @return:            a pointer to the WINDOW which is set as a rendering
+                        surface.  returns null if none is set.
 */
 WINDOW*         vterm_wnd_get(vterm_t *vterm);
 
@@ -417,7 +418,7 @@ WINDOW*         vterm_wnd_get(vterm_t *vterm);
     cause updates to the terminal to be rendered
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 */
 void            vterm_wnd_update(vterm_t *vterm);
 #endif
@@ -427,11 +428,11 @@ void            vterm_wnd_update(vterm_t *vterm);
     default on erase operations.
 
     @params:
-        vterm       a valid vterm object handle.
-        fg          the default foreground color for the terminal.
-        bg          the default background color for the terminal.
+        vterm           a valid vterm object handle.
+        fg              the default foreground color for the terminal.
+        bg              the default background color for the terminal.
 
-    @return:        returns 0 on success and -1 upon error.
+    @return:            returns 0 on success and -1 upon error.
 */
 int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
 
@@ -439,10 +440,10 @@ int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
     get the color pair number of the default fg/bg combination.
 
     @params:
-        vterm       a valid vterm object handle.
+        vterm           a valid vterm object handle.
 
-    @return:        returns the color pair index set as the default
-                    fg/bg color combination.  returns -1 upon error.
+    @return:            returns the color pair index set as the default
+                        fg/bg color combination.  returns -1 upon error.
 */
 long            vterm_get_colors(vterm_t *vterm);
 
@@ -452,14 +453,14 @@ long            vterm_get_colors(vterm_t *vterm);
     color defining sequences are interpreted.
 
     @params:
-        vterm       a valid vterm object handle
-        color       the color number according to the guest application
-        red         red RGB value ranging from 0 - 255
-        green       green RGB value ranging from 0 - 255
-        blue        blue RGB value ranging from 0 - 255
+        vterm           a valid vterm object handle
+        color           the color number according to the guest application
+        red             red RGB value ranging from 0 - 255
+        green           green RGB value ranging from 0 - 255
+        blue            blue RGB value ranging from 0 - 255
 
-    @return:        returns the number of the color mapping in the
-                    global color space.
+    @return:            returns the number of the color mapping in the
+                        global color space.
 */
 short           vterm_add_mapped_color(vterm_t *vterm, short color,
                     float red, float green, float blue);
@@ -470,16 +471,16 @@ short           vterm_add_mapped_color(vterm_t *vterm, short color,
     color table.
 
     @params:
-        vterm       a valid vterm object handle
-        color       the color number according to the guest application.
-                    when this is a positive value, arguments red, green,
-                    and blue are ignored.
-        red         red RGB value ranging from 0 - 255
-        green       green RGB value ranging from 0 - 255
-        blue        blue RGB value ranging from 0 - 255
+        vterm           a valid vterm object handle
+        color           the color number according to the guest application.
+                        when this is a positive value, arguments red, green,
+                        and blue are ignored.
+        red             red RGB value ranging from 0 - 255
+        green           green RGB value ranging from 0 - 255
+        blue            blue RGB value ranging from 0 - 255
 
-    @return:        returns the number of the color mapping in the
-                    global color space.
+    @return:            returns the number of the color mapping in the
+                        global color space.
 
 */
 short               vterm_get_mapped_color(vterm_t *vterm, short color,
@@ -490,7 +491,7 @@ short               vterm_get_mapped_color(vterm_t *vterm, short color,
     global color table.
 
     @params:
-        vterm       a valid vterm object handle
+        vterm           a valid vterm object handle
 
 */
 void                vterm_free_mapped_colors(vterm_t *vterm);
@@ -501,8 +502,8 @@ void                vterm_free_mapped_colors(vterm_t *vterm);
     erase the contents of the terminal.
 
     @params:
-        vterm       handle to a vterm object
-        idx         index of the buffer or -1 for current
+        vterm           handle to a vterm object
+        idx             index of the buffer or -1 for current
 */
 void            vterm_erase(vterm_t *vterm, int idx);
 
@@ -510,20 +511,23 @@ void            vterm_erase(vterm_t *vterm, int idx);
     erase the specified row of the terminal.
 
     @params:
-        vterm       handle to a vterm object
-        row         zero-based index of the row to delete.  specifying
-                    a value of -1 indicates current row.
+        vterm           handle to a vterm object
+        row             zero-based index of the row to delete.  specifying
+                        a value of -1 indicates current row.
+        reset_colors    a value of TRUE indicates that the erased row should
+                        also have its color attributes reset to the default
+                        foreground and background colors.
 */
-void            vterm_erase_row(vterm_t *vterm, int row);
+void            vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
 
 /*
     erase the terminal beginning at a certain row and toward the bottom
     margin.
 
     @params:
-        vterm       handle to a vterm object
-        start_row   zero-based index of the row and subsequent rows below
-                    to erase.
+        vterm           handle to a vterm object
+        start_row       zero-based index of the row and subsequent rows below
+                        to erase.
 */
 void            vterm_erase_rows(vterm_t *vterm, int start_row);
 
@@ -531,9 +535,9 @@ void            vterm_erase_rows(vterm_t *vterm, int start_row);
     erase the specified column of the terminal.
 
     @params:
-        vterm       handle to a vterm object
-        col         zero-based index of the column to delete.  specifying
-                    a value of -1 indicates current column.
+        vterm           handle to a vterm object
+        col             zero-based index of the column to delete.  specifying
+                        a value of -1 indicates current column.
 */
 void            vterm_erase_col(vterm_t *vterm, int col);
 
@@ -541,9 +545,9 @@ void            vterm_erase_col(vterm_t *vterm, int col);
     erase the terminal at a specific column and toward the right margin.
 
     @params:
-        vterm       handle to a vterm object
-        start_col   zero-based index of the column and subsequent columns
-                    to the right to erase.
+        vterm           handle to a vterm object
+        start_col       zero-based index of the column and subsequent columns
+                        to the right to erase.
 */
 void            vterm_erase_cols(vterm_t *vterm, int start_col);
 
@@ -552,18 +556,24 @@ void            vterm_erase_cols(vterm_t *vterm, int start_col);
     row at the bottom.
 
     @params:
-        vterm       handle to a vterm object
+        vterm           handle to a vterm object
+        reset_colors    a value of TRUE indicates that the new empty row
+                        should have its color attributes reset to the default
+                        foreground and background colors.
 */
-void            vterm_scroll_up(vterm_t *vterm);
+void            vterm_scroll_up(vterm_t *vterm, bool reset_colors);
 
 /*
     cause the termianl to be scrolled down by one row and placing an
     empty row at the top.
 
     @params:
-        vterm       handle to a vterm object
+        vterm           handle to a vterm object
+        reset_colors    a value of TRUE indicates that the new empty row
+                        should have its color attributes reset to the default
+                        foreground and background colors.
 */
-void            vterm_scroll_down(vterm_t *vterm);
+void            vterm_scroll_down(vterm_t *vterm, bool reset_colors);
 
 /*
     this is a convenience macro to keep original behavior intact for
@@ -571,9 +581,9 @@ void            vterm_scroll_down(vterm_t *vterm);
     the bottom right origin.
 
     @params:
-        vterm       handle to a vterm object
-        width       new width of terminal to resize to
-        height      new height of terminal to resize to
+        vterm           handle to a vterm object
+        width           new width of terminal to resize to
+        height          new height of terminal to resize to
 */
 #define         vterm_resize(vterm, width, height)  \
                     vterm_resize_full(vterm, width, height, 0, 0, 1, 1)
@@ -586,13 +596,13 @@ void            vterm_scroll_down(vterm_t *vterm);
     this API is typically used in reponse to a SIGWINCH signal.
 
     @params:
-        vterm       handle to a vterm object
-        width       new width of terminal to resize to
-        height      new height of terminal to resize to
-        grip_top    unused
-        grip_left   unused
-        grip_right  unused
-        grip_bottom unused
+        vterm           handle to a vterm object
+        width           new width of terminal to resize to
+        height          new height of terminal to resize to
+        grip_top        unused
+        grip_left       unused
+        grip_right      unused
+        grip_bottom     unused
 */
 void            vterm_resize_full(vterm_t *vterm,
                     uint16_t width, uint16_t height,
@@ -605,11 +615,11 @@ void            vterm_resize_full(vterm_t *vterm,
     updated.
 
     @params:
-        vterm       handle to a vterm object
-        data        data to push throug the intepreter.  typically this
-                    comes from vterm_read_pipe().
-        len         the length of the data being pushed into the
-                    intepreter.
+        vterm           handle to a vterm object
+        data            data to push throug the intepreter.  typically this
+                        comes from vterm_read_pipe().
+        len             the length of the data being pushed into the
+                        intepreter.
 */
 void            vterm_render(vterm_t *vterm, const char *data, int len);
 
@@ -617,9 +627,9 @@ void            vterm_render(vterm_t *vterm, const char *data, int len);
     fetches the width and height of the current terminal dimentions.
 
     @params:
-        vterm       handle to a vterm object
-        width       a pointer to an integer where the width will be stored
-        height      a pointer to an integer where the height will be stored
+        vterm           handle to a vterm object
+        width           a pointer to an integer where the width will be stored
+        height          a pointer to an integer where the height will be stored
 */
 void            vterm_get_size(vterm_t *vterm, int *width, int *height);
 
@@ -627,9 +637,9 @@ void            vterm_get_size(vterm_t *vterm, int *width, int *height);
     returns a copy of the active buffer screen matrix.
 
     @params:
-        vterm       handle to a vterm object
-        rows        integer pointer indicating the row count of the matrix
-        cols        integer pointer indicating the column count of the matrix
+        vterm           handle to a vterm object
+        rows            integer pointer indicating the row count of the matrix
+        cols            integer pointer indicating the column count of the matrix
 
 */
 vterm_cell_t**  vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols);

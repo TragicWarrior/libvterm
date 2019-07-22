@@ -39,7 +39,7 @@ interpret_esc_NEL(vterm_t *vterm)
             scroll down (which pushes the screen up which is what the VT100
             guide means when it says "scroll up").
         */
-        vterm_scroll_down(vterm);
+        vterm_scroll_down(vterm, FALSE);
         return;
     }
 
