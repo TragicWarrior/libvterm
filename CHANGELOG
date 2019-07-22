@@ -1,4 +1,10 @@
-6.5
+6.7
+
+* [Bryan Christ] Implement a shared resource mechanism to make sure that the
+  mouse works correctly in a standalone environement and when shared with
+  other instances of libvterm. 
+
+6.6
 
 * [Bryan Christ] Better handling of scroll mouse.
 * [Bryan Christ] Fix a long standing issue with scroll up and scroll
