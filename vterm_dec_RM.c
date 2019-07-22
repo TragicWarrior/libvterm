@@ -39,7 +39,7 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
         // shutdown whatever mouse driver is installed
         if(param[i] == 1000 || param[i] == 1005 || param[i] == 1006)
         {
-            mouse_driver_unset(vterm);
+            mouse_driver_stop(vterm);
             continue;
         }
 

@@ -219,6 +219,12 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         if(vterm->mouse_driver != NULL)
         {
             bytes = vterm->mouse_driver(vterm, buf);
+
+            /*
+                there was a mouse event but it was unhandled for some
+                reason so we need to move along.
+            */
+            if(bytes == 0) return 0;
         }
     }
 
