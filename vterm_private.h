@@ -3,6 +3,7 @@
 #define _VTERM_PRIVATE_H_
 
 #include <unistd.h>
+#include <termios.h>
 
 #include <sys/types.h>
 
@@ -159,6 +160,15 @@ struct _vterm_s
                                                     state of the mouse
                                                     if we are sharing it with
                                                     others.
+                                                */
+
+    char            **keymap_str;               //  points to keymap key
+    uint32_t        *keymap_val;                //  points to keymap ke value
+    int             keymap_size;                //  size of the keymap
+
+    struct termios  term_state;                 /*
+                                                    stores data returned from
+                                                    tcgetattr()
                                                 */
 
     char            *exec_path;                 //  optional binary path to use

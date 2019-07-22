@@ -135,7 +135,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     if(v_desc->ccol >= v_desc->cols)
     {
         v_desc->ccol = 0;
-        vterm_scroll_down(vterm);
+        vterm_scroll_down(vterm, FALSE);
     }
 
     /*
@@ -204,7 +204,7 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            vterm_scroll_down(vterm);
+            vterm_scroll_down(vterm, TRUE);
             break;
         }
 

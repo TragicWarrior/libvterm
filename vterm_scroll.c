@@ -12,7 +12,7 @@
 #include "vterm_buffer.h"
 
 void
-vterm_scroll_down(vterm_t *vterm)
+vterm_scroll_down(vterm_t *vterm, bool reset_colors)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -39,9 +39,6 @@ vterm_scroll_down(vterm_t *vterm)
 
     for(i = v_desc->scroll_min; i < v_desc->scroll_max; i++)
     {
-        // memcpy(v_desc->cells[i], v_desc->cells[i + 1],
-        //    sizeof(vterm_cell_t) * v_desc->cols);
-
         memcpy(*vcell_dst, *vcell_src,
              sizeof(vterm_cell_t) * v_desc->cols);
 
@@ -50,7 +47,7 @@ vterm_scroll_down(vterm_t *vterm)
     }
 
     /* clear last row of the scrolling region */
-    vterm_erase_row(vterm, v_desc->scroll_max);
+    vterm_erase_row(vterm, v_desc->scroll_max, reset_colors);
 
     if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
     {
@@ -65,7 +62,7 @@ vterm_scroll_down(vterm_t *vterm)
 }
 
 void
-vterm_scroll_up(vterm_t *vterm)
+vterm_scroll_up(vterm_t *vterm, bool reset_colors)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -92,7 +89,7 @@ vterm_scroll_up(vterm_t *vterm)
     }
 
     /* clear first row of the scrolling region */
-    vterm_erase_row(vterm, v_desc->scroll_min);
+    vterm_erase_row(vterm, v_desc->scroll_min, reset_colors);
 
     if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
     {
