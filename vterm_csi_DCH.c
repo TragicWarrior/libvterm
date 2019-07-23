@@ -48,11 +48,12 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     vcell_dst = &v_desc->cells[v_desc->crow][v_desc->ccol];
     vcell_dst += stride;
 
+    // same logic as above change the character of the cell only
     for(i = 0; i < n; i++)
     {
         VCELL_SET_CHAR((*vcell_dst), ' ');
-        VCELL_SET_ATTR((*vcell_dst), A_NORMAL);
-        VCELL_SET_DEFAULT_COLORS((*vcell_dst), v_desc);
+        // VCELL_SET_ATTR((*vcell_dst), A_NORMAL);
+        // VCELL_SET_DEFAULT_COLORS((*vcell_dst), v_desc);
 
         vcell_dst++;
     }
