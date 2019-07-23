@@ -204,7 +204,7 @@ vterm_render_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            vterm_scroll_down(vterm, TRUE);
+            vterm_scroll_down(vterm, FALSE);
             break;
         }
 
