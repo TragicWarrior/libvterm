@@ -1,3 +1,4 @@
+#include <stdlib.h>
 
 #include "vterm.h"
 #include "vterm_private.h"
@@ -8,13 +9,13 @@
 void
 interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
 {
-    vterm_cell_t    *vcell_new;
-    vterm_cell_t    *vcell_old;
     vterm_desc_t    *v_desc = NULL;
-    int             c;
-    int             n = 1;
+    vterm_cell_t    *vcell_src;
+    vterm_cell_t    *vcell_dst;
+    int             stride;
     int             idx;
-    int             max_col;
+    int             n = 1;
+    int             i;
 
     if(pcount && param[0] > 0) n = param[0];
 
@@ -22,49 +23,40 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    vcell_new = &v_desc->cells[v_desc->crow][v_desc->ccol];
+    stride = v_desc->cols - v_desc->ccol;
+    stride -= n;
 
-    max_col = v_desc->ccol + n;
+    // copy into temporary buffer
+    vcell_src = &v_desc->cells[v_desc->crow][v_desc->ccol];
+    vcell_src += n;
+    vcell_dst = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
-    // for(c = v_desc->ccol; c < v_desc->cols; c++)
-    if(!(vterm->internal_state & STATE_REPLACE_MODE))
+    /*
+        by experintation and review of other emulators it seems that DCH
+        only copies the character from its neighbor and not the attributes
+        or colors.  IMO that's bizarre but reality.
+    */
+    for(i = 0; i < stride; i++)
     {
-        for(c = v_desc->ccol; c < v_desc->cols; c++)
-        {
-            if(c + n < v_desc->cols)
-            {
-                vcell_old = vcell_new + n;
+        memcpy(&vcell_dst->wch, &vcell_src->wch, sizeof(vcell_dst->wch));
 
-                /*
-                    this is a shallow struct copy.  if a vterm_cell_t
-                    ever becomes packed with heap data referenced
-                    by pointer, it could be problematic.
-                */
-                *vcell_new = *vcell_old;
-            }
-            else
-            {
-                VCELL_SET_CHAR((*vcell_new), ' ');
-                VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
-                // VCELL_SET_ATTR((*vcell_new), A_NORMAL);
-                // VCELL_SET_DEFAULT_COLORS((*vcell_new), v_desc);
-            }
-
-            vcell_new++;
-        }
+        vcell_src++;
+        vcell_dst++;
     }
 
-    if(vterm->internal_state & STATE_REPLACE_MODE)
-    {
-        for(c = v_desc->ccol; c < max_col; c++)
-        {
-            VCELL_SET_CHAR((*vcell_new), ' ');
-            VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
-            // VCELL_SET_ATTR((*vcell_new), A_NORMAL);
-            // VCELL_SET_COLORS((*vcell_new), v_desc);
-        }
+    // zero out cells created by the void
+    vcell_dst = &v_desc->cells[v_desc->crow][v_desc->ccol];
+    vcell_dst += stride;
 
-        vcell_new++;
+    for(i = 0; i < n; i++)
+    {
+        VCELL_SET_CHAR((*vcell_dst), ' ');
+        VCELL_SET_ATTR((*vcell_dst), A_NORMAL);
+        VCELL_SET_DEFAULT_COLORS((*vcell_dst), v_desc);
+
+        vcell_dst++;
     }
+
+    return;
 }
 
