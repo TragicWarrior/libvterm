@@ -1,3 +1,10 @@
+6.9
+
+* [Bryan Christ] Rewrite the csi DCH code so that is more accurate and the 
+  output is similar to other emulators.  DCH code is now more simple and
+  faster.
+* [Bryan Christ] Add framework for csi IRM code.  Currently unused. 
+
 6.8
 
 * [Bryan Christ] Fixed an issue where multiple instances could trample the
