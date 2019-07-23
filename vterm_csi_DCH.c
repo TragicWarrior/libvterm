@@ -53,7 +53,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     {
         VCELL_SET_CHAR((*vcell_dst), ' ');
         // VCELL_SET_ATTR((*vcell_dst), A_NORMAL);
-        // VCELL_SET_DEFAULT_COLORS((*vcell_dst), v_desc);
+        VCELL_SET_COLORS((*vcell_dst), v_desc);
 
         vcell_dst++;
     }
