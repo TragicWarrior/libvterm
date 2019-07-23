@@ -21,6 +21,7 @@ int     vterm_interpret_csi(vterm_t *vterm);
 void    interpret_esc_IND(vterm_t *vterm);
 void    interpret_esc_NEL(vterm_t *vterm);
 void    interpret_esc_RI(vterm_t *vterm);
+void    interpret_csi_IRM(vterm_t *vterm, bool replace_mode);
 
 void    interpret_dec_SM(vterm_t *vterm, int param[], int pcount);
 void    interpret_dec_RM(vterm_t *vterm, int param[], int pcount);
@@ -43,7 +44,6 @@ void    interpret_csi_RESTORECUR(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_CBT(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_SU(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_SD(vterm_t *vterm, int param[], int pcount);
-
 
 int     interpret_csi_RS1_rxvt(vterm_t *vterm, char *data);
 int     interpret_csi_RS1_xterm(vterm_t *vterm, char *data);

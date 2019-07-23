@@ -13,6 +13,7 @@ vterm_interpret_csi(vterm_t *vterm)
     int             param_count = 0;
     const char      *p;
     char            verb;
+    bool            dec_private = FALSE;
 
     static void     *csi_table[128] =
                     {
@@ -98,6 +99,7 @@ vterm_interpret_csi(vterm_t *vterm)
 
         if(*p == '?')
         {
+            dec_private = TRUE;
             p++;
             continue;
         }
@@ -121,12 +123,20 @@ vterm_interpret_csi(vterm_t *vterm)
         return 0;
 
     csi_char_l:
-        interpret_dec_RM(vterm, csiparam, param_count);
+        if(dec_private == TRUE)
+            interpret_dec_RM(vterm, csiparam, param_count);
+        else
+            interpret_csi_IRM(vterm, TRUE);
+
         return 0;
 
     csi_char_h:
-        interpret_dec_SM(vterm, csiparam, param_count);
-        return 0;
+        if(dec_private == TRUE)
+            interpret_dec_SM(vterm, csiparam, param_count);
+        else
+            interpret_csi_IRM(vterm, FALSE);
+
+       return 0;
 
     csi_char_J:
         interpret_csi_ED(vterm, csiparam, param_count);

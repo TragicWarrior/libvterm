@@ -36,6 +36,7 @@
                                                     scroll region is not
                                                     full height
                                                 */
+#define STATE_REPLACE_MODE      (1 << 12)
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
