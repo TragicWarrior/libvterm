@@ -16,7 +16,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     int             idx;
     int             max_col;
 
-   if(pcount && param[0] > 0) n = param[0];
+    if(pcount && param[0] > 0) n = param[0];
 
     // select the correct desc
     idx = vterm_buffer_get_active(vterm);
@@ -27,7 +27,8 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     max_col = v_desc->ccol + n;
 
     // for(c = v_desc->ccol; c < v_desc->cols; c++)
-    if(!(vterm->internal_state & STATE_REPLACE_MODE))
+    // if(!(vterm->internal_state & STATE_REPLACE_MODE))
+    if(TRUE)
     {
         for(c = v_desc->ccol; c < v_desc->cols; c++)
         {
@@ -42,10 +43,20 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
                 */
                 *vcell_new = *vcell_old;
             }
+            else
+            {
+                VCELL_SET_CHAR((*vcell_new), ' ');
+                VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
+                // VCELL_SET_ATTR((*vcell_new), A_NORMAL);
+                // VCELL_SET_COLORS((*vcell_new), v_desc);
+            }
+
+            vcell_new++;
         }
     }
 
-    if(vterm->internal_state & STATE_REPLACE_MODE)
+    // if(vterm->internal_state & STATE_REPLACE_MODE)
+    if(FALSE)
     {
         for(c = v_desc->ccol; c < max_col; c++)
         {
