@@ -72,7 +72,7 @@ typedef chtype          attr_t;
 
 #endif
 
-#define LIBVTERM_VERSION        "6.8"
+#define LIBVTERM_VERSION        "6.10"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
