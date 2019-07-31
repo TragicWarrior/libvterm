@@ -18,7 +18,7 @@ vterm_interpret_csi(vterm_t *vterm)
     static void     *csi_table[128] =
                     {
                         [0] = &&csi_char_unknown,
-                        ['c'] = &&csi_char_c,
+                        ['c'] = &&csi_DA,
                         ['b'] = &&csi_char_b,
                         ['m'] = &&csi_char_m,
                         ['l'] = &&csi_char_l,
@@ -110,8 +110,8 @@ vterm_interpret_csi(vterm_t *vterm)
     SWITCH(csi_table, (unsigned int)verb, 0);
 
     // delegate handling depending on command character (verb)
-    csi_char_c:
-        interpret_osc_DA(vterm);
+    csi_DA:
+        interpret_osc_DA(vterm, csiparam, param_count);
         return 0;
 
     csi_char_b:

@@ -67,11 +67,10 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 {
     pid_t                   child_pid = 0;
     int                     master_fd;
-    struct winsize          ws = {.ws_xpixel = 0,.ws_ypixel = 0};
+    struct winsize          ws = {.ws_xpixel = 0, .ws_ypixel = 0};
     char                    *pos = NULL;
     int                     retval;
-
-    // rxvt emulation is the default if none specified
+    int                     fd_flags;
 
     // xterm emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM_256;
@@ -183,6 +182,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
             snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1,"vterm");
         }
     }
+
+    fd_flags = fcntl(vterm->pty_fd, F_GETFD);
+    fcntl(vterm->pty_fd, F_SETFD, fd_flags | O_NONBLOCK);
 
     use_extended_names(TRUE);
     vterm->write = vterm_write_keymap;
