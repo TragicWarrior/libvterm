@@ -1,6 +1,11 @@
+6.11
+
+* [Bryan Christ] Enable replies back to Device Attribute send requests
+  in all emulation modes except Linux.
+
 6.10
 
-* [Bryan Christ] Tweake the DCH code so that it mimics xterm exactly on
+* [Bryan Christ] Tweak the DCH code so that it mimics xterm exactly on
   such operation.
 
 6.9
