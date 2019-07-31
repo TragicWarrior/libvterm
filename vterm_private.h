@@ -144,6 +144,14 @@ struct _vterm_s
                                                     is the UTF-8 coding.
                                                 */
 
+    char            reply_buf[32];              /*
+                                                    some CSI sequences
+                                                    expect a reply.  here's
+                                                    where they go.
+                                                */
+
+    ssize_t         reply_buf_sz;               //  size of reply
+
     int             utf8_buf_len;               //  number of utf8 bytes
 
     int             pty_fd;                     /*

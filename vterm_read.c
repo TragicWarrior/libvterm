@@ -15,6 +15,7 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_render.h"
+#include "vterm_reply.h"
 
 /*
     PIPE_BUF is defined as the maximum number of bytes that can be
@@ -24,6 +25,7 @@
     process.
 */
 #define MAX_PIPE_READ   (PIPE_BUF * 8)
+
 
 ssize_t
 vterm_read_pipe(vterm_t *vterm)
@@ -70,6 +72,8 @@ vterm_read_pipe(vterm_t *vterm)
     // no data or poll() error.
     if(retval <= 0)
     {
+        // vterm_reply_buffer(vterm);
+
         if(errno == EINTR) return 0;
         return retval;
     }
@@ -163,3 +167,4 @@ vterm_read_pipe(vterm_t *vterm)
 
     return bytes_waiting - bytes_remaining;
 }
+

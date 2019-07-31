@@ -96,6 +96,7 @@ add_library(vterm-static STATIC
     vterm_osc_DA.c
     vterm_read.c
     vterm_render.c
+    vterm_reply.c
     vterm_resize.c
     vterm_scroll.c
     vterm_utf8.c
@@ -151,6 +152,7 @@ add_library(vterm.o OBJECT
     vterm_osc_DA.c
     vterm_read.c
     vterm_render.c
+    vterm_reply.c
     vterm_resize.c
     vterm_scroll.c
     vterm_utf8.c
