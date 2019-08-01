@@ -12,7 +12,8 @@
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
-#include <ncurses.h>
+// #include <ncurses.h>
+#include <ncursesw/ncurses.h>
 #endif
 
 #include "vterm.h"
