@@ -30,7 +30,10 @@ vterm_wnd_update(vterm_t *vterm)
     int             idx;
     attr_t          attrs;
     short           colors;
-    static cchar_t  uch;                    // Mac OS blows up if not static
+
+
+    // static cchar_t  uch;                    // Mac OS blows up if not static
+    cchar_t         uch;
 
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;

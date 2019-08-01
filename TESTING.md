@@ -63,6 +63,8 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - lynx
 4 - links
 5 - mutt
+3 - myman
+5 - ranger
 ```
 
 # Test Notes #
