@@ -69,6 +69,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - cmatrix
 5 - nano
 5 - man
+5 - tig
 ```
 
 ### FreeBSD Testing ###
@@ -78,6 +79,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - mc
 5 - man
 5 - nano
+5 - tig
 ```
 
 # Test Notes #
