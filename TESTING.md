@@ -47,6 +47,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - asciijump
 5 - vlc
 5 - pamix
+5 - man
 ```
 
 ### Mac OS Testing ###
@@ -65,6 +66,18 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - mutt
 3 - myman
 5 - ranger
+5 - cmatrix
+5 - nano
+5 - man
+```
+
+### FreeBSD Testing ###
+
+```
+5 - htop
+5 - mc
+5 - man
+5 - nano
 ```
 
 # Test Notes #
