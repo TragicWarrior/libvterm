@@ -9,6 +9,8 @@
 /*
     Info on bracketed paste can be found here:
 
+    ESC [ ? x h
+
     https://cirw.in/blog/bracketed-paste
 */
 
@@ -28,6 +30,13 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
+        // enable auto-wrap mode (default is auto-wrap)
+        if(param[i] == 7)
+        {
+            v_desc->buffer_state &= ~STATE_NO_WRAP;
+            continue;
+        }
+
         /* civis is actually "normal" for rxvt */
         if(param[i] == 25)
         {

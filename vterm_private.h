@@ -31,12 +31,14 @@
 
 #define STATE_PIPE_ERR          (1 << 8)
 #define STATE_CHILD_EXITED      (1 << 9)
+
 #define STATE_CURSOR_INVIS      (1 << 10)
 #define STATE_SCROLL_SHORT      (1 << 11)       /*
                                                     scroll region is not
                                                     full height
                                                 */
 #define STATE_REPLACE_MODE      (1 << 12)
+#define STATE_NO_WRAP           (1 << 13)
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
