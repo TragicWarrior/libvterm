@@ -48,6 +48,17 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
             break;
         }
 
+        // vertical tab (new line, col 0)
+        case '\x0B':
+        {
+            vterm_scroll_down(vterm, FALSE);
+            if(v_desc->buffer_state & STATE_AUTOMATIC_LF)
+            {
+                v_desc->ccol = 0;
+            }
+            break;
+        }
+
         // begin escape sequence (aborting previous one if any)
         case '\x1B':
         {

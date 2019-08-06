@@ -34,6 +34,13 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
             continue;
         }
 
+        if(param[i] == 20)
+        {
+            v_desc->buffer_state &= ~STATE_AUTOMATIC_LF;
+            continue;
+        }
+
+
         /* civis is actually the "normal" vibility for rxvt   */
         if(param[i] == 25) v_desc->buffer_state |= STATE_CURSOR_INVIS;
 

@@ -39,6 +39,7 @@
                                                 */
 #define STATE_REPLACE_MODE      (1 << 12)
 #define STATE_NO_WRAP           (1 << 13)
+#define STATE_AUTOMATIC_LF      (1 << 14)       //  DEC SM "20"
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)

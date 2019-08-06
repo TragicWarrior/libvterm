@@ -91,15 +91,27 @@ vterm_render(vterm_t *vterm, const char *data, int len)
                 return;
             }
 
-            // append character to ongoing escape sequence
-            vterm->esbuf[vterm->esbuf_len] = *data;
+            /*
+                it's absurd but control chars can legitimately happen inside
+                a escape sequence.  process them but omit them from the
+                ESEQ_BUF.
+            */
+            if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
+            {
+                vterm_interpret_ctrl_char(vterm, *data);
+            }
+            else
+            {
+                // append character to ongoing escape sequence
+                vterm->esbuf[vterm->esbuf_len] = *data;
 
-            // increment the buffer length and push out the NULL terminator
-            vterm->esbuf_len++;
-            vterm->esbuf[vterm->esbuf_len] = 0;
+                // increment the buffer length and push out the NULL terminator
+                vterm->esbuf_len++;
+                vterm->esbuf[vterm->esbuf_len] = 0;
 
-            // if we are in escape mode (initiated by 0x1B) go here...
-            vterm_interpret_escapes(vterm);
+                // if we are in escape mode (initiated by 0x1B) go here...
+                vterm_interpret_escapes(vterm);
+            }
         }
         else
         {
