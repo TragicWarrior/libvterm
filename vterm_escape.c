@@ -27,6 +27,8 @@ vterm_interpret_esc_xterm_dsc(vterm_t *vterm);
 static int
 vterm_interpret_esc_scs(vterm_t *vterm);
 
+static int
+vterm_interpret_dec_private(vterm_t *vterm);
 
 void
 vterm_escape_start(vterm_t *vterm)
@@ -70,6 +72,7 @@ vterm_interpret_escapes(vterm_t *vterm)
                                 [')'] = &&interim_rparth,
                                 ['('] = &&interim_lparth,
                                 ['P'] = &&interim_char_P,
+                                ['#'] = &&interim_pound,
                             };
 
     int                 retval = 0;
@@ -133,6 +136,14 @@ vterm_interpret_escapes(vterm_t *vterm)
             && *lastchar == '\\' )
         {
             vterm->esc_handler = vterm_interpret_esc_xterm_dsc;
+        }
+        goto interim_run;
+
+    // some DEC private modes start with a # (pound) sign
+    interim_pound:
+        if(validate_dec_private_suffix(lastchar))
+        {
+            vterm->esc_handler = vterm_interpret_dec_private;
         }
         goto interim_run;
 
@@ -209,4 +220,22 @@ vterm_interpret_esc_scs(vterm_t *vterm)
     return 2;
 }
 
+static int
+vterm_interpret_dec_private(vterm_t *vterm)
+{
+    const char  *p;
+
+    p = vterm->esbuf;
+    p++;
+
+    if(*p == '\0') return 0;
+
+    if(*p == '8')
+    {
+        interpret_dec_DECALN(vterm);
+        return 1;
+    }
+
+    return 0;
+}
 

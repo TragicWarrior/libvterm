@@ -6,8 +6,8 @@
 #include "vterm_buffer.h"
 
 /*
-    Interpret the 'relative mode' sequences: CUU, CUD, CUF, CUB, CNL,
-    CPL, CHA, HPR, VPA, VPR, HPA
+    Interpret the 'dynamic movement' sequences: CUU, CUD, CUF, CUB, CNL,
+    CPL, CHA, HPR, VPA, VPR, HPA, HPV
 
     CUF - ESC [ n C
 
@@ -27,6 +27,9 @@
     the left. If an attempt is made to move the cursor to the left of
     the left margin, the cursor stops at the left margin.
 
+    HVP - ESC [ r ; c f
+
+    Where r = row and c = column.
 */
 void
 interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
@@ -46,16 +49,20 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
 
     switch (verb)
     {
+        // CSI 'CUU' (cursor up)
         case 'A':   v_desc->crow -= n;             break;
+
+        // CSI 'CUD' (cursor down)
         case 'B':
         case 'e':   v_desc->crow += n;             break;
 
-        // CSI 'CUF'
+        // CSI 'CUF' (cursor forward)
         case 'C':
         case 'a':   v_desc->ccol += n;             break;
 
-        // CSI 'CUB'
+        // CSI 'CUB' (cursor backward)
         case 'D':   v_desc->ccol -= n;             break;
+
         case 'E':
         {
             v_desc->crow += n;
@@ -75,10 +82,17 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
         /*
             ESC [ r ; c H
             where 'r' is row number and 'c' is column number
+
             - or -
+
             ESC [ H
             which means 0, 0 implied
+
+            - or -
+
+            ESC [ r ; c f
         */
+        case 'f':
         case 'H':
         {
             if(pcount == 0)

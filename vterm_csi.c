@@ -25,7 +25,7 @@ vterm_interpret_csi(vterm_t *vterm)
                         ['h'] = &&csi_char_h,
                         ['H'] = &&csi_char_H,
                         ['J'] = &&csi_char_J,
-                        ['f'] = &&csi_char_f,
+                        ['f'] = &&csi_HVP,
                         ['A'] = &&csi_CUx,
                         ['B'] = &&csi_CUx,
                         ['C'] = &&csi_CUx,
@@ -146,8 +146,9 @@ vterm_interpret_csi(vterm_t *vterm)
         interpret_csi_CUx(vterm, verb, csiparam, param_count);
         return 0;
 
-    csi_char_f:
-        interpret_csi_CUP(vterm, csiparam, param_count);
+    csi_HVP:
+        // HVP is the same as CUP (CUx)
+        interpret_csi_CUx(vterm, verb, csiparam, param_count);
         return 0;
 
     csi_CUx:

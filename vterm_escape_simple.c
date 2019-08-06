@@ -18,7 +18,7 @@ vterm_interpret_escapes_simple(vterm_t *vterm)
                             ['A'] = &&simple_char_A,
                             ['B'] = &&simple_char_B,
                             ['C'] = &&simple_char_C,
-                            ['D'] = &&simple_char_D,
+                            ['D'] = &&simple_IND,
                             ['7'] = &&simple_char_vii,
                             ['8'] = &&simple_char_viii,
                             ['c'] = &&simple_char_c,
@@ -58,9 +58,9 @@ vterm_interpret_escapes_simple(vterm_t *vterm)
         vterm_escape_cancel(vterm);
         return 1;
 
-    // VT52, move cursor left.  same as CUB which is ESC [ D
-    simple_char_D:
-        interpret_csi_CUx(vterm, 'D', (int *)NULL, 0);
+    // VT52, move cursor down.  same as ESC [ e
+    simple_IND:
+        interpret_csi_CUx(vterm, 'e', (int *)NULL, 0);
         vterm_escape_cancel(vterm);
         return 1;
 

@@ -6,7 +6,12 @@
 #include "vterm_cursor.h"
 #include "mouse_driver.h"
 
-/* Interpret the DEC RM (reset mode) */
+/*
+    Interpret the DEC RM / DEC PRIVATE RM (reset mode)
+
+    ESC [ ? x l
+
+*/
 void
 interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
 {
@@ -22,6 +27,13 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
+        // disable auto-wrap mode
+        if(param[i] == 7)
+        {
+            v_desc->buffer_state |= STATE_NO_WRAP;
+            continue;
+        }
+
         /* civis is actually the "normal" vibility for rxvt   */
         if(param[i] == 25) v_desc->buffer_state |= STATE_CURSOR_INVIS;
 

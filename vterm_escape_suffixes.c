@@ -47,3 +47,14 @@ validate_scs_escape_suffix(char *lastchar)
     return FALSE;
 }
 
+inline bool
+validate_dec_private_suffix(char *lastchar)
+{
+    char c = *lastchar;
+
+    // the suffix must be a number between 3 and 8 inclusive
+    if(c >= '3' && c <= '8') return TRUE;
+
+    return FALSE;
+}
+

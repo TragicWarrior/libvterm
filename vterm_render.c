@@ -135,7 +135,11 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     if(v_desc->ccol >= v_desc->cols)
     {
         v_desc->ccol = 0;
-        vterm_scroll_down(vterm, FALSE);
+
+        if((v_desc->buffer_state & STATE_NO_WRAP) == FALSE)
+        {
+            vterm_scroll_down(vterm, FALSE);
+        }
     }
 
     /*
