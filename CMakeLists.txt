@@ -58,6 +58,7 @@ add_library(vterm-static STATIC
     mouse_driver_X10.c
     mouse_driver_SGR.c
     vterm.c
+    vterm_ctrl_char.c
     vterm_csi.c
     vterm_exec.c
     vterm_erase.c
@@ -116,6 +117,7 @@ add_library(vterm.o OBJECT
     mouse_driver_SGR.c
     vterm.c
     vterm_buffer.c
+    vterm_ctrl_char.c
     vterm_csi.c
     vterm_erase.c
     vterm_escape.c
