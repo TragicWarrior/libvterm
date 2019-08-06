@@ -64,7 +64,7 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
             start_row = 0;
             start_col = 0;
             end_row = v_desc->crow - 1;
-            end_col = v_desc->cols;
+            end_col = v_desc->cols - 1;
             break;
 
         default:
