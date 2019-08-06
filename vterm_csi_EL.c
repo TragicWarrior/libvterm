@@ -6,9 +6,11 @@
 
 
 /*
-    From VT100 User Guide
+    vt100 - ESC [ x K
 
-    ESC [ Ps K
+    vt200 - ESC [ ? x K
+
+    where 'x' dictates the behavior
 
     default value: 0
     Erases some or all characters in the active line
@@ -33,12 +35,13 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
     int             erase_start, erase_end, i;
     int             cmd = 0;
     int             idx;
+    int             row;
 
     // set the vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    if(pcount > 0) cmd = param[0];
+    cmd =  (pcount > 0 ? param[0] : 0);
 
     switch(cmd)
     {
@@ -65,11 +68,13 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
         }
     }
 
+    row = v_desc->crow;
+
     for(i = erase_start; i <= erase_end; i++)
     {
-        vcell = &v_desc->cells[v_desc->crow][i];
+        vcell = &v_desc->cells[row][i];
 
-        // VCELL_SET_CHAR((*vcell), 'x');
+        // VCELL_SET_CHAR((*vcell), 'm');
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), v_desc->curattr);
         VCELL_SET_COLORS((*vcell), v_desc);

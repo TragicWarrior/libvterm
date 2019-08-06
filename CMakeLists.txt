@@ -87,6 +87,7 @@ add_library(vterm-static STATIC
     vterm_csi_SU.c
     vterm_csi_UNKNOWN.c
     vterm_cursor.c
+    vterm_dec_DECALN.c
     vterm_dec_RM.c
     vterm_dec_SM.c
     vterm_esc_IND.c
@@ -143,6 +144,7 @@ add_library(vterm.o OBJECT
     vterm_csi_SU.c
     vterm_csi_UNKNOWN.c
     vterm_cursor.c
+    vterm_dec_DECALN.c
     vterm_dec_RM.c
     vterm_dec_SM.c
     vterm_esc_IND.c

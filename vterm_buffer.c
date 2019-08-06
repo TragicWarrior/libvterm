@@ -104,6 +104,8 @@ vterm_buffer_dealloc(vterm_t *vterm, int idx)
     if(vterm == NULL) return;
     if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
 
+    // endwin(); printf("%d\n", idx); fflush(stdout);
+
     v_desc = &vterm->vterm_desc[idx];
 
     // prevent a double-free

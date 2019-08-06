@@ -10,4 +10,7 @@ validate_xterm_escape_suffix(char *lastchar);
 bool
 validate_scs_escape_suffix(char *lastchar);
 
+bool
+validate_dec_private_suffix(char *lastchar);
+
 #endif
