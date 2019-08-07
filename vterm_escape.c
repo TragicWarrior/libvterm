@@ -49,6 +49,9 @@ vterm_escape_cancel(vterm_t *vterm)
 {
     vterm->internal_state &= ~STATE_ESCAPE_MODE;
 
+    // make sure OSC mode is off too
+    vterm->internal_state &= ~STATE_OSC_MODE;
+
     // zero out the escape buffer for the next run
     vterm->esbuf_len = 0;
     vterm->esbuf[0] = '\0';
@@ -67,7 +70,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     static void         *interim_table[128] =
                             {
                                 [0] = &&interim_char_none,
-                                [']'] = &&interim_rbracket,
+                                [']'] = &&interim_OSC,
                                 ['['] = &&interim_lbracket,
                                 [')'] = &&interim_rparth,
                                 ['('] = &&interim_lparth,
@@ -90,7 +93,10 @@ vterm_interpret_escapes(vterm_t *vterm)
     SWITCH(interim_table, (unsigned int)firstchar, 0);
 
     // looks like an complete xterm Operating System Command
-    interim_rbracket:
+    interim_OSC:
+
+        vterm->internal_state |= STATE_OSC_MODE;
+
         // term type linux sends this to reset FG and BG colors to default
         if(*lastchar == 'R')
         {

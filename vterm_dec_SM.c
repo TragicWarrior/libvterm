@@ -37,6 +37,12 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             continue;
         }
 
+        if(param[i] == 20)
+        {
+            v_desc->buffer_state &= STATE_AUTOMATIC_LF;
+            continue;
+        }
+
         /* civis is actually "normal" for rxvt */
         if(param[i] == 25)
         {

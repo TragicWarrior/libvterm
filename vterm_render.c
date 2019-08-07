@@ -13,15 +13,13 @@
 #include "vterm_escape.h"
 #include "vterm_utf8.h"
 #include "vterm_buffer.h"
+#include "vterm_ctrl_char.h"
+#include "vterm_osc.h"
 #include "color_cache.h"
 #include "macros.h"
 
 static void
-vterm_render_ctrl_char(vterm_t *vterm,char c);
-
-static void
 vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch);
-
 
 void
 vterm_render(vterm_t *vterm, const char *data, int len)
@@ -41,9 +39,9 @@ vterm_render(vterm_t *vterm, const char *data, int len)
 
         if(!IS_MODE_ESCAPED(vterm))
         {
-            if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
+            if(IS_CTRL_CHAR(*data))
             {
-                vterm_render_ctrl_char(vterm, *data);
+                vterm_interpret_ctrl_char(vterm, *data);
                 continue;
             }
         }
@@ -94,15 +92,28 @@ vterm_render(vterm_t *vterm, const char *data, int len)
                 return;
             }
 
-            // append character to ongoing escape sequence
-            vterm->esbuf[vterm->esbuf_len] = *data;
+            /*
+                it's absurd but control chars can legitimately happen inside
+                a escape sequence.  process them but omit them from the
+                ESEQ_BUF.  the exception to this is OSC mode which will
+                contain a control character to terminate the OSC string.
+            */
+            if(IS_CTRL_CHAR(*data) && !IS_OSC_MODE(vterm))
+            {
+                vterm_interpret_ctrl_char(vterm, *data);
+            }
+            else
+            {
+                // append character to ongoing escape sequence
+                vterm->esbuf[vterm->esbuf_len] = *data;
 
-            // increment the buffer length and push out the NULL terminator
-            vterm->esbuf_len++;
-            vterm->esbuf[vterm->esbuf_len] = 0;
+                // increment the buffer length and push out the NULL terminator
+                vterm->esbuf_len++;
+                vterm->esbuf[vterm->esbuf_len] = 0;
 
-            // if we are in escape mode (initiated by 0x1B) go here...
-            vterm_interpret_escapes(vterm);
+                // if we are in escape mode (initiated by 0x1B) go here...
+                vterm_interpret_escapes(vterm);
+            }
         }
         else
         {
@@ -183,89 +194,6 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     v_desc->ccol++;
 
     return;
-}
-
-void
-vterm_render_ctrl_char(vterm_t *vterm, char c)
-{
-    vterm_desc_t    *v_desc = NULL;
-    int             tab_sz;
-    int             idx;
-
-    // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
-
-    switch(c)
-    {
-        // carriage return
-        case '\r':
-        {
-            v_desc->ccol = 0;
-            break;
-        }
-
-        // line-feed
-        case '\n':
-        {
-            vterm_scroll_down(vterm, FALSE);
-            break;
-        }
-
-        // backspace
-        case '\b':
-        {
-            if(v_desc->ccol > 0) v_desc->ccol--;
-            break;
-        }
-
-        // tab
-        case '\t':
-        {
-            tab_sz = 8 - (v_desc->ccol % 8);
-            v_desc->ccol += tab_sz;
-            break;
-        }
-
-        // begin escape sequence (aborting previous one if any)
-        case '\x1B':
-        {
-            vterm_escape_start(vterm);
-            break;
-        }
-
-        // enter graphical character mode
-        case '\x0E':
-        {
-            vterm->internal_state |= STATE_ALT_CHARSET;
-            break;
-        }
-
-        // exit graphical character mode
-        case '\x0F':
-        {
-            vterm->internal_state &= ~STATE_ALT_CHARSET;
-            break;
-        }
-
-        // these interrupt escape sequences
-        case '\x18':
-
-        // bell
-        case '\a':
-        {
-#ifndef NOCURSES
-            beep();
-#endif
-            break;
-        }
-
-#ifdef DEBUG
-      default:
-         fprintf(stderr, "Unrecognized control char: %d (^%c)\n", c, c + '@');
-         break;
-#endif
-   }
 }
 
 void

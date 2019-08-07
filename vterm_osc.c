@@ -8,6 +8,7 @@
 #include "stringv.h"
 #include "vterm.h"
 #include "vterm_private.h"
+#include "vterm_ctrl_char.h"
 #include "vterm_osc.h"
 
 static int
@@ -58,6 +59,13 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
         {
             // Change Icon Name and Window Title
             case '0':
+            {
+                max_sz = ARRAY_SZ(vterm->title);
+                count = vterm_osc_read_string(vterm, pos,
+                    vterm->title, max_sz);
+
+                break;
+            }
 
             // Change Icon Name
             case '1':
@@ -133,21 +141,31 @@ vterm_osc_read_string(vterm_t *vterm, char *esbuf, char *buf, int buf_sz)
     for(;;)
     {
         // both bell and 0x9c can terminate a OSC string
-        if(*esbuf == '\x07') break;
-        if(*esbuf == '\x9c') break;
+        if(*esbuf == '\x07' || *esbuf == '\x9c')
+        {
+            break;
+        }
 
         // the seqencue ESC \ (0x5C) can also terminate a OSC string
-        if(*esbuf == '\x1b' && esbuf[1] == '\x5c') break;
+        if(*esbuf == '\x1b' && esbuf[1] == '\x5c')
+        {
+            break;
+        }
 
         // limit hit
         if(count == buf_sz) break;
 
-        // copy a character from the escape buffer into user buffer
-        *pos = *esbuf;
+        // control chars in an OSC string are ignored
+        if(!IS_CTRL_CHAR(*esbuf))
+        {
+            // copy a character from the escape buffer into user buffer
+            *pos = *esbuf;
+
+            count++;
+            pos++;
+        }
 
         esbuf++;
-        pos++;
-        count++;
     }
 
     return count;
