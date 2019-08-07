@@ -1,6 +1,11 @@
+6.14
+
+* [Bryan Christ] OSC compatibility updates based on vttest conformance
+  sceanrios.
+
 6.13
 
-  [Bryan Christ] Compatibility updates based on vttest conformance
+* [Bryan Christ] Compatibility updates based on vttest conformance
   scenarios.
 
 6.12

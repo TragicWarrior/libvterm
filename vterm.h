@@ -67,13 +67,12 @@ typedef chtype          attr_t;
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
-// #include <ncurses.h>
 #include <ncursesw/ncurses.h>
 #endif
 
 #endif
 
-#define LIBVTERM_VERSION        "6.13"
+#define LIBVTERM_VERSION        "6.14"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
