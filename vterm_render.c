@@ -14,6 +14,7 @@
 #include "vterm_utf8.h"
 #include "vterm_buffer.h"
 #include "vterm_ctrl_char.h"
+#include "vterm_osc.h"
 #include "color_cache.h"
 #include "macros.h"
 
@@ -38,7 +39,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
 
         if(!IS_MODE_ESCAPED(vterm))
         {
-            if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
+            if(IS_CTRL_CHAR(*data))
             {
                 vterm_interpret_ctrl_char(vterm, *data);
                 continue;
@@ -94,9 +95,10 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             /*
                 it's absurd but control chars can legitimately happen inside
                 a escape sequence.  process them but omit them from the
-                ESEQ_BUF.
+                ESEQ_BUF.  the exception to this is OSC mode which will
+                contain a control character to terminate the OSC string.
             */
-            if((unsigned int)*data >= 1 && (unsigned int)*data <= 31)
+            if(IS_CTRL_CHAR(*data) && !IS_OSC_MODE(vterm))
             {
                 vterm_interpret_ctrl_char(vterm, *data);
             }
