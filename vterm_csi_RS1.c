@@ -2,9 +2,11 @@
 #include <string.h>
 
 #include "vterm.h"
+#include "vterm_cursor.h"
 #include "vterm_csi.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
+
 
 /*
     we're looking for a very specific sequence.  using a protothread here
@@ -16,7 +18,6 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 {
     static char     *end = RXVT_RS1 + sizeof(RXVT_RS1) - 2;
     static char     *pos = RXVT_RS1;
-    vterm_desc_t    *v_desc = NULL;
 
     // if we get a stray byte, reset sequence parser
     if(byte[0] != pos[0])
@@ -32,11 +33,7 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
         vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
 
         // make cursor always visible after a reset
-        v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];
-        v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
-
-        // restore the default palette
-        // color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
+        vterm_cursor_show(vterm, VTERM_BUFFER_STD);
 
         // reset the parser
         pos = RXVT_RS1;
@@ -52,8 +49,6 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 int
 interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
 {
-    vterm_desc_t    *v_desc = NULL;
-
     if(vterm == NULL) return -1;
 
     // safety check
@@ -69,12 +64,8 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
     // reset to standard buffer (and add other stuff if ncessary)
     vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
 
-    // restore the default palette
-    // color_cache_load_palette(vterm->color_cache, PALETTE_SAVED);
-
     // make cursor always visible after a reset
-    v_desc = &vterm->vterm_desc[VTERM_BUFFER_STD];
-    v_desc->buffer_state &= ~STATE_CURSOR_INVIS;
+    vterm_cursor_show(vterm, VTERM_BUFFER_STD);
 
     return 0;
 }

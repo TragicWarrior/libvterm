@@ -41,6 +41,10 @@
 #define STATE_REPLACE_MODE      (1UL << 12)
 #define STATE_NO_WRAP           (1UL << 13)
 #define STATE_AUTOMATIC_LF      (1UL << 14)     //  DEC SM "20"
+#define STATE_ORIGIN_MODE       (1UL << 15)     /*
+                                                    cursor home is relative
+                                                    to the scroll region
+                                                */
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)

@@ -6,6 +6,7 @@
 
 #include "vterm.h"
 #include "vterm_private.h"
+#include "vterm_cursor.h"
 #include "vterm_buffer.h"
 
 static vterm_cell_t** _vterm_buffer_alloc_raw(int rows, int cols);
@@ -199,6 +200,8 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
 
                 vterm_buffer_dealloc(vterm, curr_idx);
             }
+
+            vterm_cursor_show(vterm, VTERM_BUFFER_STD);
         }
     }
 

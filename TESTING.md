@@ -36,7 +36,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - tig
 5 - iptraf-ng
 5 - aaxine
-1 - cacaxine
+2 - cacaxine
 4 - ponysay
 5 - cacafire
 5 - cacademo
@@ -127,3 +127,16 @@ When running in "linux" terminal emulation mode, the version of mc which
 ships with Ubuntu 18.04 LTS buffers keystrokes when mouse mode is enabled.
 Upgrading to a newer version of mc or staring in no mouse mode (-d) will
 alleviate the problem.
+
+
+### cacaxine ###
+
+Notes:
+
+This is a notoriously buggy player.  It often spews out characters that an
+emulator can mistake for legitimate escape sequences.  For this reason
+it makes for a brutal test on the parsing engine.  As of 2019-08-08,
+playback will cause libvte based emulators (xfce terminal, gnome terminal)
+to crash because of CSI SU sequences which are out of bounds.  A safety
+check in libvterm prevents it.  Both xterm and the  KDE konsole emulator
+seems to be resistant to the bug.

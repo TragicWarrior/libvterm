@@ -27,6 +27,36 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
+        /*
+            DECCOLM
+
+            restore to 80 column mode.  it also erases the screen
+            which is all we're going to do.
+        */
+        if(param[i] == 3)
+        {
+            vterm_erase(vterm, idx);
+            v_desc->ccol = 0;
+            v_desc->crow = 0;
+            continue;
+        }
+
+        /*
+            DECOM
+
+            set origin mode.  this means that cursor home position is
+            relative to the scrolling region.  it also cause the cursor
+            to move to the effective home position.
+
+            we don't support this yet.
+        */
+        if(param[i] == 6)
+        {
+            v_desc->buffer_state &= ~STATE_ORIGIN_MODE;
+            vterm_cursor_move_home(vterm);
+            continue;
+        }
+
         // disable auto-wrap mode
         if(param[i] == 7)
         {
@@ -42,7 +72,11 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
 
 
         /* civis is actually the "normal" vibility for rxvt   */
-        if(param[i] == 25) v_desc->buffer_state |= STATE_CURSOR_INVIS;
+        if(param[i] == 25)
+        {
+            vterm_cursor_hide(vterm, idx);
+            continue;
+        }
 
         // restore standard buffer
         // CSI hanlder:  ESC [ ? 47 l

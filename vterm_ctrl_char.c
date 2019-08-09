@@ -4,13 +4,13 @@
 #include "vterm_private.h"
 #include "vterm_buffer.h"
 #include "vterm_ctrl_char.h"
+#include "vterm_cursor.h"
 #include "vterm_escape.h"
 
 void
 vterm_interpret_ctrl_char(vterm_t *vterm, char c)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             tab_sz;
     int             idx;
 
     // set vterm desc buffer selector
@@ -36,15 +36,14 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // backspace
         case '\b':
         {
-            if(v_desc->ccol > 0) v_desc->ccol--;
+            vterm_cursor_move_backward(vterm);
             break;
         }
 
         // tab
         case '\t':
         {
-            tab_sz = 8 - (v_desc->ccol % 8);
-            v_desc->ccol += tab_sz;
+            vterm_cursor_move_tab(vterm);
             break;
         }
 

@@ -71,7 +71,7 @@ vterm_interpret_escapes(vterm_t *vterm)
                             {
                                 [0] = &&interim_char_none,
                                 [']'] = &&interim_OSC,
-                                ['['] = &&interim_lbracket,
+                                ['['] = &&interim_CSI,
                                 [')'] = &&interim_rparth,
                                 ['('] = &&interim_lparth,
                                 ['P'] = &&interim_char_P,
@@ -86,6 +86,16 @@ vterm_interpret_escapes(vterm_t *vterm)
 
     // too early to do anything
     if(!firstchar) return;
+
+    /*
+        this should never happen yet it does (cacaxine).  in this situation
+        we'll just deactivate the escape parser.
+    */
+    if(vterm->esbuf_len > 1 && *lastchar == '\033')
+    {
+        vterm_escape_cancel(vterm);
+        return;
+    }
 
     retval = vterm_interpret_escapes_simple(vterm);
     if(retval > 0) return;
@@ -111,7 +121,7 @@ vterm_interpret_escapes(vterm_t *vterm)
         goto interim_run;
 
     // we have a complete csi escape sequence: interpret it
-    interim_lbracket:
+    interim_CSI:
         if(validate_csi_escape_suffix(lastchar))
         {
             vterm->esc_handler = vterm_interpret_csi;

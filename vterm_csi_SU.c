@@ -37,6 +37,10 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
         if(param[0] > 0) n = param[0];
     }
 
+    // safety checks
+    if(n > v_desc->rows) return;
+    if(n < 1) return;
+
     top_row = v_desc->scroll_min;
     bottom_row = v_desc->scroll_max - (n - 1);
     stride = sizeof(vterm_cell_t) * v_desc->cols;

@@ -505,7 +505,7 @@ void                vterm_free_mapped_colors(vterm_t *vterm);
         vterm           handle to a vterm object
         idx             index of the buffer or -1 for current
 */
-void            vterm_erase(vterm_t *vterm, int idx);
+void                vterm_erase(vterm_t *vterm, int idx);
 
 /*
     erase the specified row of the terminal.
@@ -518,7 +518,7 @@ void            vterm_erase(vterm_t *vterm, int idx);
                         also have its color attributes reset to the default
                         foreground and background colors.
 */
-void            vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
+void                vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
 
 /*
     erase the terminal beginning at a certain row and toward the bottom
@@ -529,7 +529,7 @@ void            vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
         start_row       zero-based index of the row and subsequent rows below
                         to erase.
 */
-void            vterm_erase_rows(vterm_t *vterm, int start_row);
+void                vterm_erase_rows(vterm_t *vterm, int start_row);
 
 /*
     erase the specified column of the terminal.
@@ -539,7 +539,7 @@ void            vterm_erase_rows(vterm_t *vterm, int start_row);
         col             zero-based index of the column to delete.  specifying
                         a value of -1 indicates current column.
 */
-void            vterm_erase_col(vterm_t *vterm, int col);
+void                vterm_erase_col(vterm_t *vterm, int col);
 
 /*
     erase the terminal at a specific column and toward the right margin.
@@ -549,7 +549,7 @@ void            vterm_erase_col(vterm_t *vterm, int col);
         start_col       zero-based index of the column and subsequent columns
                         to the right to erase.
 */
-void            vterm_erase_cols(vterm_t *vterm, int start_col);
+void                vterm_erase_cols(vterm_t *vterm, int start_col);
 
 /*
     cause the terminal to be scrolled up by one row and placing an empty
@@ -561,7 +561,7 @@ void            vterm_erase_cols(vterm_t *vterm, int start_col);
                         should have its color attributes reset to the default
                         foreground and background colors.
 */
-void            vterm_scroll_up(vterm_t *vterm, bool reset_colors);
+void                vterm_scroll_up(vterm_t *vterm, bool reset_colors);
 
 /*
     cause the termianl to be scrolled down by one row and placing an
@@ -573,7 +573,7 @@ void            vterm_scroll_up(vterm_t *vterm, bool reset_colors);
                         should have its color attributes reset to the default
                         foreground and background colors.
 */
-void            vterm_scroll_down(vterm_t *vterm, bool reset_colors);
+void                vterm_scroll_down(vterm_t *vterm, bool reset_colors);
 
 /*
     this is a convenience macro to keep original behavior intact for
@@ -585,8 +585,8 @@ void            vterm_scroll_down(vterm_t *vterm, bool reset_colors);
         width           new width of terminal to resize to
         height          new height of terminal to resize to
 */
-#define         vterm_resize(vterm, width, height)  \
-                    vterm_resize_full(vterm, width, height, 0, 0, 1, 1)
+#define             vterm_resize(vterm, width, height)  \
+                        vterm_resize_full(vterm, width, height, 0, 0, 1, 1)
 
 /*
     resize the terminal to a specific size.  when shrinking the terminal,
@@ -604,10 +604,10 @@ void            vterm_scroll_down(vterm_t *vterm, bool reset_colors);
         grip_right      unused
         grip_bottom     unused
 */
-void            vterm_resize_full(vterm_t *vterm,
-                    uint16_t width, uint16_t height,
-                    int grip_top, int grip_left,
-                    int grip_right, int grip_bottom);
+void                vterm_resize_full(vterm_t *vterm,
+                        uint16_t width, uint16_t height,
+                        int grip_top, int grip_left,
+                        int grip_right, int grip_bottom);
 
 /*
     pushes new data into the interpreter.  if a WINDOW has been
@@ -621,7 +621,7 @@ void            vterm_resize_full(vterm_t *vterm,
         len             the length of the data being pushed into the
                         intepreter.
 */
-void            vterm_render(vterm_t *vterm, const char *data, int len);
+void                vterm_render(vterm_t *vterm, const char *data, int len);
 
 /*
     fetches the width and height of the current terminal dimentions.
@@ -631,7 +631,7 @@ void            vterm_render(vterm_t *vterm, const char *data, int len);
         width           a pointer to an integer where the width will be stored
         height          a pointer to an integer where the height will be stored
 */
-void            vterm_get_size(vterm_t *vterm, int *width, int *height);
+void                vterm_get_size(vterm_t *vterm, int *width, int *height);
 
 /*
     returns a copy of the active buffer screen matrix.
@@ -642,7 +642,7 @@ void            vterm_get_size(vterm_t *vterm, int *width, int *height);
         cols            integer pointer indicating the column count of the matrix
 
 */
-vterm_cell_t**  vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols);
+vterm_cell_t**      vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols);
 
 #endif
 
