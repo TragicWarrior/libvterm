@@ -51,9 +51,9 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     }
 
     top_row = v_desc->scroll_max - (n - 1);
-    bottom_row = v_desc->scroll_max;
+    bottom_row = v_desc->scroll_max + 1;
 
-    for(r = top_row; r < bottom_row + 1; r++)
+    for(r = top_row; r < bottom_row; r++)
     {
         vcell = &v_desc->cells[r][0];
 
