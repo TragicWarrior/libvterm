@@ -35,7 +35,7 @@ interpret_esc_NEL(vterm_t *vterm)
     // check to see if we're at the bottom already
     if(v_desc->crow >= v_desc->scroll_max)
     {
-        vterm_scroll_upward(vterm, TRUE);
+        vterm_scroll_up(vterm, TRUE);
         return;
     }
 
