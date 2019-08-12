@@ -561,7 +561,7 @@ void                vterm_erase_cols(vterm_t *vterm, int start_col);
                         should have its color attributes reset to the default
                         foreground and background colors.
 */
-void                vterm_scroll_up(vterm_t *vterm, bool reset_colors);
+void                vterm_scroll_upward(vterm_t *vterm, bool reset_colors);
 
 /*
     cause the termianl to be scrolled down by one row and placing an
@@ -573,7 +573,7 @@ void                vterm_scroll_up(vterm_t *vterm, bool reset_colors);
                         should have its color attributes reset to the default
                         foreground and background colors.
 */
-void                vterm_scroll_down(vterm_t *vterm, bool reset_colors);
+void                vterm_scroll_downward(vterm_t *vterm, bool reset_colors);
 
 /*
     this is a convenience macro to keep original behavior intact for

@@ -149,7 +149,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 
         if((v_desc->buffer_state & STATE_NO_WRAP) == FALSE)
         {
-            vterm_scroll_down(vterm, FALSE);
+            vterm_scroll_upward(vterm, FALSE);
         }
     }
 

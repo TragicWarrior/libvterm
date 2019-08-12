@@ -29,14 +29,10 @@ interpret_esc_RI(vterm_t *vterm)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    // check to see if we're at the bottom already
+    // check to see if we're at the top already
     if(v_desc->crow <= v_desc->scroll_min)
     {
-        /*
-            scroll up (which pushes the screen down which is what the VT100
-            guide means when it says "scroll down").
-        */
-        vterm_scroll_up(vterm, FALSE);
+        vterm_scroll_downward(vterm, FALSE);
         return;
     }
 

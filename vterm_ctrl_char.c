@@ -29,8 +29,8 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            // vterm_scroll_down(vterm, FALSE);
-            vterm_scroll_down(vterm, TRUE);
+            // vterm_scroll_upward(vterm, FALSE);
+            vterm_scroll_upward(vterm, TRUE);
             break;
         }
 
@@ -51,7 +51,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // vertical tab (new line, col 0)
         case '\x0B':
         {
-            vterm_scroll_down(vterm, FALSE);
+            vterm_scroll_upward(vterm, FALSE);
             if(v_desc->buffer_state & STATE_AUTOMATIC_LF)
             {
                 v_desc->ccol = 0;
