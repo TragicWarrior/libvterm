@@ -29,7 +29,8 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            vterm_scroll_down(vterm, FALSE);
+            // vterm_scroll_down(vterm, FALSE);
+            vterm_scroll_down(vterm, TRUE);
             break;
         }
 
