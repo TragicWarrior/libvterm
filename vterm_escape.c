@@ -93,8 +93,11 @@ vterm_interpret_escapes(vterm_t *vterm)
     */
     if(vterm->esbuf_len > 1 && *lastchar == '\033')
     {
-        vterm_escape_cancel(vterm);
-        return;
+        if(!(vterm->internal_state & STATE_OSC_MODE))
+        {
+                vterm_escape_cancel(vterm);
+                return;
+        }
     }
 
     retval = vterm_interpret_escapes_simple(vterm);
