@@ -29,8 +29,16 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            // vterm_scroll_up(vterm, FALSE);
-            vterm_scroll_up(vterm, TRUE);
+            if(idx == VTERM_BUFFER_ALT)
+            {
+                // this behavior ssems to work better on ALT buffer
+                vterm_scroll_up(vterm, FALSE);
+            }
+            else
+            {
+                // this behavoir seems to work better on STD buffer
+                vterm_scroll_up(vterm, TRUE);
+            }
             break;
         }
 
