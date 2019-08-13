@@ -37,6 +37,10 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
         if(param[0] > 0) n = param[0];
     }
 
+    // safety checks
+    if(n > v_desc->rows) return;
+    if(n < 1) return;
+
     top_row = v_desc->scroll_min;
     bottom_row = v_desc->scroll_max - (n - 1);
     stride = sizeof(vterm_cell_t) * v_desc->cols;
@@ -47,9 +51,9 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     }
 
     top_row = v_desc->scroll_max - (n - 1);
-    bottom_row = v_desc->scroll_max;
+    bottom_row = v_desc->scroll_max + 1;
 
-    for(r = top_row; r < bottom_row + 1; r++)
+    for(r = top_row; r < bottom_row; r++)
     {
         vcell = &v_desc->cells[r][0];
 
@@ -59,7 +63,7 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
             // VCELL_SET_CHAR((*vcell), 48 + n);
             VCELL_SET_ATTR((*vcell), v_desc->curattr);
             VCELL_SET_COLORS((*vcell), v_desc);
-            // VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
+            //VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
             vcell++;
         }

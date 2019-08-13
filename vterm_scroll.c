@@ -12,7 +12,7 @@
 #include "vterm_buffer.h"
 
 void
-vterm_scroll_down(vterm_t *vterm, bool reset_colors)
+vterm_scroll_up(vterm_t *vterm, bool reset_colors)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -62,7 +62,7 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
 }
 
 void
-vterm_scroll_up(vterm_t *vterm, bool reset_colors)
+vterm_scroll_down(vterm_t *vterm, bool reset_colors)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;

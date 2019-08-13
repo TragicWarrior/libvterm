@@ -41,6 +41,9 @@ interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
     if(newbottom < 0) newbottom = 0;
     if(newbottom >= v_desc->rows) newbottom = v_desc->rows - 1;
 
+    // not valid
+    if(newtop > newbottom) return;
+
     /* check for range validity */
     if(newtop > newbottom) return;
     v_desc->scroll_min = newtop;

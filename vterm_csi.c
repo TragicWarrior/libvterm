@@ -48,6 +48,7 @@ vterm_interpret_csi(vterm_t *vterm)
                         ['u'] = &&csi_char_u,
                         ['^'] = &&csi_SD,
                         ['T'] = &&csi_SD,
+                        ['t'] = &&csi_EWMH,
                         ['Z'] = &&csi_char_Z,
                         ['S'] = &&csi_SU,
                     };
@@ -205,7 +206,14 @@ vterm_interpret_csi(vterm_t *vterm)
         interpret_csi_SU(vterm, csiparam, param_count);
         return 0;
 
+    csi_EWMH:
+        // Extended Window Manager Hints
+        // currently unsupported
+        return 0;
+
     csi_char_unknown:
+
+    // endwin(); exit(0);
 
 #ifdef _DEBUG
     default:

@@ -4,13 +4,13 @@
 #include "vterm_private.h"
 #include "vterm_buffer.h"
 #include "vterm_ctrl_char.h"
+#include "vterm_cursor.h"
 #include "vterm_escape.h"
 
 void
 vterm_interpret_ctrl_char(vterm_t *vterm, char c)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             tab_sz;
     int             idx;
 
     // set vterm desc buffer selector
@@ -29,29 +29,37 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            vterm_scroll_down(vterm, FALSE);
+            if(idx == VTERM_BUFFER_ALT)
+            {
+                // this behavior ssems to work better on ALT buffer
+                vterm_scroll_up(vterm, FALSE);
+            }
+            else
+            {
+                // this behavoir seems to work better on STD buffer
+                vterm_scroll_up(vterm, TRUE);
+            }
             break;
         }
 
         // backspace
         case '\b':
         {
-            if(v_desc->ccol > 0) v_desc->ccol--;
+            vterm_cursor_move_backward(vterm);
             break;
         }
 
         // tab
         case '\t':
         {
-            tab_sz = 8 - (v_desc->ccol % 8);
-            v_desc->ccol += tab_sz;
+            vterm_cursor_move_tab(vterm);
             break;
         }
 
         // vertical tab (new line, col 0)
         case '\x0B':
         {
-            vterm_scroll_down(vterm, FALSE);
+            vterm_scroll_up(vterm, FALSE);
             if(v_desc->buffer_state & STATE_AUTOMATIC_LF)
             {
                 v_desc->ccol = 0;

@@ -35,11 +35,7 @@ interpret_esc_NEL(vterm_t *vterm)
     // check to see if we're at the bottom already
     if(v_desc->crow >= v_desc->scroll_max)
     {
-        /*
-            scroll down (which pushes the screen up which is what the VT100
-            guide means when it says "scroll up").
-        */
-        vterm_scroll_down(vterm, TRUE);
+        vterm_scroll_up(vterm, TRUE);
         return;
     }
 
