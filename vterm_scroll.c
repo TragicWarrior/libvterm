@@ -26,6 +26,10 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
 
     v_desc->crow++;
 
+    /*
+        we just moved the cursor down a row.  if we haven't hit the bottom
+        edge yet, then we're done.
+    */
     if(v_desc->crow <= v_desc->scroll_max) return;
 
     /*
@@ -72,8 +76,13 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
+    // move the cursor up
     v_desc->crow--;
 
+    /*
+        we just moved the cursor up a row.  if we haven't hit the top
+        edge yet, then we're done.
+    */
     if(v_desc->crow >= v_desc->scroll_min) return;
 
     /*

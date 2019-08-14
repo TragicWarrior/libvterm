@@ -95,12 +95,14 @@ vterm_interpret_escapes(vterm_t *vterm)
     {
         if(!(vterm->internal_state & STATE_OSC_MODE))
         {
-                vterm_escape_cancel(vterm);
-                return;
+            vterm_escape_cancel(vterm);
+            return;
         }
     }
 
-    retval = vterm_interpret_escapes_simple(vterm);
+    // if(firstchar == 'M') { endwin(); exit(0); }
+
+    retval = vterm_interpret_escapes_simple(vterm, firstchar);
     if(retval > 0) return;
 
     SWITCH(interim_table, (unsigned int)firstchar, 0);
@@ -125,6 +127,7 @@ vterm_interpret_escapes(vterm_t *vterm)
 
     // we have a complete csi escape sequence: interpret it
     interim_CSI:
+
         if(validate_csi_escape_suffix(lastchar))
         {
             vterm->esc_handler = vterm_interpret_csi;

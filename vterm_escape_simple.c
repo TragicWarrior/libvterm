@@ -6,15 +6,13 @@
 // returns number of bytes processed (should always be 0 or 1)
 
 int
-vterm_interpret_escapes_simple(vterm_t *vterm)
+vterm_interpret_escapes_simple(vterm_t *vterm, char verb)
 {
-    char            firstchar;
-
     static void     *simple_table[128] =
                         {
                             [0] = &&simple_char_default,
-                            ['E'] = &&simple_char_E,
-                            ['M'] = &&simple_char_M,
+                            ['E'] = &&esc_NEL,
+                            ['M'] = &&esc_RI,
                             ['A'] = &&simple_char_A,
                             ['B'] = &&simple_char_B,
                             ['C'] = &&simple_char_C,
@@ -24,18 +22,17 @@ vterm_interpret_escapes_simple(vterm_t *vterm)
                             ['c'] = &&simple_char_c,
                         };
 
-    firstchar = vterm->esbuf[0];
 
-    SWITCH(simple_table, (unsigned int)firstchar, 0);
+    SWITCH(simple_table, (unsigned int)verb, 0);
 
-    // interpert ESC-M a line-feed (NEL)
-    simple_char_E:
+    // interpert ESC-H a line-feed (NEL)
+    esc_NEL:
         interpret_esc_NEL(vterm);
         vterm_escape_cancel(vterm);
         return 1;
 
     // interpret ESC-M as reverse line-feed (RI)
-    simple_char_M:
+    esc_RI:
         interpret_esc_RI(vterm);
         vterm_escape_cancel(vterm);
         return 1;
