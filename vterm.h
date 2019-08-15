@@ -63,7 +63,7 @@ typedef chtype          attr_t;
 #endif
 
 #ifdef __FreeBSD__
-#include <ncurses.h>
+#include <ncurses/ncurses.h>
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)

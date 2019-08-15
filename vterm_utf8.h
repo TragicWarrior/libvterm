@@ -8,7 +8,7 @@
 #endif
 
 #ifdef __FreeBSD__
-#include <ncurses.h>
+#include <ncurses/ncurses.h>
 #endif
 
 #endif

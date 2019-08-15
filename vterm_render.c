@@ -89,7 +89,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             if(vterm->esbuf_len >= ESEQ_BUF_SIZE)
             {
                 vterm_escape_cancel(vterm);
-                return;
+                continue;
             }
 
             /*
@@ -101,6 +101,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             if(IS_CTRL_CHAR(*data) && !IS_OSC_MODE(vterm))
             {
                 vterm_interpret_ctrl_char(vterm, *data);
+                continue;
             }
             else
             {
@@ -113,11 +114,13 @@ vterm_render(vterm_t *vterm, const char *data, int len)
 
                 // if we are in escape mode (initiated by 0x1B) go here...
                 vterm_interpret_escapes(vterm);
+                continue;
             }
         }
         else
         {
             vterm_put_char(vterm, *data, NULL);
+            continue;
         }
     }
 

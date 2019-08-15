@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10.2)
 
 # uncomment this to force build with gcc instead of clang
 #set(CMAKE_C_COMPILER "gcc")
-#set(CMAKE_CXX_COMPILER "g++")
 
 #set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
 
@@ -45,9 +44,14 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     set(CMAKE_PREFIX_PATH /usr/local/opt/ncurses)
     include_directories(/usr/local/opt/ncurses/include)
 
-    #set(CMAKE_PREFIX_PATH /usr/local/alt/)
-
 endif() 
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+
+    set(CMAKE_PREFIX_PATH /usr/local/lib)
+    include_directories(/usr/local/include)
+
+endif()
 
 find_package(Curses)
 

@@ -200,15 +200,13 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     if(keycode == KEY_BACKSPACE)
     {
         tcgetattr(vterm->pty_fd, &vterm->term_state);
-
-        if(vterm->term_state.c_cc[VERASE] != '0')
+        if(vterm->term_state.c_cc[VERASE] != '\b')
             sprintf((char *)buf, "%c", vterm->term_state.c_cc[VERASE]);
         else
             sprintf((char *)buf, "\b");
 
         bytes = strlen((char *)buf);
     }
-
 
     if(keycode == KEY_MOUSE)
     {

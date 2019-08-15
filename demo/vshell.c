@@ -1,5 +1,4 @@
 
-#include <ncurses.h>
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
@@ -7,6 +6,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#ifdef __FreeBSD__
+#include <ncurses/ncurses.h>
+#else
+#include <ncurses.h>
+#endif
 
 #include "ctimer.h"
 #include "../vterm.h"

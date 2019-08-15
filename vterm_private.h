@@ -17,7 +17,7 @@
 #endif
 
 #ifdef __FREEBSD__
-#include <ncurses/cursesw.h>
+#include <ncurses/ncurses.h>
 #endif
 
 #endif
