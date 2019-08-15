@@ -1,3 +1,10 @@
+6.16
+
+* [Bryan Christ] Fixed a scrolling bug introduced in 6.15 which was easily
+  surfaced on FreeBSD.
+* [Bryan Christ] Ensure that library and binaries build against ncursesw
+  which is installed from ports.
+
 6.15
 
 * [Bryan Christ] More compatibility fixes based on vttest conformance
