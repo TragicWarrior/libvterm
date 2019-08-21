@@ -86,7 +86,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
     // allocate a the buffer (a matrix of cells)
-    vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
+    vterm_buffer_alloc(vterm, VTERM_BUF_STANDARD, width, height);
 
     // initializes the color cache or updates the ref count
     color_cache_init();
@@ -104,7 +104,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     }
 
     // initialize all cells with defaults
-    vterm_erase(vterm, VTERM_BUFFER_STD);
+    vterm_erase(vterm, VTERM_BUF_STANDARD);
 
     if(flags & VTERM_FLAG_DUMP)
     {

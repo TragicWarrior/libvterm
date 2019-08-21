@@ -85,9 +85,9 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         if(param[i] == 47)
         {
             // check to see if we're already using the ALT buffer
-            if(idx == VTERM_BUFFER_ALT) continue;
+            if(idx == VTERM_BUF_ALTERNATE) continue;
 
-            vterm_buffer_set_active(vterm, VTERM_BUFFER_ALT);
+            vterm_buffer_set_active(vterm, VTERM_BUF_ALTERNATE);
             continue;
         }
 
@@ -161,8 +161,8 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             vterm_cursor_save(vterm);
 
             // check to see if we're already using the ALT buffer
-            if(idx != VTERM_BUFFER_ALT)
-                vterm_buffer_set_active(vterm, VTERM_BUFFER_ALT);
+            if(idx != VTERM_BUF_ALTERNATE)
+                vterm_buffer_set_active(vterm, VTERM_BUF_ALTERNATE);
 
             continue;
         }

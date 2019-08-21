@@ -26,7 +26,7 @@ vterm_cursor_move_home(vterm_t *vterm)
     return;
 }
 
-void
+inline void
 vterm_cursor_move_backward(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
@@ -42,14 +42,19 @@ vterm_cursor_move_backward(vterm_t *vterm)
     else
         min_row = 0;
 
-    if(v_desc->ccol > 0) v_desc->ccol--;
-    else
+    // cursor is at the left margin
+    if(v_desc->ccol > 0)
     {
-        if(v_desc->crow > min_row)
-        {
-            v_desc->ccol = v_desc->cols - 1;
-            v_desc->crow--;
-        }
+        v_desc->ccol--;
+        return;
+    }
+
+    // endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
+
+    if(v_desc->crow > min_row)
+    {
+        v_desc->ccol = v_desc->cols - 1;
+        v_desc->crow--;
     }
 
     return;
@@ -99,7 +104,7 @@ vterm_cursor_show(vterm_t *vterm, int idx)
     vterm_desc_t    *v_desc = NULL;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     v_desc = &vterm->vterm_desc[idx];
 
@@ -114,7 +119,7 @@ vterm_cursor_hide(vterm_t *vterm, int idx)
     vterm_desc_t    *v_desc = NULL;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     v_desc = &vterm->vterm_desc[idx];
 

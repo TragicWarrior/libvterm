@@ -29,7 +29,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            if(idx == VTERM_BUFFER_ALT)
+            if(idx == VTERM_BUF_ALTERNATE)
             {
                 // this behavior ssems to work better on ALT buffer
                 vterm_scroll_up(vterm, FALSE);
@@ -45,6 +45,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // backspace
         case '\b':
         {
+            // endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
             vterm_cursor_move_backward(vterm);
             break;
         }

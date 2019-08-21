@@ -48,7 +48,7 @@ mouse_driver_init(vterm_t *vterm)
     mouse_state->ref_count++;
 
     if(vterm->mouse_config == NULL)
-        vterm->mouse_config = calloc(1, sizeof(mouse_config_t));
+        vterm->mouse_config = calloc(1, sizeof(struct _mouse_config_s));
 
     return;
 }
@@ -156,6 +156,8 @@ void
 mouse_driver_free(vterm_t *vterm)
 {
     extern mouse_state_t    *mouse_state;
+
+    if(vterm == NULL) return;
 
     // release the mouse config
     if(vterm->mouse_config != NULL)
