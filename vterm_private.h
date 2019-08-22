@@ -94,7 +94,7 @@ struct _vterm_desc_s
     vterm_cell_t    **cells;
     vterm_cell_t    last_cell;                  // contents of last cell write
 
-    unsigned int    buffer_state;               // internal state control
+    unsigned long   buffer_state;               // internal state control
 
     attr_t          curattr;                    // current attribute set
     int             colors;                     // current color pair
@@ -169,9 +169,9 @@ struct _vterm_s
 
     pid_t           child_pid;                  //  pid of the child process
     uint32_t        flags;                      //  user options
-    unsigned int    internal_state;             //  internal state control
+    unsigned long   internal_state;             //  internal state control
 
-    uint16_t        mouse;                      //  mouse mode
+    uint16_t        mouse_mode;                 //  mouse mode
     mouse_config_t  *mouse_config;              /*
                                                     saves and restores the
                                                     state of the mouse

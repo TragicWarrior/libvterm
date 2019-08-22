@@ -26,7 +26,7 @@ vterm_cursor_move_home(vterm_t *vterm)
     return;
 }
 
-inline void
+void
 vterm_cursor_move_backward(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
@@ -36,6 +36,9 @@ vterm_cursor_move_backward(vterm_t *vterm)
     // set vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
+
+    // printf("%ju\n\r", vterm);
+    // endwin(); printf("%d %ju\n\r", v_desc->ccol, v_desc); fflush(stdout); exit(0);
 
     if(v_desc->buffer_state & STATE_ORIGIN_MODE)
         min_row = v_desc->scroll_min;

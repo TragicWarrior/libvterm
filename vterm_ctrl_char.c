@@ -46,6 +46,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         case '\b':
         {
             // endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
+            // printf("%d %ju\n\r", v_desc->ccol, v_desc);
             vterm_cursor_move_backward(vterm);
             break;
         }

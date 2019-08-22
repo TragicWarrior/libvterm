@@ -100,14 +100,14 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             mouse_driver_init(vterm);
             mouse_driver_start(vterm);
 
-            vterm->mouse |= VTERM_MOUSE_VT200;
+            vterm->mouse_mode |= VTERM_MOUSE_VT200;
             vterm->mouse_driver = mouse_driver_default;
             continue;
         }
 
         if(param[i] == 1001)
         {
-            vterm->mouse |= VTERM_MOUSE_HIGHLIGHT;
+            vterm->mouse_mode |= VTERM_MOUSE_HIGHLIGHT;
             continue;
         }
 
@@ -120,7 +120,7 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             mouse_driver_init(vterm);
             mouse_driver_start(vterm);
 
-            vterm->mouse |= VTERM_MOUSE_SGR;
+            vterm->mouse_mode |= VTERM_MOUSE_SGR;
             vterm->mouse_driver = mouse_driver_default;
             continue;
         }
@@ -132,7 +132,7 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1007)
         {
-            vterm->mouse |= VTERM_MOUSE_ALTSCROLL;
+            vterm->mouse_mode |= VTERM_MOUSE_ALTSCROLL;
             continue;
         }
 

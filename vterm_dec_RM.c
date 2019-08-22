@@ -103,7 +103,7 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1007)
         {
-            vterm->mouse &= ~VTERM_MOUSE_ALTSCROLL;
+            vterm->mouse_mode &= ~VTERM_MOUSE_ALTSCROLL;
             continue;
         }
 

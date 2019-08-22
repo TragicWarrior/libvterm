@@ -215,11 +215,13 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
             bytes = vterm->mouse_driver(vterm, buf);
 
             /*
+                if bytes == 0 then
                 there was a mouse event but it was unhandled for some
                 reason so we need to move along.
             */
-            if(bytes == 0) return 0;
         }
+
+        if(bytes == 0) return 0;
     }
 
     // if bytes is > 0 we've arleady found something to write
