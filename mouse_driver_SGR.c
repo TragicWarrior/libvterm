@@ -61,7 +61,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON4_PRESSED)
     {
-        if(vterm->mouse & VTERM_MOUSE_ALTSCROLL)
+        if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\eOA");
         else
             sprintf((char *)buf, "\e[<%d;%d;%dM", button + 64 + 4, x, y);
@@ -73,7 +73,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
-        if(vterm->mouse & VTERM_MOUSE_ALTSCROLL)
+        if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\eOB");
         else
             sprintf((char *)buf, "\e[<%d;%d;%dM", button + 64 + 5, x, y);
