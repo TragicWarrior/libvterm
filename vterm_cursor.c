@@ -1,3 +1,4 @@
+
 #include "vterm_private.h"
 #include "vterm_cursor.h"
 #include "vterm_buffer.h"
@@ -29,6 +30,8 @@ vterm_cursor_move_home(vterm_t *vterm)
 void
 vterm_cursor_move_backward(vterm_t *vterm)
 {
+    struct rllimit  *rlimit;
+
     vterm_desc_t    *v_desc = NULL;
     int             min_row;
     int             idx;
