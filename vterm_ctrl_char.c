@@ -8,16 +8,19 @@
 #include "vterm_escape.h"
 
 void
-vterm_interpret_ctrl_char(vterm_t *vterm, char c)
+vterm_interpret_ctrl_char(vterm_t *vterm, const char *data)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
+    char            verb;
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    switch(c)
+    verb = data[0];
+
+    switch(verb)
     {
         // carriage return
         case '\r':
@@ -45,7 +48,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // backspace
         case '\b':
         {
-            // endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
+            //endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
             // printf("%d %ju\n\r", v_desc->ccol, v_desc);
             vterm_cursor_move_backward(vterm);
             break;

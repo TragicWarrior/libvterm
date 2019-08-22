@@ -132,41 +132,33 @@ struct _vterm_s
                                                     supplied by the Xterm OSC
                                                     code sequences.
                                                 */
-
-
     char            esbuf[ESEQ_BUF_SIZE];       /*
                                                     0-terminated string. Does
                                                     NOT include the initial
                                                     escape (\x1B) character.
                                                 */
-
     int             esbuf_len;                  /*
                                                     length of buffer. The
                                                     following property is
                                                     always kept:
                                                     esbuf[esbuf_len] == '\0'
                                                 */
-
+    int             utf8_buf_len;               //  number of utf8 bytes
     char            utf8_buf[UTF8_BUF_SIZE];    /*
                                                     0-terminated string that
                                                     is the UTF-8 coding.
                                                 */
 
+    ssize_t         reply_buf_sz;               //  size of reply
     char            reply_buf[32];              /*
                                                     some CSI sequences
                                                     expect a reply.  here's
                                                     where they go.
                                                 */
-
-    ssize_t         reply_buf_sz;               //  size of reply
-
-    int             utf8_buf_len;               //  number of utf8 bytes
-
     int             pty_fd;                     /*
                                                     file descriptor for the pty
                                                     attached to this terminal.
                                                 */
-
     pid_t           child_pid;                  //  pid of the child process
     uint32_t        flags;                      //  user options
     unsigned long   internal_state;             //  internal state control
@@ -178,7 +170,6 @@ struct _vterm_s
                                                     if we are sharing it with
                                                     others.
                                                 */
-
     char            **keymap_str;               //  points to keymap key
     uint32_t        *keymap_val;                //  points to keymap ke value
     int             keymap_size;                //  size of the keymap
@@ -187,7 +178,6 @@ struct _vterm_s
                                                     stores data returned from
                                                     tcgetattr()
                                                 */
-
     char            *exec_path;                 //  optional binary path to use
     char            **exec_argv;                //  instead of starting shell.
 

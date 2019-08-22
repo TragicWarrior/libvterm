@@ -147,6 +147,9 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     int                     retval = 0;
     int                     i;
 
+    // zero out buf for safe measure
+    memset(buf, 0, sizeof(buf));
+
     // set the default to Xterm handler
     if(vterm->keymap_str == NULL)
     {
@@ -221,6 +224,10 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
             */
         }
 
+        /*
+            don't pass unhandled mouse senquences through.
+            bad things will happen.
+        */
         if(bytes == 0) return 0;
     }
 

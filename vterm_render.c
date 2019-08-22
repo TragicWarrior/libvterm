@@ -41,7 +41,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         {
             if(IS_CTRL_CHAR(*data))
             {
-                vterm_interpret_ctrl_char(vterm, *data);
+                vterm_interpret_ctrl_char(vterm, data);
                 continue;
             }
         }
@@ -100,7 +100,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             */
             if(IS_CTRL_CHAR(*data) && !IS_OSC_MODE(vterm))
             {
-                vterm_interpret_ctrl_char(vterm, *data);
+                vterm_interpret_ctrl_char(vterm, data);
                 continue;
             }
             else
