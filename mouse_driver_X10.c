@@ -35,7 +35,7 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON1_PRESSED)
     {
-        sprintf((char *)buf, "\e[M%c%c%c",
+        sprintf((char *)buf, "\033[M%c%c%c",
             32 + 0x0,
             32 + x,
             32 + y);
@@ -47,7 +47,7 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON1_RELEASED)
     {
-        sprintf((char *)buf, "\e[M%c%c%c",
+        sprintf((char *)buf, "\033[M%c%c%c",
             32 + 0x3,
             32 + x,
             32 + y);
@@ -62,7 +62,7 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON4_PRESSED)
     {
-        sprintf((char *)buf, "\eOA");
+        sprintf((char *)buf, "\033OA");
 
         retval = strlen((char *)buf);
 
@@ -71,7 +71,7 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
-        sprintf((char *)buf, "\eOB");
+        sprintf((char *)buf, "\033OB");
 
         retval = strlen((char *)buf);
 

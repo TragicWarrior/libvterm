@@ -2,6 +2,11 @@
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <wchar.h>
+
+#ifdef __FreeBSD__
+#include <ncurses/ncurses.h>
+#endif
 
 #include "vterm.h"
 #include "vterm_private.h"

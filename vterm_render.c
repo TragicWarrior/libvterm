@@ -1,4 +1,3 @@
-
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -6,6 +5,10 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifdef __FreeBSD__
+#include <ncurses/ncurses.h>
+#endif
 
 #include "vterm.h"
 #include "vterm_private.h"

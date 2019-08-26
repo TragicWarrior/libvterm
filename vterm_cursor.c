@@ -1,7 +1,5 @@
 
-#ifdef __linux__
-#include <ncursesw/curses.h>
-#endif
+#include <wchar.h>
 
 #ifdef __FreeBSD__
 #include <ncurses/ncurses.h>

@@ -7,11 +7,6 @@
 
 #include <sys/types.h>
 
-#include "mouse_driver.h"
-#include "color_cache.h"
-
-#ifndef NOCURSES
-
 #ifdef __linux__
 #include <ncursesw/curses.h>
 #endif
@@ -20,7 +15,8 @@
 #include <ncurses/ncurses.h>
 #endif
 
-#endif
+#include "mouse_driver.h"
+#include "color_cache.h"
 
 #define ESEQ_BUF_SIZE           128             // escape buffer max
 #define UTF8_BUF_SIZE           5               // 4 bytes + 0-terminator
@@ -120,10 +116,10 @@ struct _vterm_s
     vterm_desc_t    vterm_desc[2];              // normal buffer and alt buffer
     int             vterm_desc_idx;             // index of active buffer;
 
-#ifndef NOCURSES
     WINDOW          *window;                    // curses window
+
     vterm_cmap_t    *cmap_head;
-#endif
+
     char            ttyname[96];                // populated with ttyname_r()
 
     char            title[128];                 /*

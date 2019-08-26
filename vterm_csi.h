@@ -13,8 +13,8 @@
     the same termcap operation.  the sequence is codified in terminfo
     database.  this can be inspected with the infocmp tool.
 */
-#define RXVT_RS1    "\e>\e[1;3;4;5;6l\e[?7h\e[m\e[r\e[2J\e[H"
-#define XTERM_RS1   "\ec"
+#define RXVT_RS1    "\033>\033[1;3;4;5;6l\033[?7h\033[m\033[r\033[2J\033[H"
+#define XTERM_RS1   "\033c"
 
 int     vterm_interpret_csi(vterm_t *vterm);
 

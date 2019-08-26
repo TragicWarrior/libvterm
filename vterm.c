@@ -189,7 +189,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 
         if(ttyname_r(master_fd,vterm->ttyname,sizeof(vterm->ttyname) - 1) != 0)
         {
-            snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1,"vterm");
+            snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1, "vterm");
         }
     }
 

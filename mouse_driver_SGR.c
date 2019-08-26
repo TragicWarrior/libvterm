@@ -40,7 +40,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON1_PRESSED)
     {
-        sprintf((char *)buf, "\e[<%d;%d;%dM", 0, x, y);
+        sprintf((char *)buf, "\033[<%d;%d;%dM", 0, x, y);
 
         retval = strlen((char *)buf);
 
@@ -49,7 +49,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON1_RELEASED)
     {
-        sprintf((char *)buf, "\e[<%d;%d;%dm", 0, x, y);
+        sprintf((char *)buf, "\033[<%d;%d;%dm", 0, x, y);
 
         retval = strlen((char *)buf);
 
@@ -62,9 +62,9 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
     if(mouse_event.bstate & BUTTON4_PRESSED)
     {
         if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
-            sprintf((char *)buf, "\eOA");
+            sprintf((char *)buf, "\033OA");
         else
-            sprintf((char *)buf, "\e[<%d;%d;%dM", button + 64 + 4, x, y);
+            sprintf((char *)buf, "\033[<%d;%d;%dM", button + 64 + 4, x, y);
 
         retval = strlen((char *)buf);
 
@@ -74,9 +74,9 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
         if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
-            sprintf((char *)buf, "\eOB");
+            sprintf((char *)buf, "\033OB");
         else
-            sprintf((char *)buf, "\e[<%d;%d;%dM", button + 64 + 5, x, y);
+            sprintf((char *)buf, "\033[<%d;%d;%dM", button + 64 + 5, x, y);
 
         retval = strlen((char *)buf);
 

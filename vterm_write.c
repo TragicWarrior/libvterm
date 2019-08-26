@@ -183,7 +183,8 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     // look in KEYMAP x-macro table for a match
     for(i = 0; i < vterm->keymap_size; i++)
     {
-        if(vterm->keymap_val[i] == (KEY_MAX + 1))
+        // if(vterm->keymap_val[i] == (KEY_MAX + 1))
+        if(vterm->keymap_val[i] == KEY_DYNAMIC)
         {
             vterm->keymap_val[i] = key_defined(vterm->keymap_str[i]);
         }
@@ -200,16 +201,6 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         }
     }
 
-    if(keycode == KEY_BACKSPACE)
-    {
-        tcgetattr(vterm->pty_fd, &vterm->term_state);
-        if(vterm->term_state.c_cc[VERASE] != '\b')
-            sprintf((char *)buf, "%c", vterm->term_state.c_cc[VERASE]);
-        else
-            sprintf((char *)buf, "\b");
-
-        bytes = strlen((char *)buf);
-    }
 
     if(keycode == KEY_MOUSE)
     {
@@ -229,6 +220,26 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
             bad things will happen.
         */
         if(bytes == 0) return 0;
+    }
+
+    if(keycode == KEY_BACKSPACE)
+    {
+        /*
+            freebsd corrupts the heap object when tcgetattr is called.
+            just use '\b' blindly.  it seems to always work.
+        */
+#ifndef __FreeBSD__
+        tcgetattr(vterm->pty_fd, &vterm->term_state);
+
+        if(vterm->term_state.c_cc[VERASE] != '\b')
+            sprintf((char *)buf, "%c", vterm->term_state.c_cc[VERASE]);
+        else
+            sprintf((char *)buf, "\b");
+#else
+        sprintf((char *)buf, "\b");
+#endif
+
+        bytes = strlen((char *)buf);
     }
 
     // if bytes is > 0 we've arleady found something to write

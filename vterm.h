@@ -11,53 +11,6 @@
 
 #include <sys/types.h>
 
-#ifdef NOCURSES
-// short equivalent of the header, without needing the lib.
-typedef unsigned long   chtype;
-typedef unsigned char   bool;
-typedef chtype          attr_t;
-
-#undef TRUE
-#define TRUE            1
-#undef FALSE
-#define FALSE           0
-
-#define COLOR_BLACK     0
-#define COLOR_RED       1
-#define COLOR_GREEN     2
-#define COLOR_YELLOW    3
-#define COLOR_BLUE      4
-#define COLOR_MAGENTA   5
-#define COLOR_CYAN      6
-#define COLOR_WHITE     7
-
-#define COLOR_PAIR(n)  ((n) & 0xff)<<8
-
-#define A_NORMAL        0x00000000
-#define A_REVERSE       0x00040000
-#define A_BLINK         0x00080000
-#define A_BOLD          0x00200000
-#define A_INVIS         0x00800000
-
-#define NCURSES_ACS(x)  (((x)>0&&(x)<0x80)?((x)|0x00400000):0)
-
-#define KEY_UP          259
-#define KEY_DOWN        258
-#define KEY_RIGHT       261
-#define KEY_LEFT        260
-#define KEY_BACKSPACE   263
-#define KEY_IC          331
-#define KEY_DC          330
-#define KEY_HOME        262
-#define KEY_END         360
-#define KEY_PPAGE       339
-#define KEY_NPAGE       338
-#define KEY_SUSPEND     407
-
-#define KEY_F(n)        ((n)>0 && (n)<50)?(n)+264:0
-
-#else
-
 #ifdef __linux__
 #include <ncursesw/curses.h>
 #endif
@@ -70,7 +23,10 @@ typedef chtype          attr_t;
 #include <ncursesw/ncurses.h>
 #endif
 
-#endif
+#undef TRUE
+#define TRUE            1
+#undef FALSE
+#define FALSE           0
 
 #define LIBVTERM_VERSION        "6.16"
 
@@ -108,10 +64,6 @@ typedef chtype          attr_t;
                                                     stream data to a dump file
                                                     for debugging.
                                                 */
-
-
-// #define VCELL_TYPE_SIMPLE       0
-// #define VCELL_TYPE_WIDE         1
 
 /*
     Need this to be public if we want to expose the buffer to callers.
