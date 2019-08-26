@@ -22,7 +22,7 @@ static void
 vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch);
 
 void
-vterm_render(vterm_t *vterm, const char *data, int len)
+vterm_render(vterm_t *vterm, char *data, int len)
 {
     chtype          utf8_char;
     wchar_t         wch[CCHARW_MAX];

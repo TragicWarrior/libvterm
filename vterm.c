@@ -71,6 +71,16 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     char                    *pos = NULL;
     int                     retval;
     int                     fd_flags;
+    // static void             *ds_addr = NULL;
+
+    /*
+    if(ds_addr == NULL)
+    {
+        ds_addr = sbrk(0);
+        ds_addr += 1024;
+        brk(ds_addr);
+    }
+    */
 
     // xterm emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM_256;
@@ -151,7 +161,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         if(child_pid < 0)
         {
             vterm_destroy(vterm);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         if(child_pid == 0)

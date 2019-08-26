@@ -1,4 +1,12 @@
 
+#ifdef __linux__
+#include <ncursesw/curses.h>
+#endif
+
+#ifdef __FreeBSD__
+#include <ncurses/ncurses.h>
+#endif
+
 #include "vterm_private.h"
 #include "vterm_cursor.h"
 #include "vterm_buffer.h"
@@ -30,8 +38,6 @@ vterm_cursor_move_home(vterm_t *vterm)
 void
 vterm_cursor_move_backward(vterm_t *vterm)
 {
-    struct rllimit  *rlimit;
-
     vterm_desc_t    *v_desc = NULL;
     int             min_row;
     int             idx;
@@ -39,9 +45,6 @@ vterm_cursor_move_backward(vterm_t *vterm)
     // set vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
-
-    // printf("%ju\n\r", vterm);
-    // endwin(); printf("%d %ju\n\r", v_desc->ccol, v_desc); fflush(stdout); exit(0);
 
     if(v_desc->buffer_state & STATE_ORIGIN_MODE)
         min_row = v_desc->scroll_min;
@@ -54,8 +57,6 @@ vterm_cursor_move_backward(vterm_t *vterm)
         v_desc->ccol--;
         return;
     }
-
-    // endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
 
     if(v_desc->crow > min_row)
     {

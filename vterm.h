@@ -179,16 +179,16 @@ enum
     VTERM_EVENT_TERM_SCROLLED,
 };
 
-#define VTERM_MASK_BUFFER_ACTIVATED     (1L << 0)
-#define VTERM_MASK_BUFFER_DEACTIVATED   (1L << 1)
-#define VTERM_MASK_BUFFER_PREFLIP       (1L << 2)
-#define VTERM_MASK_BUFFER_READ          (1L << 3)
-#define VTERM_MASK_PIPE_READ            (1L << 4)
-#define VTERM_MASK_PIPE_WRITTEN         (1L << 5)
-#define VTERM_MASK_TERM_PRESIZE         (1L << 6)
-#define VTERM_MASK_TERM_RESIZED         (1L << 7)
-#define VTERM_MASK_TERM_PRECLEAR        (1L << 8)
-#define VTERM_MASK_TERM_SCROLLED        (1L << 9)
+#define VTERM_MASK_BUFFER_ACTIVATED     (1UL << 0)
+#define VTERM_MASK_BUFFER_DEACTIVATED   (1UL << 1)
+#define VTERM_MASK_BUFFER_PREFLIP       (1UL << 2)
+#define VTERM_MASK_BUFFER_READ          (1UL << 3)
+#define VTERM_MASK_PIPE_READ            (1UL << 4)
+#define VTERM_MASK_PIPE_WRITTEN         (1UL << 5)
+#define VTERM_MASK_TERM_PRESIZE         (1UL << 6)
+#define VTERM_MASK_TERM_RESIZED         (1UL << 7)
+#define VTERM_MASK_TERM_PRECLEAR        (1UL << 8)
+#define VTERM_MASK_TERM_SCROLLED        (1UL << 9)
 
 /*
     alloc a raw terminal object.
@@ -621,7 +621,7 @@ void                vterm_resize_full(vterm_t *vterm,
         len             the length of the data being pushed into the
                         intepreter.
 */
-void                vterm_render(vterm_t *vterm, const char *data, int len);
+void                vterm_render(vterm_t *vterm, char *data, int len);
 
 /*
     fetches the width and height of the current terminal dimentions.

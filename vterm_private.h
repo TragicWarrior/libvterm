@@ -101,7 +101,8 @@ struct _vterm_desc_s
 
     int             default_colors;             // default fg/bg color pair
 
-    int             crow, ccol;                 // current cursor column & row
+    int             ccol;                       // current cursor col
+    int             crow;                       // current cursor row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region
     int             saved_x, saved_y;           // saved cursor coords

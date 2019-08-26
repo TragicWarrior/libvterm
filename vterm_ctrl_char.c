@@ -8,7 +8,7 @@
 #include "vterm_escape.h"
 
 void
-vterm_interpret_ctrl_char(vterm_t *vterm, const char *data)
+vterm_interpret_ctrl_char(vterm_t *vterm, char *data)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -48,8 +48,6 @@ vterm_interpret_ctrl_char(vterm_t *vterm, const char *data)
         // backspace
         case '\b':
         {
-            //endwin(); printf("%d\n\r", v_desc->ccol); fflush(stdout); exit(0);
-            // printf("%d %ju\n\r", v_desc->ccol, v_desc);
             vterm_cursor_move_backward(vterm);
             break;
         }
