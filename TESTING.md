@@ -81,6 +81,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - man
 5 - nano
 5 - tig
+4 - bastet
 ```
 
 # Test Notes #
