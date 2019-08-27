@@ -83,6 +83,8 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - tig
 4 - bastet
 3 - lynx
+5 - hexedit
+5 - calcurse
 ```
 
 # Test Notes #
