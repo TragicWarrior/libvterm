@@ -71,6 +71,7 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors)
         VCELL_SET_CHAR((*vcell), ' ');
         VCELL_SET_ATTR((*vcell), A_NORMAL);
 
+        // reset_colors = TRUE;
         if(reset_colors == TRUE)
             VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
