@@ -1,3 +1,7 @@
+6.17
+
+* [Bryan Christ] Fixed major heap corruption issues with FreeBSD.
+
 6.16
 
 * [Bryan Christ] Fixed a scrolling bug introduced in 6.15 which was easily
