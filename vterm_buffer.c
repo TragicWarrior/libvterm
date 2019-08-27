@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #include <sys/ioctl.h>
 
 #include "vterm.h"
@@ -17,7 +18,7 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
     vterm_desc_t    *v_desc;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     if(width < 0 || height < 0) return;
 
@@ -44,7 +45,7 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     uint16_t        j;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     if(width == 0 || height == 0) return;
 
@@ -103,7 +104,7 @@ vterm_buffer_dealloc(vterm_t *vterm, int idx)
     int             i;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     // endwin(); printf("%d\n", idx); fflush(stdout);
 
@@ -136,7 +137,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     int             curr_width, curr_height;
 
     if(vterm == NULL) return -1;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return -1;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return -1;
 
     curr_idx = vterm_buffer_get_active(vterm);
 
@@ -168,24 +169,24 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     width = ws.ws_col;
 
     // treat the standard buffer special -- it never goes away
-    if(idx == VTERM_BUFFER_STD)
+    if(idx == VTERM_BUF_STANDARD)
     {
         /*
             if the current buffer not the STD buffer, we need to handle
             a few housekeeping items and then tear down the other
             buffer before switching.
         */
-        if(curr_idx != VTERM_BUFFER_STD)
+        if(curr_idx != VTERM_BUF_STANDARD)
         {
             // check to see if a resize happened
-            std_width = vterm->vterm_desc[VTERM_BUFFER_STD].cols;
-            std_height = vterm->vterm_desc[VTERM_BUFFER_STD].rows;
+            std_width = vterm->vterm_desc[VTERM_BUF_STANDARD].cols;
+            std_height = vterm->vterm_desc[VTERM_BUF_STANDARD].rows;
             curr_width = vterm->vterm_desc[curr_idx].cols;
             curr_height = vterm->vterm_desc[curr_idx].rows;
 
             if(std_height != curr_height || std_width != curr_width)
             {
-                vterm_buffer_realloc(vterm, VTERM_BUFFER_STD,
+                vterm_buffer_realloc(vterm, VTERM_BUF_STANDARD,
                     curr_width, curr_height);
             }
 
@@ -201,7 +202,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
                 vterm_buffer_dealloc(vterm, curr_idx);
             }
 
-            vterm_cursor_show(vterm, VTERM_BUFFER_STD);
+            vterm_cursor_show(vterm, VTERM_BUF_STANDARD);
         }
     }
 
@@ -210,14 +211,14 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
         however, this is more readable and it should optimize
         about the same.
     */
-    if(idx != VTERM_BUFFER_STD)
+    if(idx != VTERM_BUF_STANDARD)
     {
         vterm_buffer_alloc(vterm, idx, width, height);
         v_desc = &vterm->vterm_desc[idx];
 
         // copy some defaults from standard buffer
         v_desc->default_colors =
-            vterm->vterm_desc[VTERM_BUFFER_STD].default_colors;
+            vterm->vterm_desc[VTERM_BUF_STANDARD].default_colors;
 
         // erase the newly created buffer
         vterm_erase(vterm, idx);

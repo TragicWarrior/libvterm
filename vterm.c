@@ -71,6 +71,16 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     char                    *pos = NULL;
     int                     retval;
     int                     fd_flags;
+    // static void             *ds_addr = NULL;
+
+    /*
+    if(ds_addr == NULL)
+    {
+        ds_addr = sbrk(0);
+        ds_addr += 1024;
+        brk(ds_addr);
+    }
+    */
 
     // xterm emulation is the default if none specified
     if((flags & VTERM_TERM_MASK) == 0) flags |= VTERM_FLAG_XTERM_256;
@@ -86,7 +96,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
     // allocate a the buffer (a matrix of cells)
-    vterm_buffer_alloc(vterm, VTERM_BUFFER_STD, width, height);
+    vterm_buffer_alloc(vterm, VTERM_BUF_STANDARD, width, height);
 
     // initializes the color cache or updates the ref count
     color_cache_init();
@@ -104,7 +114,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     }
 
     // initialize all cells with defaults
-    vterm_erase(vterm, VTERM_BUFFER_STD);
+    vterm_erase(vterm, VTERM_BUF_STANDARD);
 
     if(flags & VTERM_FLAG_DUMP)
     {
@@ -151,7 +161,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         if(child_pid < 0)
         {
             vterm_destroy(vterm);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         if(child_pid == 0)
@@ -179,7 +189,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 
         if(ttyname_r(master_fd,vterm->ttyname,sizeof(vterm->ttyname) - 1) != 0)
         {
-            snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1,"vterm");
+            snprintf(vterm->ttyname,sizeof(vterm->ttyname) - 1, "vterm");
         }
     }
 

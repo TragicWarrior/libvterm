@@ -77,10 +77,15 @@ Fidelity score: 5 = excellent, 1 = poor
 
 ```
 5 - htop
-5 - mc
+2 - mc
 5 - man
 5 - nano
 5 - tig
+4 - bastet
+3 - lynx
+5 - hexedit
+5 - calcurse
+5 - cmatrix
 ```
 
 # Test Notes #

@@ -1,3 +1,10 @@
+
+#include <wchar.h>
+
+#ifdef __FreeBSD__
+#include <ncurses/ncurses.h>
+#endif
+
 #include "vterm_private.h"
 #include "vterm_cursor.h"
 #include "vterm_buffer.h"
@@ -42,14 +49,17 @@ vterm_cursor_move_backward(vterm_t *vterm)
     else
         min_row = 0;
 
-    if(v_desc->ccol > 0) v_desc->ccol--;
-    else
+    // cursor is at the left margin
+    if(v_desc->ccol > 0)
     {
-        if(v_desc->crow > min_row)
-        {
-            v_desc->ccol = v_desc->cols - 1;
-            v_desc->crow--;
-        }
+        v_desc->ccol--;
+        return;
+    }
+
+    if(v_desc->crow > min_row)
+    {
+        v_desc->ccol = v_desc->cols - 1;
+        v_desc->crow--;
     }
 
     return;
@@ -99,7 +109,7 @@ vterm_cursor_show(vterm_t *vterm, int idx)
     vterm_desc_t    *v_desc = NULL;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     v_desc = &vterm->vterm_desc[idx];
 
@@ -114,7 +124,7 @@ vterm_cursor_hide(vterm_t *vterm, int idx)
     vterm_desc_t    *v_desc = NULL;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUFFER_STD && idx != VTERM_BUFFER_ALT) return;
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     v_desc = &vterm->vterm_desc[idx];
 

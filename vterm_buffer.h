@@ -3,13 +3,16 @@
 #define _VTERM_BUFFER_H_
 
 #include <string.h>
+#include <stdio.h>
+#include <wchar.h>
 
 #include "vterm.h"
 
 enum
 {
-    VTERM_BUFFER_STD    =   0x00,
-    VTERM_BUFFER_ALT,
+    VTERM_BUF_STANDARD    =   0x00,
+    VTERM_BUF_ALTERNATE,
+    VTERM_BUF_SCROLLBACK
 };
 
 void    vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height);

@@ -1,4 +1,3 @@
-
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -6,6 +5,10 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifdef __FreeBSD__
+#include <ncurses/ncurses.h>
+#endif
 
 #include "vterm.h"
 #include "vterm_private.h"
@@ -22,7 +25,7 @@ static void
 vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch);
 
 void
-vterm_render(vterm_t *vterm, const char *data, int len)
+vterm_render(vterm_t *vterm, char *data, int len)
 {
     chtype          utf8_char;
     wchar_t         wch[CCHARW_MAX];
@@ -41,7 +44,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
         {
             if(IS_CTRL_CHAR(*data))
             {
-                vterm_interpret_ctrl_char(vterm, *data);
+                vterm_interpret_ctrl_char(vterm, data);
                 continue;
             }
         }
@@ -100,7 +103,7 @@ vterm_render(vterm_t *vterm, const char *data, int len)
             */
             if(IS_CTRL_CHAR(*data) && !IS_OSC_MODE(vterm))
             {
-                vterm_interpret_ctrl_char(vterm, *data);
+                vterm_interpret_ctrl_char(vterm, data);
                 continue;
             }
             else

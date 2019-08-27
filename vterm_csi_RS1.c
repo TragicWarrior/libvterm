@@ -30,10 +30,10 @@ interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
     if((pos[0] == end[0] && pos == end))
     {
         // reset to standard buffer (and add other stuff if ncessary)
-        vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+        vterm_buffer_set_active(vterm, VTERM_BUF_STANDARD);
 
         // make cursor always visible after a reset
-        vterm_cursor_show(vterm, VTERM_BUFFER_STD);
+        vterm_cursor_show(vterm, VTERM_BUF_STANDARD);
 
         // reset the parser
         pos = RXVT_RS1;
@@ -62,10 +62,10 @@ interpret_csi_RS1_xterm(vterm_t *vterm, char *data)
     vterm_render(vterm, RXVT_RS1, sizeof(RXVT_RS1) - 1);
 
     // reset to standard buffer (and add other stuff if ncessary)
-    vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+    vterm_buffer_set_active(vterm, VTERM_BUF_STANDARD);
 
     // make cursor always visible after a reset
-    vterm_cursor_show(vterm, VTERM_BUFFER_STD);
+    vterm_cursor_show(vterm, VTERM_BUF_STANDARD);
 
     return 0;
 }

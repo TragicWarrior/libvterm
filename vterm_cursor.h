@@ -1,6 +1,7 @@
 #ifndef _VTERM_CURSOR_H_
 #define _VTERM_CURSOR_H_
 
+#include "vterm_private.h"
 #include "vterm.h"
 
 void    vterm_cursor_move_home(vterm_t *vterm);

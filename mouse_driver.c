@@ -69,7 +69,7 @@ mouse_driver_stop(vterm_t *vterm)
     if(vterm->mouse_config == NULL) return;
 
     // reset the mouse driver setup
-    vterm->mouse = 0;
+    vterm->mouse_mode = 0;
     vterm->mouse_driver = NULL;
 
     // indicate that we're stopped
@@ -94,7 +94,7 @@ mouse_driver_default(vterm_t *vterm, unsigned char *buf)
     mouse_driver_save_state(vterm);
 
     // SGR is a special variant of VT200
-    if(vterm->mouse & VTERM_MOUSE_SGR)
+    if(vterm->mouse_mode & VTERM_MOUSE_SGR)
     {
         mbytes = mouse_driver_SGR(vterm, buf);
         mouse_driver_restore_state(vterm);
@@ -102,7 +102,7 @@ mouse_driver_default(vterm_t *vterm, unsigned char *buf)
         return mbytes;
     }
 
-    if(vterm->mouse & VTERM_MOUSE_VT200)
+    if(vterm->mouse_mode & VTERM_MOUSE_VT200)
     {
         mbytes = mouse_driver_vt200(vterm, buf);
         mouse_driver_restore_state(vterm);

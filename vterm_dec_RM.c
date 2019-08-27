@@ -83,9 +83,9 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
         if(param[i] == 47)
         {
             // check to see if we're already using the ALT buffer
-            if(idx == VTERM_BUFFER_STD) continue;
+            if(idx == VTERM_BUF_STANDARD) continue;
 
-            vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+            vterm_buffer_set_active(vterm, VTERM_BUF_STANDARD);
             continue;
         }
 
@@ -103,7 +103,7 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1007)
         {
-            vterm->mouse &= ~VTERM_MOUSE_ALTSCROLL;
+            vterm->mouse_mode &= ~VTERM_MOUSE_ALTSCROLL;
             continue;
         }
 
@@ -129,9 +129,9 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 1049)
         {
-            if(idx != VTERM_BUFFER_STD)
+            if(idx != VTERM_BUF_STANDARD)
             {
-                vterm_buffer_set_active(vterm, VTERM_BUFFER_STD);
+                vterm_buffer_set_active(vterm, VTERM_BUF_STANDARD);
             }
 
             vterm_cursor_restore(vterm);

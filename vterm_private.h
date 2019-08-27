@@ -7,11 +7,6 @@
 
 #include <sys/types.h>
 
-#include "mouse_driver.h"
-#include "color_cache.h"
-
-#ifndef NOCURSES
-
 #ifdef __linux__
 #include <ncursesw/curses.h>
 #endif
@@ -20,7 +15,8 @@
 #include <ncurses/ncurses.h>
 #endif
 
-#endif
+#include "mouse_driver.h"
+#include "color_cache.h"
 
 #define ESEQ_BUF_SIZE           128             // escape buffer max
 #define UTF8_BUF_SIZE           5               // 4 bytes + 0-terminator
@@ -94,14 +90,15 @@ struct _vterm_desc_s
     vterm_cell_t    **cells;
     vterm_cell_t    last_cell;                  // contents of last cell write
 
-    unsigned int    buffer_state;               // internal state control
+    unsigned long   buffer_state;               // internal state control
 
     attr_t          curattr;                    // current attribute set
     int             colors;                     // current color pair
 
     int             default_colors;             // default fg/bg color pair
 
-    int             crow, ccol;                 // current cursor column & row
+    int             ccol;                       // current cursor col
+    int             crow;                       // current cursor row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region
     int             saved_x, saved_y;           // saved cursor coords
@@ -119,10 +116,10 @@ struct _vterm_s
     vterm_desc_t    vterm_desc[2];              // normal buffer and alt buffer
     int             vterm_desc_idx;             // index of active buffer;
 
-#ifndef NOCURSES
     WINDOW          *window;                    // curses window
+
     vterm_cmap_t    *cmap_head;
-#endif
+
     char            ttyname[96];                // populated with ttyname_r()
 
     char            title[128];                 /*
@@ -132,53 +129,44 @@ struct _vterm_s
                                                     supplied by the Xterm OSC
                                                     code sequences.
                                                 */
-
-
     char            esbuf[ESEQ_BUF_SIZE];       /*
                                                     0-terminated string. Does
                                                     NOT include the initial
                                                     escape (\x1B) character.
                                                 */
-
     int             esbuf_len;                  /*
                                                     length of buffer. The
                                                     following property is
                                                     always kept:
                                                     esbuf[esbuf_len] == '\0'
                                                 */
-
+    int             utf8_buf_len;               //  number of utf8 bytes
     char            utf8_buf[UTF8_BUF_SIZE];    /*
                                                     0-terminated string that
                                                     is the UTF-8 coding.
                                                 */
 
+    ssize_t         reply_buf_sz;               //  size of reply
     char            reply_buf[32];              /*
                                                     some CSI sequences
                                                     expect a reply.  here's
                                                     where they go.
                                                 */
-
-    ssize_t         reply_buf_sz;               //  size of reply
-
-    int             utf8_buf_len;               //  number of utf8 bytes
-
     int             pty_fd;                     /*
                                                     file descriptor for the pty
                                                     attached to this terminal.
                                                 */
-
     pid_t           child_pid;                  //  pid of the child process
     uint32_t        flags;                      //  user options
-    unsigned int    internal_state;             //  internal state control
+    unsigned long   internal_state;             //  internal state control
 
-    uint16_t        mouse;                      //  mouse mode
+    uint16_t        mouse_mode;                 //  mouse mode
     mouse_config_t  *mouse_config;              /*
                                                     saves and restores the
                                                     state of the mouse
                                                     if we are sharing it with
                                                     others.
                                                 */
-
     char            **keymap_str;               //  points to keymap key
     uint32_t        *keymap_val;                //  points to keymap ke value
     int             keymap_size;                //  size of the keymap
@@ -187,7 +175,6 @@ struct _vterm_s
                                                     stores data returned from
                                                     tcgetattr()
                                                 */
-
     char            *exec_path;                 //  optional binary path to use
     char            **exec_argv;                //  instead of starting shell.
 

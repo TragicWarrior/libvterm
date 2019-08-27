@@ -8,16 +8,19 @@
 #include "vterm_escape.h"
 
 void
-vterm_interpret_ctrl_char(vterm_t *vterm, char c)
+vterm_interpret_ctrl_char(vterm_t *vterm, char *data)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
+    char            verb;
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    switch(c)
+    verb = data[0];
+
+    switch(verb)
     {
         // carriage return
         case '\r':
@@ -29,7 +32,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char c)
         // line-feed
         case '\n':
         {
-            if(idx == VTERM_BUFFER_ALT)
+            if(idx == VTERM_BUF_ALTERNATE)
             {
                 // this behavior ssems to work better on ALT buffer
                 vterm_scroll_up(vterm, FALSE);
