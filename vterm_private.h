@@ -101,6 +101,11 @@ struct _vterm_desc_s
     int             crow;                       // current cursor row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region
+    int             max_cols;                   /*
+                                                   max width (including
+                                                   offscreen columns)
+                                                */
+
     int             saved_x, saved_y;           // saved cursor coords
 
     int             fg;                         // current fg color

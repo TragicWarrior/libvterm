@@ -66,7 +66,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
 
     clamp_cursor_to_bounds(vterm);
 
-    if(delta_x > 0) vterm_erase_cols(vterm, start_x);
+    // if(delta_x > 0) vterm_erase_cols(vterm, start_x);
     if(delta_y > 0) vterm_erase_rows(vterm, start_y);
 
     // signal the child process that terminal changed size
