@@ -28,6 +28,7 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 
     v_desc->rows = height;
     v_desc->cols = width;
+    v_desc->max_cols = width;
 
     v_desc->scroll_min = 0;
     v_desc->scroll_max = height - 1;
@@ -41,6 +42,8 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     vterm_desc_t    *v_desc;
     int             delta_y = 0;
     int             start_x = 0;
+    int             max_cols_old;
+    int             new_width;
     uint16_t        i;
     uint16_t        j;
 
@@ -54,6 +57,13 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 
     delta_y = height - v_desc->rows;
 
+    // true up total colum count and never reduce buffer row width
+    max_cols_old = v_desc->max_cols;
+    new_width = width;
+
+    if(new_width < v_desc->max_cols) new_width = v_desc->max_cols;
+    if(new_width >= v_desc->max_cols) v_desc->max_cols = new_width;
+
     // realloc to accomodate the new matrix size
     v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
         sizeof(vterm_cell_t*) * height);
@@ -64,10 +74,10 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
         if((delta_y > 0) && (i > (v_desc->rows - 1)))
         {
             v_desc->cells[i] =
-                (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * width));
+                (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * new_width));
 
             // fill new row with blanks
-            for(j = 0; j < width; j++)
+            for(j = 0; j < new_width; j++)
             {
                 VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
             }
@@ -77,11 +87,11 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 
         // this handles existing rows
         v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
-            sizeof(vterm_cell_t) * width);
+            sizeof(vterm_cell_t) * new_width);
 
         // fill new cols with blanks
-        start_x = v_desc->cols - 1;
-        for(j = start_x; j < width; j++)
+        start_x = max_cols_old - 1;
+        for(j = start_x; j < new_width; j++)
         {
             VCELL_ZERO_ALL(v_desc->cells[i][j]);
             VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
@@ -264,7 +274,8 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
     v_desc = &vterm->vterm_desc[idx];
 
     *rows = v_desc->rows;
-    *cols = v_desc->cols;
+    // *cols = v_desc->cols;
+    *cols = v_desc->max_cols;
 
     buffer = _vterm_buffer_alloc_raw(*rows, *cols);
 
