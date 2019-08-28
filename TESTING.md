@@ -15,6 +15,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - cdw
 5 - htop
 5 - apt
+5 - yum
 5 - bastet
 5 - myman
 5 - last file manager
@@ -48,7 +49,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - vlc
 5 - pamix
 5 - man
-5 - test-colorcube
+5 - test-colorcube (ncurses test)
 ```
 
 ### Mac OS Testing ###
@@ -59,7 +60,7 @@ Fidelity score: 5 = excellent, 1 = poor
 4 - homebrew
 5 - mdcat
 5 - midnight commander
-5 - ponysay
+4 - ponysay
 5 - ninvaders
 5 - emojify
 5 - lynx
@@ -72,6 +73,7 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - man
 5 - tig
 5 - bastet
+5 - test-colorcube (ncurses test)
 ```
 
 ### FreeBSD Testing ###

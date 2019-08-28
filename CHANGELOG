@@ -1,3 +1,10 @@
+6.18
+
+* [Bryan Christ] Fixed a regression in scrolling code which affected
+  several applications including bastet and midnight commander.
+* [Bryan Christ] Don't allow xterm 256 color mode on FreeBSD.
+  It doesn't work.
+
 6.17
 
 * [Bryan Christ] Fixed major heap corruption issues with FreeBSD.
