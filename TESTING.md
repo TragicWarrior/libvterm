@@ -71,18 +71,19 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - nano
 5 - man
 5 - tig
+5 - bastet
 ```
 
 ### FreeBSD Testing ###
 
 ```
 5 - htop
-2 - mc
+3 - mc
 5 - man
 5 - nano
 5 - tig
-4 - bastet
-3 - lynx
+5 - bastet
+4 - lynx
 5 - hexedit
 5 - calcurse
 5 - cmatrix
