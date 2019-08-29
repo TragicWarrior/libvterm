@@ -18,9 +18,8 @@ interpret_esc_IND(vterm_t *vterm)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    // advance cursor 1 row
-    v_desc->crow++;
+    vterm_scroll_up(vterm, FALSE);
 
-    clamp_cursor_to_bounds(vterm);
+    return;
 }
 
