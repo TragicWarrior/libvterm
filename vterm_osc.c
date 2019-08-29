@@ -38,7 +38,7 @@ int
 vterm_interpret_xterm_osc(vterm_t *vterm)
 {
     char        buf[128];           // general purpose capture buffer
-    char        verb;
+    int         verb = 0;
     char        *pos;
     int         count = 0;
     int         max_sz;
@@ -46,67 +46,63 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
     // advance past OSC which is ESC ]
     pos = vterm->esbuf + 1;
 
-    // parse numeric parameters
-    if(isdigit(*pos))
+    while(isdigit(*pos))
     {
-        // store digit as verb
-        verb = *pos;
-
-        // move past verb
+        verb *= 10;
+        verb += (*pos) - '0';
         pos++;
+    }
 
-        switch(verb)
+    if(verb == 0) return 0;
+
+    switch(verb)
+    {
+        // Change Icon Name and Window Title
+        case 0:
         {
-            // Change Icon Name and Window Title
-            case '0':
-            {
-                max_sz = ARRAY_SZ(vterm->title);
-                count = vterm_osc_read_string(vterm, pos,
-                    vterm->title, max_sz);
+            max_sz = ARRAY_SZ(vterm->title);
+            count = vterm_osc_read_string(vterm, pos, vterm->title, max_sz);
 
-                break;
-            }
+            break;
+        }
 
-            // Change Icon Name
-            case '1':
+        // Change Icon Name
+        case 1:
 
-            // Change Window Title
-            case '2':
-            {
-                /*
-                    todo:  for now we will simply copy the string and
-                    treat all OSC sequences the same (icon, name, both).
-                */
-                max_sz = ARRAY_SZ(vterm->title);
-                count = vterm_osc_read_string(vterm, pos,
-                    vterm->title, max_sz);
+        // Change Window Title
+        case 2:
+        {
+            /*
+                todo:  for now we will simply copy the string and
+                treat all OSC sequences the same (icon, name, both).
+            */
+            max_sz = ARRAY_SZ(vterm->title);
+            count = vterm_osc_read_string(vterm, pos, vterm->title, max_sz);
 
-                break;
-            }
+            break;
+        }
 
-            // Define a custom RGB color)
-            case '4':
-            {
-                max_sz = ARRAY_SZ(buf);
-                count = vterm_osc_read_string(vterm, pos, buf, max_sz);
+        // Define a custom RGB color)
+        case 4:
+        {
+            max_sz = ARRAY_SZ(buf);
+            count = vterm_osc_read_string(vterm, pos, buf, max_sz);
 
-                vterm_osc_parse_xcolor(vterm, buf, count);
+            vterm_osc_parse_xcolor(vterm, buf, count);
 
-                break;
-            }
+            break;
+        }
 
-            // Unknown purpose.  Part of xterm u8 (user defined string #8)
-            case '7':
-            {
-                max_sz = ARRAY_SZ(buf);
-                count = vterm_osc_read_string(vterm, pos, buf, max_sz);
+        // Unknown purpose.  Part of xterm u8 (user defined string #8)
+        case 7:
+        // Also unknown purpose.
+        case 777:
+        {
+            break;
+        }
 
-                break;
-            }
-
-            default:
-                break;
-         }
+        default:
+            break;
     }
 
     return count;
