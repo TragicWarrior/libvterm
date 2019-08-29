@@ -21,6 +21,11 @@
 #include "color_cache.h"
 #include "macros.h"
 
+// this is necessary for FreeBSD in some compilation scenarios
+#ifndef CCHARW_MAX
+#define CCHARW_MAX  5
+#endif
+
 static void
 vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch);
 

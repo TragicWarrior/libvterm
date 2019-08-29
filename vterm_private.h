@@ -101,6 +101,11 @@ struct _vterm_desc_s
     int             crow;                       // current cursor row
     int             scroll_min;                 // top of scrolling region
     int             scroll_max;                 // bottom of scrolling region
+    int             max_cols;                   /*
+                                                   max width (including
+                                                   offscreen columns)
+                                                */
+
     int             saved_x, saved_y;           // saved cursor coords
 
     int             fg;                         // current fg color
@@ -167,8 +172,14 @@ struct _vterm_s
                                                     if we are sharing it with
                                                     others.
                                                 */
+#ifdef __FreeBSD__
+    char            padding[10];                //  without this padding FreeBSD
+#endif                                          //  trashes mouse_config and
+                                                //  keymap_str causing all sorts
+                                                //  of bad things to happen
+
     char            **keymap_str;               //  points to keymap key
-    uint32_t        *keymap_val;                //  points to keymap ke value
+    int             *keymap_val;                //  points to keymap ke value
     int             keymap_size;                //  size of the keymap
 
     struct termios  term_state;                 /*
