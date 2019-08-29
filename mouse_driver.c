@@ -31,7 +31,9 @@ mouse_driver_init(vterm_t *vterm)
         mouse_state = calloc(1, sizeof(mouse_state_t));
 
         if(has_mouse() == TRUE)
+        {
             mouse_state->origin = NULL;
+        }
         else
         {
             mouse_state->origin = vterm;
@@ -48,7 +50,9 @@ mouse_driver_init(vterm_t *vterm)
     mouse_state->ref_count++;
 
     if(vterm->mouse_config == NULL)
+    {
         vterm->mouse_config = calloc(1, sizeof(mouse_config_t));
+    }
 
     return;
 }

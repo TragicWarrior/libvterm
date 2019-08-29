@@ -12,6 +12,11 @@
 #include "vterm_private.h"
 #include "vterm_buffer.h"
 
+// this is necessary for FreeBSD in some compilation scenarios
+#ifndef CCHARW_MAX
+#define CCHARW_MAX  5
+#endif
+
 /*
     the way UTF-8 is encoded, we can just test the highest bit, pop it
     off, and count, in order to know how many bytes are in the code

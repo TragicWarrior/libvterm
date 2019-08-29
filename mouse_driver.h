@@ -17,6 +17,7 @@
 #endif
 
 #include "vterm.h"
+#include "vterm_private.h"
 
 typedef struct _mouse_state_s   mouse_state_t;
 
