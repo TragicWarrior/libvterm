@@ -1,3 +1,8 @@
+6.19
+
+* [Bryan Christ] Fixed a bug which caused a malformed prompt when certain
+  OSC strings were parsed.
+
 6.18
 
 * [Bryan Christ] Fixed a regression in scrolling code which affected
