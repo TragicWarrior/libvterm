@@ -113,7 +113,7 @@ vterm_interpret_escapes(vterm_t *vterm)
         vterm->internal_state |= STATE_OSC_MODE;
 
         // term type linux sends this to reset FG and BG colors to default
-        if(*lastchar == 'R')
+        if(*lastchar == 'R' && *(lastchar - sizeof(char)) == ']')
         {
             vterm_escape_cancel(vterm);
             goto interim_run;

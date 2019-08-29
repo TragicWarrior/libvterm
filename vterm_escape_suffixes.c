@@ -27,6 +27,7 @@ validate_xterm_escape_suffix(char *lastchar)
     // seems to be a VTE thing
     if(c == '\x5c')
     {
+        // make sure the preceding char was ESC
         if( *(--lastchar) == '\x1b') return TRUE;
     }
 
