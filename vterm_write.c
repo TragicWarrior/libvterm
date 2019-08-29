@@ -64,7 +64,7 @@
 
 // load keymap table for xterm and xterm256
 #define KEYMAP(k, s)    k,
-static uint32_t keymap_xterm_val[] = {
+static int keymap_xterm_val[] = {
 #include "keymap_xterm.def"
 };
 #undef KEYMAP
@@ -77,7 +77,7 @@ static char *keymap_xterm_str[] = {
 
 // load keymap table for rxvt
 #define KEYMAP(k, s)    k,
-static uint32_t keymap_rxvt_val[] = {
+static int keymap_rxvt_val[] = {
 #include "keymap_rxvt.def"
 };
 #undef KEYMAP
@@ -90,7 +90,7 @@ static char *keymap_rxvt_str[] = {
 
 // load keymap table for linux
 #define KEYMAP(k, s)    k,
-static uint32_t keymap_linux_val[] = {
+static int keymap_linux_val[] = {
 #include "keymap_linux.def"
 };
 #undef KEYMAP
@@ -103,7 +103,7 @@ static char *keymap_linux_str[] = {
 
 // load keymap table for vt100
 #define KEYMAP(k, s)    k,
-static uint32_t keymap_vt100_val[] = {
+static int keymap_vt100_val[] = {
 #include "keymap_vt100.def"
 };
 #undef KEYMAP
@@ -143,6 +143,7 @@ int
 vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
 {
     unsigned char           buf[KEY_BUFFER_SZ];
+    int                     mapped_key = 0;
     ssize_t                 bytes = 0;
     int                     retval = 0;
     int                     i;
@@ -183,14 +184,29 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     // look in KEYMAP x-macro table for a match
     for(i = 0; i < vterm->keymap_size; i++)
     {
-        // if(vterm->keymap_val[i] == (KEY_MAX + 1))
+        // check for end of list
+        if(vterm->keymap_val[i] == -1)
+        {
+            break;
+        }
+
         if(vterm->keymap_val[i] == KEY_DYNAMIC)
         {
-            vterm->keymap_val[i] = key_defined(vterm->keymap_str[i]);
+            mapped_key = key_defined(vterm->keymap_str[i]);
+            if(mapped_key > 0)
+            {
+                vterm->keymap_val[i] = mapped_key;
+            }
+
+            // the key cannot be mapped.  move on.
+            if(mapped_key < 1)
+            {
+                continue;
+            }
         }
 
         // the key keycode is a match
-        if(keycode == vterm->keymap_val[i])
+        if(keycode == (uint32_t)vterm->keymap_val[i])
         {
             // cant imagine a sequence longer than 16 bytes
             bytes = strlen(vterm->keymap_str[i]);
@@ -200,7 +216,6 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
             break;
         }
     }
-
 
     if(keycode == KEY_MOUSE)
     {
@@ -224,20 +239,12 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
 
     if(keycode == KEY_BACKSPACE)
     {
-        /*
-            freebsd corrupts the heap object when tcgetattr is called.
-            just use '\b' blindly.  it seems to always work.
-        */
-#ifndef __FreeBSD__
         tcgetattr(vterm->pty_fd, &vterm->term_state);
 
         if(vterm->term_state.c_cc[VERASE] != '\b')
             sprintf((char *)buf, "%c", vterm->term_state.c_cc[VERASE]);
         else
             sprintf((char *)buf, "\b");
-#else
-        sprintf((char *)buf, "\b");
-#endif
 
         bytes = strlen((char *)buf);
     }

@@ -172,8 +172,14 @@ struct _vterm_s
                                                     if we are sharing it with
                                                     others.
                                                 */
+#ifdef __FreeBSD__
+    char            padding[10];                //  without this padding FreeBSD
+#endif                                          //  trashes mouse_config and
+                                                //  keymap_str causing all sorts
+                                                //  of bad things to happen
+
     char            **keymap_str;               //  points to keymap key
-    uint32_t        *keymap_val;                //  points to keymap ke value
+    int             *keymap_val;                //  points to keymap ke value
     int             keymap_size;                //  size of the keymap
 
     struct termios  term_state;                 /*
