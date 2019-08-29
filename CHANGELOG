@@ -1,3 +1,11 @@
+6.21
+
+* [Bryan Christ] Don't clip and discard contents of buffer when resizing
+  width.
+* [Bryan Christ] Fix heap corruption issue on FreeBSD which restores proper
+  handling of backspace key, fixes crashes, and restores correct operation
+  of midnight commander.
+
 6.20
 
 * [Bryan Christ] Fixed a bug where ESC-D was not being handled correctly.
