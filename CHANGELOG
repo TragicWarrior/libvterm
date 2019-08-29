@@ -1,3 +1,7 @@
+6.20
+
+* [Bryan Christ] Fixed a bug where ESC-D was not being handled correctly.
+
 6.19
 
 * [Bryan Christ] Fixed a bug which caused a malformed prompt when certain
