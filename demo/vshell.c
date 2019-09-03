@@ -48,6 +48,7 @@ struct _color_mtx_s
 typedef struct _color_mtx_s     color_mtx_t;
 
 // prototypes
+void    vshell_print_help(void);
 void    vshell_paint_screen(vterm_t *vterm);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
@@ -88,7 +89,6 @@ int main(int argc, char **argv)
     screen_wnd = initscr();
     noecho();
     raw();
-    // cbreak();
     nodelay(stdscr, TRUE);              /*
                                            prevents getch() from blocking;
                                            rather it will return ERR when
@@ -105,6 +105,19 @@ int main(int argc, char **argv)
         // interate through argv[] looking for params
         for (i = 1; i < argc; i++)
         {
+            if (strncmp(argv[i], "--help", strlen("--help")) == 0)
+            {
+                endwin();
+                vshell_print_help();
+                exit(0);
+            }
+
+            if (strncmp(argv[i], "--version", strlen("--version")) == 0)
+            {
+                endwin();
+                vshell_print_help();
+                exit(0);
+            }
 
             if (strncmp(argv[i], "--dump", strlen("--dump")) == 0)
             {
@@ -115,12 +128,6 @@ int main(int argc, char **argv)
             if (strncmp(argv[i], "--rxvt", strlen("--rxvt")) == 0)
             {
                 flags |= VTERM_FLAG_RXVT;
-                continue;
-            }
-
-            if (strncmp(argv[i], "--x256", strlen("--x256")) == 0)
-            {
-                flags |= VTERM_FLAG_XTERM_256;
                 continue;
             }
 
@@ -429,3 +436,29 @@ vshell_pair_selector(vterm_t *vterm, short fg, short bg)
     return i;
 }
 
+void
+vshell_print_help(void)
+{
+    char    *help_msg =
+                "Usage:  vshell  <args...>\n\r"
+                " \n\r"
+                "[Args]         [Description]\n\r"
+                "---------------------------------------------------------\n\r"
+                "--help         Show usage information.\n\r"
+                "--version      Show version information.\n\r"
+                "--dump         Write escape sequences to a log file.\n\r"
+                "--vt100        Set emulation mode to vt100.\n\r"
+                "--rxvt         Set emulation mode to rxvt.\n\r"
+                "--linux        Set emulation mode to linux.\n\r"
+                "--xterm        Set emulation mode to xterm (default).\n\r"
+                "               If the underlying terminal supports it,\n\r"
+                "               vshell will attempt to use hi-color mode.\n\r"
+                "--c16          When running in 16 color mode use the\n\r"
+                "               libvterm palette instead.\n\r"
+                "--exec <prg>   Launch program at start up.\n\r";
+
+    printf("\n\rLibvterm version: %s\n\r\n\r%s\n\r",
+        LIBVTERM_VERSION, help_msg);
+
+    return;
+}
