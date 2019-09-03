@@ -1,3 +1,10 @@
+6.22
+
+* [Bryan Christ] Remove some code that wasn't needed addressing some
+  compiler warnings.
+* [Bryan Christ] Sometimes it's useful to know what version of libvterm
+  is running.  Add --help and --version flags to vshell demo program.
+
 6.21
 
 * [Bryan Christ] Don't clip and discard contents of buffer when resizing

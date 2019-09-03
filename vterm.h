@@ -28,7 +28,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTERM_VERSION        "6.21"
+#define LIBVTERM_VERSION        "6.22"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
