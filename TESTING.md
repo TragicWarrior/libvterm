@@ -10,6 +10,13 @@ Fidelity score: 5 = excellent, 1 = poor
 
 ### Linux Testing ###
 
+Test Versions:
+
+Xubuntu 16.04 LTS, 18.04 LTS, 19.04
+Debian 10 (buster)
+Fedora 29, Fedora 30
+Centos 7.8
+
 ```
 5 - hexedit
 5 - cdw
@@ -54,6 +61,11 @@ Fidelity score: 5 = excellent, 1 = poor
 
 ### Mac OS Testing ###
 
+Test Versions:
+
+Mojave 10.14.5
+Mojave 10.14.6
+
 ```
 5 - htop
 5 - vitetris
@@ -74,9 +86,14 @@ Fidelity score: 5 = excellent, 1 = poor
 5 - tig
 5 - bastet
 5 - test-colorcube (ncurses test)
+5 - bmon
 ```
 
 ### FreeBSD Testing ###
+
+Test Versions:
+
+FreeBSD 12.0
 
 ```
 5 - htop
