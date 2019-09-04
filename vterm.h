@@ -166,6 +166,19 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     uint32_t flags);
 
 /*
+    determines the number of lines that will be preserved in the scrollback
+    buffer.
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+        rows            the maximum number of lines that will be preserved.
+                        when the vterm object is first initialized the
+                        default limit is set to 4x the height of the
+                        terminal.
+*/
+void            vterm_set_scrollback(vterm_t *vterm, int rows);
+
+/*
     convenience macro for alloc-ing a ready to use terminal object.
 
     @params:

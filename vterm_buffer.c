@@ -51,9 +51,14 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     if(width == 0 || height == 0) return;
+    if(width == -1 && height == -1) return;
 
     // set the vterm description buffer selector
     v_desc = &vterm->vterm_desc[idx];
+
+    // a -1 means the caller wants to keep an existing dimension
+    if(width == -1) width = v_desc->cols;
+    if(height == -1) height = v_desc->rows;
 
     delta_y = height - v_desc->rows;
 

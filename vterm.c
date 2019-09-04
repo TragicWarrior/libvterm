@@ -87,6 +87,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUF_STANDARD, width, height);
 
+    // allocate the scrollback buffer to 4x height
+    vterm_buffer_alloc(vterm, VTERM_BUF_SCROLLBACK, width, height * 4);
+
     // initializes the color cache or updates the ref count
     color_cache_init();
 
