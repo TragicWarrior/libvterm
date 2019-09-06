@@ -110,6 +110,7 @@ add_library(vterm-static STATIC
     vterm_reply.c
     vterm_resize.c
     vterm_scroll.c
+    vterm_scrollback.c
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
@@ -168,6 +169,7 @@ add_library(vterm.o OBJECT
     vterm_reply.c
     vterm_resize.c
     vterm_scroll.c
+    vterm_scrollback.c
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
