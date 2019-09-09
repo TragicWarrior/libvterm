@@ -29,6 +29,13 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
+enum
+{
+    TERM_MODE_NORMAL    =   0x0,
+    TERM_MODE_ALT,
+    TERM_MODE_HISTORY,
+};
+
 short   color_table[] =
             {
                 COLOR_BLACK, COLOR_RED, COLOR_GREEN,
@@ -59,7 +66,7 @@ short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
 // globals
 WINDOW          *screen_wnd;
 int             screen_w, screen_h;
-int             frame_colors;
+int             term_mode;
 color_mtx_t     *color_mtx;
 
 
@@ -89,6 +96,7 @@ int main(int argc, char **argv)
     screen_wnd = initscr();
     noecho();
     raw();
+    curs_set(0);                        // hide cursor
     nodelay(stdscr, TRUE);              /*
                                            prevents getch() from blocking;
                                            rather it will return ERR when
@@ -180,12 +188,11 @@ int main(int argc, char **argv)
     vshell_color_init();
 
     // set default frame color
-    frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     vshell_paint_screen(NULL);
 
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
 
-    wattrset(VWINDOW(twin), COLOR_PAIR(7*8+7-0));        // black over white
+    wattrset(VWINDOW(twin), COLOR_PAIR(7 * 8 + 7 - 0)); // black over white
     wrefresh(VWINDOW(twin));
 
     vterm = vterm_alloc();
@@ -222,7 +229,7 @@ int main(int argc, char **argv)
         {
             if(bytes_buffered > 0)
             {
-                vterm_wnd_update(vterm);
+                vterm_wnd_update(vterm, VTERM_BUF_STANDARD, 0);
                 touchwin(VWINDOW(twin));
                 wrefresh(VWINDOW(twin));
                 refresh();
@@ -271,12 +278,27 @@ vshell_paint_screen(vterm_t *vterm)
     char            buf[254];
     int             len;
     int             offset;
+    int             frame_colors;
+    int             status_colors;
+
+    if(term_mode == TERM_MODE_NORMAL)
+    {
+        frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
+        status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
+    }
+
+    if(term_mode == TERM_MODE_ALT)
+    {
+        frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_RED);
+        status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_RED);
+    }
+
 
     // paint the screen blue
     attrset(COLOR_PAIR(frame_colors));    // white on blue
-    wattron(screen_wnd, A_BOLD);
+    // wattron(screen_wnd, A_BOLD);
     box(screen_wnd, 0, 0);
-    wattroff(screen_wnd, A_BOLD);
+    // wattroff(screen_wnd, A_BOLD);
 
     // quick computer of title location
     if(vterm != NULL)
@@ -294,12 +316,17 @@ vshell_paint_screen(vterm_t *vterm)
     offset = (screen_w >> 1) - (len >> 1);
     mvprintw(0, offset, title);
 
-    sprintf(title, " %d x %d ", screen_w - 2, screen_h - 2);
+    sprintf(title, " mode: %s | size: %d x %d ",
+        (term_mode == TERM_MODE_NORMAL) ? "standard" : "alternate",
+        screen_w - 2, screen_h - 2);
+
     len = strlen(title);
     offset = (screen_w >> 1) - (len >> 1);
-    wattron(screen_wnd, A_DIM);
+
+    attrset(COLOR_PAIR(status_colors));
+    wattron(screen_wnd, A_BOLD);
     mvwprintw(screen_wnd, screen_h - 1, offset, title);
-    wattroff(screen_wnd, A_DIM);
+    wattroff(screen_wnd, A_BOLD);
 
     refresh();
 
@@ -332,7 +359,6 @@ vshell_resize(testwin_t *twin, vterm_t * vterm)
 void
 vshell_hook(vterm_t *vterm, int event, void *anything)
 {
-    extern int  frame_colors;
     int         idx;
 
     if(vterm == NULL) return;       // something went horribly wrong
@@ -344,11 +370,9 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             idx = *(int *)anything;
 
             if(idx == 0)
-                frame_colors = vshell_pair_selector(NULL,
-                    COLOR_WHITE, COLOR_BLUE);
+                term_mode = TERM_MODE_NORMAL;
             else
-                frame_colors = vshell_pair_selector(NULL,
-                    COLOR_WHITE, COLOR_RED);
+                term_mode = TERM_MODE_ALT;
 
             vshell_paint_screen(vterm);
             break;

@@ -28,31 +28,30 @@ vterm_wnd_get(vterm_t *vterm)
     return vterm->window;
 }
 
-void
-vterm_wnd_update(vterm_t *vterm)
+int
+vterm_wnd_update(vterm_t *vterm, int idx, int offset)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             r, c;
-    int             idx;
     attr_t          attrs;
     short           colors;
-
-
-    // static cchar_t  uch;                    // Mac OS blows up if not static
     cchar_t         uch;
 
-    if(vterm == NULL) return;
-    if(vterm->window == NULL) return;
+    if(vterm == NULL) return -1;
+    if(vterm->window == NULL) return -1;
+
+    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_SCROLLBACK) return -1;
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
+    // for(r = 0; r < v_desc->rows; r++)
     for(r = 0; r < v_desc->rows; r++)
     {
         // start at the beginning of the row
-        vcell = &v_desc->cells[r][0];
+        vcell = &v_desc->cells[r][offset];
 
         for(c = 0; c < v_desc->cols; c++)
         {
@@ -82,7 +81,7 @@ vterm_wnd_update(vterm_t *vterm)
             v_desc->default_colors, NULL);
     }
 
-    return;
+    return -1;
 }
 
 #endif

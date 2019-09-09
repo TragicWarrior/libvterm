@@ -142,6 +142,13 @@ enum
 #define VTERM_MASK_TERM_PRECLEAR        (1UL << 8)
 #define VTERM_MASK_TERM_SCROLLED        (1UL << 9)
 
+enum
+{
+    VTERM_BUF_STANDARD    =   0x00,     // nomral / standard buffer
+    VTERM_BUF_ALTERNATE,                // typically used for lineart progs
+    VTERM_BUF_SCROLLBACK                // the history buffer
+};
+
 /*
     alloc a raw terminal object.
 
@@ -384,8 +391,13 @@ WINDOW*         vterm_wnd_get(vterm_t *vterm);
 
     @params:
         vterm           a valid vterm object handle.
+        idx             the index of the buffer to render.  this is either
+                        VTERM_BUF_STANDARD or VTERM_BUF_SCROLLBACK.
+
+    @return:            returns 0 or success or -1 on error if an invalid
+                        buffer index was specfied.
 */
-void            vterm_wnd_update(vterm_t *vterm);
+int             vterm_wnd_update(vterm_t *vterm, int idx, int offset);
 #endif
 
 /*

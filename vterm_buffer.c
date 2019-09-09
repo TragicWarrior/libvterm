@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include <sys/ioctl.h>
 
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_cursor.h"
@@ -331,6 +331,37 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     return 0;
 }
 
+int
+vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
+     int src_offset, int dst_offset, int rows)
+{
+    vterm_desc_t    *v_desc_src = NULL;
+    vterm_desc_t    *v_desc_dst = NULL;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
+    int             stride;
+    int             i;
+
+    if(vterm == NULL) return -1;
+
+    v_desc_src = &vterm->vterm_desc[src_idx];
+    v_desc_dst = &vterm->vterm_desc[dst_idx];
+
+    vcell_src = &v_desc_src->cells[src_offset];
+    vcell_dst = &v_desc_dst->cells[dst_offset];
+
+    stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
+
+    for(i = 0; i < rows; i++)
+    {
+        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * stride);
+
+        vcell_src++;
+        vcell_dst++;
+    }
+
+    return 0;
+}
 
 vterm_cell_t**
 vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
@@ -348,7 +379,6 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
     v_desc = &vterm->vterm_desc[idx];
 
     *rows = v_desc->rows;
-    // *cols = v_desc->cols;
     *cols = v_desc->max_cols;
 
     buffer = _vterm_buffer_alloc_raw(*rows, *cols);
