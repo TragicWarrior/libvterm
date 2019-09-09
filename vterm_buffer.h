@@ -25,6 +25,13 @@ int     vterm_buffer_set_active(vterm_t *vterm, int idx);
 
 int     vterm_buffer_get_active(vterm_t *vterm);
 
+int     vterm_buffer_shift_up(vterm_t *vterm, int idx,
+            int top_row, int bottom_row, int stride);
+
+int     vterm_buffer_shift_down(vterm_t *vterm, int idx,
+            int top_row, int bottom_row, int stride);
+
+
 #define VCELL_ZERO_ALL(_cell) \
             { memset(&_cell, 0, sizeof(_cell)); }
 

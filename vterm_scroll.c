@@ -20,9 +20,6 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
-    int             i;
-    vterm_cell_t    **vcell_src;
-    vterm_cell_t    **vcell_dst;
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
@@ -42,17 +39,8 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
     */
     v_desc->crow = v_desc->scroll_max;
 
-    vcell_src = &v_desc->cells[v_desc->scroll_min + 1];
-    vcell_dst = &v_desc->cells[v_desc->scroll_min];
-
-    for(i = v_desc->scroll_min; i < v_desc->scroll_max; i++)
-    {
-        memcpy(*vcell_dst, *vcell_src,
-             sizeof(vterm_cell_t) * v_desc->cols);
-
-        vcell_src++;
-        vcell_dst++;
-    }
+    vterm_buffer_shift_up(vterm, idx,
+        v_desc->scroll_min, v_desc->scroll_max, 1);
 
     /* clear last row of the scrolling region */
     vterm_erase_row(vterm, v_desc->scroll_max, reset_colors);
@@ -74,7 +62,6 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
-    int             i;
 
     // set vterm desc buffer selector
     idx = vterm_buffer_get_active(vterm);
@@ -95,11 +82,8 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
     */
     v_desc->crow = v_desc->scroll_min;
 
-    for(i = v_desc->scroll_max; i > v_desc->scroll_min; i--)
-    {
-        memcpy(v_desc->cells[i], v_desc->cells[i - 1],
-            sizeof(vterm_cell_t) * v_desc->cols);
-    }
+    vterm_buffer_shift_down(vterm, idx,
+        v_desc->scroll_min, v_desc->scroll_max, 1);
 
     /* clear first row of the scrolling region */
     vterm_erase_row(vterm, v_desc->scroll_min, reset_colors);

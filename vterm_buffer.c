@@ -263,6 +263,75 @@ vterm_buffer_get_active(vterm_t *vterm)
     return vterm->vterm_desc_idx;
 }
 
+int
+vterm_buffer_shift_up(vterm_t *vterm, int idx,
+    int top_row, int bottom_row, int stride)
+{
+    vterm_desc_t    *v_desc = NULL;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
+    int             region;
+    int             i;
+
+    // set vterm desc buffer selector
+    v_desc = &vterm->vterm_desc[idx];
+
+    // computer real values when -1 is supplied
+    if(top_row == -1) top_row = 0;
+    if(bottom_row == -1) bottom_row = v_desc->rows - 1;
+
+    region = bottom_row - top_row;
+    if(region < 1) return -1;
+
+    vcell_src = &v_desc->cells[top_row + stride];
+    vcell_dst = &v_desc->cells[top_row];
+
+    for(i = 0; i < region; i++)
+    {
+        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * v_desc->cols);
+
+        vcell_src++;
+        vcell_dst++;
+    }
+
+    return 0;
+}
+
+int
+vterm_buffer_shift_down(vterm_t *vterm, int idx,
+    int top_row, int bottom_row, int stride)
+{
+    vterm_desc_t    *v_desc = NULL;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
+    int             region;
+    int             i;
+
+    // set vterm desc buffer selector
+    v_desc = &vterm->vterm_desc[idx];
+
+    // computer real values when -1 is supplied
+    if(top_row == -1) top_row = 0;
+    if(bottom_row == -1) bottom_row = v_desc->rows - 1;
+
+    region = bottom_row - top_row;
+    if(region < 1) return -1;
+
+    vcell_src = &v_desc->cells[bottom_row - stride];
+    vcell_dst = &v_desc->cells[bottom_row];
+
+    for(i = 0; i < region; i++)
+    {
+        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * v_desc->cols);
+
+        vcell_src--;
+        vcell_dst--;
+    }
+
+    return 0;
+}
+
+
 vterm_cell_t**
 vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
 {
