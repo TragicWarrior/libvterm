@@ -29,12 +29,9 @@ testwin_t;
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
-enum
-{
-    TERM_MODE_NORMAL    =   0x0,
-    TERM_MODE_ALT,
-    TERM_MODE_HISTORY,
-};
+#define TERM_MODE_NORMAL    0
+#define TERM_MODE_ALT       1
+#define TERM_MODE_HISTORY   (1 << 4)
 
 short   color_table[] =
             {
@@ -57,11 +54,12 @@ typedef struct _color_mtx_s     color_mtx_t;
 // prototypes
 void    vshell_print_help(void);
 void    vshell_paint_screen(vterm_t *vterm);
+int32_t vshell_get_key(void);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
 void    vshell_color_init(void);
 short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
-// int     vshell_pair_splitter(vterm_t *vterm, short pair, short *fg, short *bg);
+void    vshell_render_std(vterm_t *vterm, WINDOW *window);
 
 // globals
 WINDOW          *screen_wnd;
@@ -73,7 +71,8 @@ color_mtx_t     *color_mtx;
 int main(int argc, char **argv)
 {
     vterm_t         *vterm;
-    int 		    i, ch;
+    int32_t         ch;
+    int		        i;
     ssize_t         bytes;
     ssize_t         bytes_buffered = 0;
     uint32_t        flags = 0;
@@ -229,10 +228,10 @@ int main(int argc, char **argv)
         {
             if(bytes_buffered > 0)
             {
-                vterm_wnd_update(vterm, VTERM_BUF_STANDARD, 0);
-                touchwin(VWINDOW(twin));
-                wrefresh(VWINDOW(twin));
-                refresh();
+                if(!(term_mode & TERM_MODE_HISTORY))
+                {
+                    vshell_render_std(vterm, VWINDOW(twin));
+                }
 
                 bytes_buffered = 0;
             }
@@ -242,12 +241,28 @@ int main(int argc, char **argv)
 
         if(bytes == -1) break;
 
-        ch = getch();
+        ch = vshell_get_key();
 
         // handle special events like resize first
         if(ch == KEY_RESIZE)
         {
             vshell_resize(twin, vterm);
+            continue;
+        }
+
+        // alt z
+        if(ch == 0x1b7a)
+        {
+            if(term_mode & TERM_MODE_HISTORY)
+            {
+                term_mode &= ~TERM_MODE_HISTORY;
+            }
+            else
+            {
+                term_mode |= TERM_MODE_HISTORY;
+            }
+
+            vshell_paint_screen(vterm);
             continue;
         }
 
@@ -268,6 +283,30 @@ int main(int argc, char **argv)
     fflush(NULL);
 
     return 0;
+}
+
+int32_t
+vshell_get_key(void)
+{
+    int32_t keystroke;
+    int     ch;
+
+    ch = getch();
+    keystroke = ch;
+
+    if(ch == 0x1b)
+    {
+        for(;;)
+        {
+            ch = getch();
+            if(ch == -1) break;
+
+            keystroke = keystroke << 8;
+            keystroke |= ch;
+        }
+    }
+
+    return keystroke;
 }
 
 void
@@ -293,12 +332,16 @@ vshell_paint_screen(vterm_t *vterm)
         status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_RED);
     }
 
+    if(term_mode & TERM_MODE_HISTORY)
+    {
+        frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_MAGENTA);
+        status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_MAGENTA);
+    }
 
     // paint the screen blue
     attrset(COLOR_PAIR(frame_colors));    // white on blue
-    // wattron(screen_wnd, A_BOLD);
+    wattron(screen_wnd, A_BOLD);
     box(screen_wnd, 0, 0);
-    // wattroff(screen_wnd, A_BOLD);
 
     // quick computer of title location
     if(vterm != NULL)
@@ -316,17 +359,14 @@ vshell_paint_screen(vterm_t *vterm)
     offset = (screen_w >> 1) - (len >> 1);
     mvprintw(0, offset, title);
 
-    sprintf(title, " mode: %s | size: %d x %d ",
-        (term_mode == TERM_MODE_NORMAL) ? "standard" : "alternate",
+    sprintf(title, " Press [alt + z] for history | %s | %d x %d ",
+        (term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
         screen_w - 2, screen_h - 2);
 
     len = strlen(title);
     offset = (screen_w >> 1) - (len >> 1);
 
-    attrset(COLOR_PAIR(status_colors));
-    wattron(screen_wnd, A_BOLD);
     mvwprintw(screen_wnd, screen_h - 1, offset, title);
-    wattroff(screen_wnd, A_BOLD);
 
     refresh();
 
@@ -459,6 +499,18 @@ vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 
     return i;
 }
+
+void
+vshell_render_std(vterm_t *vterm, WINDOW *window)
+{
+    vterm_wnd_update(vterm, VTERM_BUF_STANDARD, 0);
+    touchwin(window);
+    wrefresh(window);
+    refresh();
+
+    return;
+}
+
 
 void
 vshell_print_help(void)
