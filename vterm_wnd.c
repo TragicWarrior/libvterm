@@ -28,11 +28,24 @@ vterm_wnd_get(vterm_t *vterm)
     return vterm->window;
 }
 
+void
+vterm_wnd_size(vterm_t *vterm, int *width, int *height)
+{
+    if(vterm == NULL) return;
+    if(vterm->window == NULL) return;
+
+    getmaxyx(vterm->window, *height, *width);
+
+    return;
+}
+
 int
 vterm_wnd_update(vterm_t *vterm, int idx, int offset)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
+    int             width;
+    int             height;
     int             r, c;
     attr_t          attrs;
     short           colors;
@@ -41,17 +54,21 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
     if(vterm == NULL) return -1;
     if(vterm->window == NULL) return -1;
 
-    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_SCROLLBACK) return -1;
-
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
+    if(idx == -1)
+    {
+        idx = vterm_buffer_get_active(vterm);
+    }
+
     v_desc = &vterm->vterm_desc[idx];
 
+    getmaxyx(vterm->window, height, width);
+
     // for(r = 0; r < v_desc->rows; r++)
-    for(r = 0; r < v_desc->rows; r++)
+    for(r = 0; r < height; r++)
     {
         // start at the beginning of the row
-        vcell = &v_desc->cells[r][offset];
+        vcell = &v_desc->cells[r + offset][0];
 
         for(c = 0; c < v_desc->cols; c++)
         {
@@ -75,10 +92,13 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
         }
     }
 
-    if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
+    if(idx != VTERM_BUF_HISTORY)
     {
-        mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
-            v_desc->default_colors, NULL);
+        if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
+        {
+            mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
+                v_desc->default_colors, NULL);
+        }
     }
 
     return -1;

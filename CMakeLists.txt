@@ -101,6 +101,7 @@ add_library(vterm-static STATIC
     vterm_esc_IND.c
     vterm_esc_NEL.c
     vterm_esc_RI.c
+    vterm_history.c
     vterm_hook.c
     vterm_misc.c
     vterm_osc.c
@@ -110,7 +111,6 @@ add_library(vterm-static STATIC
     vterm_reply.c
     vterm_resize.c
     vterm_scroll.c
-    vterm_scrollback.c
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c
@@ -160,6 +160,7 @@ add_library(vterm.o OBJECT
     vterm_esc_IND.c
     vterm_esc_NEL.c
     vterm_esc_RI.c
+    vterm_history.c
     vterm_hook.c
     vterm_misc.c
     vterm_osc.c
@@ -169,7 +170,6 @@ add_library(vterm.o OBJECT
     vterm_reply.c
     vterm_resize.c
     vterm_scroll.c
-    vterm_scrollback.c
     vterm_utf8.c
     vterm_wnd.c
     vterm_write.c

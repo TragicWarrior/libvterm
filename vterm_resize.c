@@ -53,10 +53,10 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     vterm_buffer_realloc(vterm, idx, width, height);
 
     /*
-        realloc the scrollback buffer to the new width and keep the
+        realloc the history buffer to the new width and keep the
         height the same.
     */
-    vterm_buffer_realloc(vterm, VTERM_BUF_SCROLLBACK, width, -1);
+    vterm_buffer_realloc(vterm, VTERM_BUF_HISTORY, width, -1);
 
     if(!(v_desc->buffer_state & STATE_SCROLL_SHORT))
     {

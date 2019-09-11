@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE   1           // needed for wcswidth()
 
 #include <stdio.h>
 #include <signal.h>
@@ -6,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <wchar.h>
 
 #ifdef __FreeBSD__
 #include <ncurses/ncurses.h>
@@ -26,6 +28,9 @@ typedef struct
     WINDOW  *term_win;
 }
 testwin_t;
+
+#define WCS_UARROW      0x2191
+#define WCS_DARROW      0x2193
 
 #define VWINDOW(x)  (*(WINDOW**)x)
 
@@ -53,13 +58,15 @@ typedef struct _color_mtx_s     color_mtx_t;
 
 // prototypes
 void    vshell_print_help(void);
-void    vshell_paint_screen(vterm_t *vterm);
+void    vshell_paint_frame(vterm_t *vterm);
 int32_t vshell_get_key(void);
 int     vshell_resize(testwin_t *twin, vterm_t * vterm);
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
 void    vshell_color_init(void);
 short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
-void    vshell_render_std(vterm_t *vterm, WINDOW *window);
+void    vshell_render_normal(vterm_t *vterm, WINDOW *window);
+void    vshell_render_history(vterm_t *vterm, WINDOW *window, int scrolled);
+
 
 // globals
 WINDOW          *screen_wnd;
@@ -101,7 +108,6 @@ int main(int argc, char **argv)
                                            rather it will return ERR when
                                            there is no keypress available
                                         */
-
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, screen_h, screen_w);
 
@@ -187,7 +193,7 @@ int main(int argc, char **argv)
     vshell_color_init();
 
     // set default frame color
-    vshell_paint_screen(NULL);
+    vshell_paint_frame(NULL);
 
     VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
 
@@ -230,7 +236,12 @@ int main(int argc, char **argv)
             {
                 if(!(term_mode & TERM_MODE_HISTORY))
                 {
-                    vshell_render_std(vterm, VWINDOW(twin));
+                    vshell_render_normal(vterm, VWINDOW(twin));
+                }
+
+                if(term_mode & TERM_MODE_HISTORY)
+                {
+                    vshell_render_history(vterm, VWINDOW(twin), 0);
                 }
 
                 bytes_buffered = 0;
@@ -256,19 +267,37 @@ int main(int argc, char **argv)
             if(term_mode & TERM_MODE_HISTORY)
             {
                 term_mode &= ~TERM_MODE_HISTORY;
+                vshell_paint_frame(vterm);
+                vshell_render_normal(vterm, VWINDOW(twin));
             }
             else
             {
                 term_mode |= TERM_MODE_HISTORY;
+                vshell_paint_frame(vterm);
+                vshell_render_history(vterm, VWINDOW(twin), 0);
             }
 
-            vshell_paint_screen(vterm);
             continue;
         }
 
-        if(ch != ERR)
+        if(term_mode & TERM_MODE_HISTORY)
         {
-            vterm_write_pipe(vterm, ch);
+            if(ch == KEY_UP)
+            {
+                vshell_render_history(vterm, VWINDOW(twin), 1);
+            }
+
+            if(ch == KEY_DOWN)
+            {
+                vshell_render_history(vterm, VWINDOW(twin), -1);
+            }
+        }
+        else
+        {
+            if(ch != ERR)
+            {
+                vterm_write_pipe(vterm, ch);
+            }
         }
     }
 
@@ -310,32 +339,31 @@ vshell_get_key(void)
 }
 
 void
-vshell_paint_screen(vterm_t *vterm)
+vshell_paint_frame(vterm_t *vterm)
 {
     extern WINDOW   *screen_wnd;
     char            title[256] = " Term In A Box ";
     char            buf[254];
+    wchar_t         wbuf[512];
+    static cchar_t  cbuf[512];
     int             len;
     int             offset;
     int             frame_colors;
-    int             status_colors;
+    int             i = 0;
 
     if(term_mode == TERM_MODE_NORMAL)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
-        status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     }
 
     if(term_mode == TERM_MODE_ALT)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_RED);
-        status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_RED);
     }
 
     if(term_mode & TERM_MODE_HISTORY)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_MAGENTA);
-        status_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_MAGENTA);
     }
 
     // paint the screen blue
@@ -359,14 +387,34 @@ vshell_paint_screen(vterm_t *vterm)
     offset = (screen_w >> 1) - (len >> 1);
     mvprintw(0, offset, title);
 
-    sprintf(title, " Press [alt + z] for history | %s | %d x %d ",
-        (term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
-        screen_w - 2, screen_h - 2);
+    if(term_mode & TERM_MODE_HISTORY)
+    {
+        len = swprintf(wbuf, 512,
+            L" Press [alt + z] to exit history. "
+            L"[%lc] / [%lc] Scroll contents ",
+            WCS_UARROW, WCS_DARROW);
+        memset(cbuf, 0, sizeof(cbuf));
 
-    len = strlen(title);
-    offset = (screen_w >> 1) - (len >> 1);
+        for(i = 0; i < len; i++)
+        {
+            setcchar(&cbuf[i], &wbuf[i], WA_BOLD, frame_colors, NULL);
+        }
 
-    mvwprintw(screen_wnd, screen_h - 1, offset, title);
+        offset = (screen_w >> 1) - (len >> 1);
+
+        mvwadd_wchnstr(screen_wnd, screen_h - 1, offset, cbuf, -1);
+    }
+    else
+    {
+        len = sprintf(title, " Press [alt + z] for history | %s | %d x %d ",
+            (term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
+            screen_w - 2, screen_h - 2);
+
+        offset = (screen_w >> 1) - (len >> 1);
+
+        mvwprintw(screen_wnd, screen_h - 1, offset, title);
+    }
+
 
     refresh();
 
@@ -378,7 +426,7 @@ vshell_resize(testwin_t *twin, vterm_t * vterm)
 {
     getmaxyx(stdscr, screen_h, screen_w);
 
-    vshell_paint_screen(vterm);
+    vshell_paint_frame(vterm);
 
     wresize(VWINDOW(twin), screen_h - 2, screen_w - 2);
 
@@ -414,7 +462,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             else
                 term_mode = TERM_MODE_ALT;
 
-            vshell_paint_screen(vterm);
+            vshell_paint_frame(vterm);
             break;
         }
     }
@@ -501,9 +549,40 @@ vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 }
 
 void
-vshell_render_std(vterm_t *vterm, WINDOW *window)
+vshell_render_normal(vterm_t *vterm, WINDOW *window)
 {
-    vterm_wnd_update(vterm, VTERM_BUF_STANDARD, 0);
+    vterm_wnd_update(vterm, -1, 0);
+    touchwin(window);
+    wrefresh(window);
+    refresh();
+
+    return;
+}
+
+void
+vshell_render_history(vterm_t *vterm, WINDOW *window, int scrolled)
+{
+    static int  cursor_pos = 0;
+    int         history_sz;
+    int         height, width;
+    int         offset;
+
+    history_sz = vterm_get_history_size(vterm);
+    vterm_wnd_size(vterm, &width, &height);
+
+    if(scrolled < 0)
+    {
+        if((cursor_pos + scrolled) < 0)
+        {
+            cursor_pos = 0;
+            scrolled = 0;
+        }
+    }
+
+    cursor_pos += scrolled;
+    offset = history_sz - height - cursor_pos;
+
+    vterm_wnd_update(vterm, VTERM_BUF_HISTORY, offset);
     touchwin(window);
     wrefresh(window);
     refresh();

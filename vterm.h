@@ -146,7 +146,7 @@ enum
 {
     VTERM_BUF_STANDARD    =   0x00,     // nomral / standard buffer
     VTERM_BUF_ALTERNATE,                // typically used for lineart progs
-    VTERM_BUF_SCROLLBACK                // the history buffer
+    VTERM_BUF_HISTORY                   // the history buffer
 };
 
 /*
@@ -173,7 +173,7 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     uint32_t flags);
 
 /*
-    determines the number of lines that will be preserved in the scrollback
+    determines the number of lines that will be preserved in the history
     buffer.
 
     @params:
@@ -183,7 +183,18 @@ vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                         default limit is set to 4x the height of the
                         terminal.
 */
-void            vterm_set_scrollback(vterm_t *vterm, int rows);
+void            vterm_set_history_size(vterm_t *vterm, int rows);
+
+/*
+    get the maximum number of lines that will be preserved in the history
+    buffer.
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+
+    @return:            the number of lines preserved by the history buffer.
+*/
+int            vterm_get_history_size(vterm_t *vterm);
 
 /*
     convenience macro for alloc-ing a ready to use terminal object.
@@ -387,12 +398,24 @@ void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
 WINDOW*         vterm_wnd_get(vterm_t *vterm);
 
 /*
+    get the size of the WINDOW that is attached to the vterm object
+
+    @params:
+        vterm           a valid vterm object handle.
+        width           pointer to an integer where the width will be returned.
+        height          pointer to an integer where the height will be returned.
+*/
+void            vterm_wnd_size(vterm_t *vterm, int *width, int *height);
+
+/*
     cause updates to the terminal to be rendered
 
     @params:
         vterm           a valid vterm object handle.
-        idx             the index of the buffer to render.  this is either
-                        VTERM_BUF_STANDARD or VTERM_BUF_SCROLLBACK.
+        idx             the index of the buffer to render.  passing a value
+                        of -1 will automatically select the active buffer
+                        which will either be VTERM_BUF_STANDARD or
+                        VTERM_BUF_ALTERNATE.
 
     @return:            returns 0 or success or -1 on error if an invalid
                         buffer index was specfied.

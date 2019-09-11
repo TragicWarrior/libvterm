@@ -88,7 +88,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     vterm_buffer_alloc(vterm, VTERM_BUF_STANDARD, width, height);
 
     // allocate the scrollback buffer to 4x height
-    vterm_buffer_alloc(vterm, VTERM_BUF_SCROLLBACK, width, height * 4);
+    vterm_buffer_alloc(vterm, VTERM_BUF_HISTORY, width, height * 4);
 
     // initializes the color cache or updates the ref count
     color_cache_init();
@@ -243,7 +243,7 @@ vterm_destroy(vterm_t *vterm)
     mouse_driver_free(vterm);
 
     // todo:  do something more elegant in the future
-    for(i = 0; i < 2; i++)
+    for(i = 0; i < 3; i++)
     {
         vterm_buffer_dealloc(vterm, i);
     }
