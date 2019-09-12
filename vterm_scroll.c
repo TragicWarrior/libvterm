@@ -25,11 +25,18 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY, -1, -1, 1);
+    /*
+        on scroll up, copy a row to the history buffer, but only if the
+        active buffer is the standard buffer.
+    */
+    if(idx == VTERM_BUF_STANDARD)
+    {
+        vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY, -1, -1, 1);
 
-    vterm_buffer_clone(vterm, VTERM_BUF_STANDARD, VTERM_BUF_HISTORY,
-        vterm->vterm_desc[VTERM_BUF_STANDARD].crow,
-        vterm->vterm_desc[VTERM_BUF_HISTORY].rows - 1, 1);
+        vterm_buffer_clone(vterm, VTERM_BUF_STANDARD, VTERM_BUF_HISTORY,
+            vterm->vterm_desc[VTERM_BUF_STANDARD].crow,
+            vterm->vterm_desc[VTERM_BUF_HISTORY].rows - 1, 1);
+    }
 
     v_desc->crow++;
 
