@@ -126,8 +126,8 @@ int main(int argc, char **argv)
 
     vshell_parse_cmdline(vshell);
 
-
     vshell_color_init(vshell);
+    vshell->renderer = vshell_render_normal;
 
     // set default frame color
     vshell_paint_frame(vshell);
@@ -172,15 +172,7 @@ int main(int argc, char **argv)
         {
             if(bytes_buffered > 0)
             {
-                if(!(vshell->term_mode & TERM_MODE_HISTORY))
-                {
-                    vshell_render_normal(vshell, NULL);
-                }
-
-                if(vshell->term_mode & TERM_MODE_HISTORY)
-                {
-                    vshell_render_history(vshell, &(int){0});
-                }
+                vshell->renderer(vshell, &(int){0});
 
                 bytes_buffered = 0;
             }
@@ -206,15 +198,15 @@ int main(int argc, char **argv)
             {
                 vshell->term_mode &= ~TERM_MODE_HISTORY;
                 vshell->cursor_pos = 0;
-                vshell_paint_frame(vshell);
-                vshell_render_normal(vshell, NULL);
+                vshell->renderer = vshell_render_normal;
             }
             else
             {
                 vshell->term_mode |= TERM_MODE_HISTORY;
-                vshell_paint_frame(vshell);
-                vshell_render_history(vshell, &(int){0});
+                vshell->renderer = vshell_render_history;
             }
+
+            vshell->renderer(vshell, &(int){0});
 
             continue;
         }
@@ -223,14 +215,12 @@ int main(int argc, char **argv)
         {
             if(ch == KEY_UP)
             {
-                vshell_paint_frame(vshell);
-                vshell_render_history(vshell, &(int){1});
+                vshell->renderer(vshell, &(int){1});
             }
 
             if(ch == KEY_DOWN)
             {
-                vshell_paint_frame(vshell);
-                vshell_render_history(vshell, &(int){-1});
+                vshell->renderer(vshell, &(int){-1});
             }
         }
         else
@@ -366,7 +356,7 @@ vshell_resize(vshell_t *vshell)
 {
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
-    vshell_paint_frame(vshell);
+    vshell->renderer(vshell, &(int){0});
 
     wresize(vshell->term_wnd, vshell->screen_h - 2, vshell->screen_w - 2);
 
@@ -402,7 +392,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             else
                 vshell->term_mode = TERM_MODE_ALT;
 
-            vshell_paint_frame(vshell);
+            vshell->renderer(vshell, &(int){0});
             break;
         }
     }
@@ -496,6 +486,7 @@ vshell_render_normal(vshell_t *vshell, void *anything)
 {
     (void)anything;     // make compiler happy
 
+    vshell_paint_frame(vshell);
     vterm_wnd_update(vshell->vterm, -1, 0);
     touchwin(vshell->term_wnd);
     wrefresh(vshell->term_wnd);
@@ -507,29 +498,32 @@ vshell_render_normal(vshell_t *vshell, void *anything)
 void
 vshell_render_history(vshell_t *vshell, void *anything)
 {
-    int         scrolled = *(int *)anything;
+    int         *scrolled;
     int         history_sz;
     int         height, width;
     int         offset;
 
+    scrolled = (int *)anything;
+
     history_sz = vterm_get_history_size(vshell->vterm);
     vterm_wnd_size(vshell->vterm, &width, &height);
 
-    if((vshell->cursor_pos + scrolled) < 0)
+    if((vshell->cursor_pos + *scrolled) < 0)
     {
         vshell->cursor_pos = 0;
-        scrolled = 0;
+        *scrolled = 0;
     }
 
-    if((vshell->cursor_pos + scrolled) > history_sz - height)
+    if((vshell->cursor_pos + *scrolled) > history_sz - height)
     {
         vshell->cursor_pos = history_sz - height;
-        scrolled = 0;
+        *scrolled = 0;
     }
 
-    vshell->cursor_pos += scrolled;
+    vshell->cursor_pos += *scrolled;
     offset = history_sz - height - vshell->cursor_pos;
 
+    vshell_paint_frame(vshell);
     vterm_wnd_update(vshell->vterm, VTERM_BUF_HISTORY, offset);
     touchwin(vshell->term_wnd);
     wrefresh(vshell->term_wnd);
