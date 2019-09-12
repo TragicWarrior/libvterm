@@ -242,7 +242,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
             vterm->vterm_desc[VTERM_BUF_STANDARD].default_colors;
 
         // erase the newly created buffer
-        vterm_erase(vterm, idx);
+        vterm_erase(vterm, idx, 0);
     }
 
     // update the vterm buffer desc index
@@ -366,7 +366,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
     stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
 
-    // endwin(); printf("%d\n", stride); fflush(stdout); exit(0);
+    // endwin(); printf("%d\n", rows); fflush(stdout); exit(0);
 
     for(i = 0; i < rows; i++)
     {

@@ -504,8 +504,10 @@ void                vterm_free_mapped_colors(vterm_t *vterm);
     @params:
         vterm           handle to a vterm object
         idx             index of the buffer or -1 for current
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase(vterm_t *vterm, int idx);
+void                vterm_erase(vterm_t *vterm, int idx, char fill_char);
 
 /*
     erase the specified row of the terminal.
@@ -517,8 +519,11 @@ void                vterm_erase(vterm_t *vterm, int idx);
         reset_colors    a value of TRUE indicates that the erased row should
                         also have its color attributes reset to the default
                         foreground and background colors.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
+void                vterm_erase_row(vterm_t *vterm, int row,
+                        bool reset_color, char fill_char);
 
 /*
     erase the terminal beginning at a certain row and toward the bottom
@@ -528,8 +533,11 @@ void                vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
         vterm           handle to a vterm object
         start_row       zero-based index of the row and subsequent rows below
                         to erase.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_rows(vterm_t *vterm, int start_row);
+void                vterm_erase_rows(vterm_t *vterm, int start_row,
+                        char fill_char);
 
 /*
     erase the specified column of the terminal.
@@ -538,8 +546,10 @@ void                vterm_erase_rows(vterm_t *vterm, int start_row);
         vterm           handle to a vterm object
         col             zero-based index of the column to delete.  specifying
                         a value of -1 indicates current column.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_col(vterm_t *vterm, int col);
+void                vterm_erase_col(vterm_t *vterm, int col, char fill_char);
 
 /*
     erase the terminal at a specific column and toward the right margin.
@@ -548,8 +558,11 @@ void                vterm_erase_col(vterm_t *vterm, int col);
         vterm           handle to a vterm object
         start_col       zero-based index of the column and subsequent columns
                         to the right to erase.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_cols(vterm_t *vterm, int start_col);
+void                vterm_erase_cols(vterm_t *vterm, int start_col,
+                        char fill_char);
 
 /*
     cause the terminal to be scrolled up by one row and placing an empty

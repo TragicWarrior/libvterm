@@ -25,6 +25,12 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
+    vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY, -1, -1, 1);
+
+    vterm_buffer_clone(vterm, VTERM_BUF_STANDARD, VTERM_BUF_HISTORY,
+        vterm->vterm_desc[VTERM_BUF_STANDARD].crow,
+        vterm->vterm_desc[VTERM_BUF_HISTORY].rows - 1, 1);
+
     v_desc->crow++;
 
     /*
@@ -43,7 +49,7 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
         v_desc->scroll_min, v_desc->scroll_max, 1);
 
     /* clear last row of the scrolling region */
-    vterm_erase_row(vterm, v_desc->scroll_max, reset_colors);
+    vterm_erase_row(vterm, v_desc->scroll_max, reset_colors, 0);
 
     if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
     {
@@ -85,8 +91,8 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
     vterm_buffer_shift_down(vterm, idx,
         v_desc->scroll_min, v_desc->scroll_max, 1);
 
-    /* clear first row of the scrolling region */
-    vterm_erase_row(vterm, v_desc->scroll_min, reset_colors);
+    // clear first row of the scrolling region
+    vterm_erase_row(vterm, v_desc->scroll_min, reset_colors, 0);
 
     if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
     {

@@ -73,7 +73,7 @@ WINDOW          *screen_wnd;
 int             screen_w, screen_h;
 int             term_mode;
 color_mtx_t     *color_mtx;
-
+int             cursor_pos;
 
 int main(int argc, char **argv)
 {
@@ -267,6 +267,7 @@ int main(int argc, char **argv)
             if(term_mode & TERM_MODE_HISTORY)
             {
                 term_mode &= ~TERM_MODE_HISTORY;
+                cursor_pos = 0;
                 vshell_paint_frame(vterm);
                 vshell_render_normal(vterm, VWINDOW(twin));
             }
@@ -284,11 +285,13 @@ int main(int argc, char **argv)
         {
             if(ch == KEY_UP)
             {
+                vshell_paint_frame(vterm);
                 vshell_render_history(vterm, VWINDOW(twin), 1);
             }
 
             if(ch == KEY_DOWN)
             {
+                vshell_paint_frame(vterm);
                 vshell_render_history(vterm, VWINDOW(twin), -1);
             }
         }
@@ -390,9 +393,9 @@ vshell_paint_frame(vterm_t *vterm)
     if(term_mode & TERM_MODE_HISTORY)
     {
         len = swprintf(wbuf, 512,
-            L" Press [alt + z] to exit history. "
-            L"[%lc] / [%lc] Scroll contents ",
-            WCS_UARROW, WCS_DARROW);
+            L" Press [alt + z] to exit history | "
+            L" [%lc] / [%lc] Scroll | Line %03d ",
+            WCS_UARROW, WCS_DARROW, cursor_pos);
         memset(cbuf, 0, sizeof(cbuf));
 
         for(i = 0; i < len; i++)
@@ -414,7 +417,6 @@ vshell_paint_frame(vterm_t *vterm)
 
         mvwprintw(screen_wnd, screen_h - 1, offset, title);
     }
-
 
     refresh();
 
@@ -562,7 +564,6 @@ vshell_render_normal(vterm_t *vterm, WINDOW *window)
 void
 vshell_render_history(vterm_t *vterm, WINDOW *window, int scrolled)
 {
-    static int  cursor_pos = 0;
     int         history_sz;
     int         height, width;
     int         offset;
@@ -570,13 +571,16 @@ vshell_render_history(vterm_t *vterm, WINDOW *window, int scrolled)
     history_sz = vterm_get_history_size(vterm);
     vterm_wnd_size(vterm, &width, &height);
 
-    if(scrolled < 0)
+    if((cursor_pos + scrolled) < 0)
     {
-        if((cursor_pos + scrolled) < 0)
-        {
-            cursor_pos = 0;
-            scrolled = 0;
-        }
+        cursor_pos = 0;
+        scrolled = 0;
+    }
+
+    if((cursor_pos + scrolled) > history_sz - height)
+    {
+        cursor_pos = history_sz - height;
+        scrolled = 0;
     }
 
     cursor_pos += scrolled;

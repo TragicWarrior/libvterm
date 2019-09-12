@@ -92,7 +92,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         with all blanks.
     */
     vterm_buffer_alloc(vterm, VTERM_BUF_HISTORY, width, height * 4);
-    vterm_erase(vterm, VTERM_BUF_HISTORY);
+    vterm_erase(vterm, VTERM_BUF_HISTORY, '-');
 
     // initializes the color cache or updates the ref count
     color_cache_init();
@@ -110,7 +110,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     }
 
     // initialize all cells with defaults
-    vterm_erase(vterm, VTERM_BUF_STANDARD);
+    vterm_erase(vterm, VTERM_BUF_STANDARD, 0);
 
     if(flags & VTERM_FLAG_DUMP)
     {
