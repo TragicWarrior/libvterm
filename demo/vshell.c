@@ -1,4 +1,5 @@
-#define _XOPEN_SOURCE   1           // needed for wcswidth()
+#define _XOPEN_SOURCE 500               // needed for wcswidth()
+#define _XOPEN_SOURCE_EXTNEDED
 
 #include <stdio.h>
 #include <signal.h>
@@ -19,20 +20,9 @@
 #include "../vterm.h"
 #include "../stringv.h"
 
-/*
-    packing the WINDOW * inside another structure can be useful when
-    passing data around in a real program.
-*/
-typedef struct
-{
-    WINDOW  *term_win;
-}
-testwin_t;
 
 #define WCS_UARROW      0x2191
 #define WCS_DARROW      0x2193
-
-#define VWINDOW(x)  (*(WINDOW**)x)
 
 #define TERM_MODE_NORMAL    0
 #define TERM_MODE_ALT       1
@@ -56,38 +46,58 @@ struct _color_mtx_s
 
 typedef struct _color_mtx_s     color_mtx_t;
 
-// prototypes
-void    vshell_print_help(void);
-void    vshell_paint_frame(vterm_t *vterm);
-int32_t vshell_get_key(void);
-int     vshell_resize(testwin_t *twin, vterm_t * vterm);
-void    vshell_hook(vterm_t *vterm, int event, void *anything);
-void    vshell_color_init(void);
-short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
-void    vshell_render_normal(vterm_t *vterm, WINDOW *window);
-void    vshell_render_history(vterm_t *vterm, WINDOW *window, int scrolled);
-
+typedef struct _vshell_s        vshell_t;
 
 // globals
-WINDOW          *screen_wnd;
-int             screen_w, screen_h;
-int             term_mode;
-color_mtx_t     *color_mtx;
-int             cursor_pos;
+struct _vshell_s
+{
+    int             argc;
+    char            **argv;
+
+    char            *exec_path;
+    char            **exec_argv;
+
+    vterm_t         *vterm;
+    uint32_t        flags ;
+    WINDOW          *screen_wnd;
+    WINDOW          *term_wnd;
+    int             screen_w;
+    int             screen_h;
+    int             term_mode;
+    color_mtx_t     *color_mtx;
+    int             cursor_pos;
+
+    // object "methods"
+    void            (*renderer)   (vshell_t *, void *);
+};
+
+// prototypes
+void    vshell_parse_cmdline(vshell_t *vshell);
+void    vshell_print_help(void);
+void    vshell_color_init(vshell_t *vshell);
+
+void    vshell_paint_frame(vshell_t *vshell);
+int32_t vshell_get_key(void);
+int     vshell_resize(vshell_t *vshell);
+
+void    vshell_render_normal(vshell_t *vshell, void *anything);
+void    vshell_render_history(vshell_t *vshell, void *anything);
+
+void    vshell_hook(vterm_t *vterm, int event, void *anything);
+short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
+
+
+vshell_t    *vshell;
 
 int main(int argc, char **argv)
 {
-    vterm_t         *vterm;
     int32_t         ch;
-    int		        i;
+    // int		        i;
     ssize_t         bytes;
     ssize_t         bytes_buffered = 0;
-    uint32_t        flags = 0;
-    testwin_t       *twin;
-    char            *exec_path = NULL;
-    char            **exec_argv = NULL;
     char            *locale;
-    int             count = 1;
+
+    vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
 
     // 1,000,000 usec = 1 sec
     // effective 30000 usec = 30 fps
@@ -99,7 +109,7 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL, locale);
 
-    screen_wnd = initscr();
+    vshell->screen_wnd = initscr();
     noecho();
     raw();
     curs_set(0);                        // hide cursor
@@ -109,113 +119,41 @@ int main(int argc, char **argv)
                                            there is no keypress available
                                         */
     keypad(stdscr, TRUE);
-    getmaxyx(stdscr, screen_h, screen_w);
+    getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
-    twin = (testwin_t*)calloc(1, sizeof(testwin_t));
+    vshell->argc = argc;
+    vshell->argv = argv;
 
-    if (argc > 1)
-    {
-        // interate through argv[] looking for params
-        for (i = 1; i < argc; i++)
-        {
-            if (strncmp(argv[i], "--help", strlen("--help")) == 0)
-            {
-                endwin();
-                vshell_print_help();
-                exit(0);
-            }
+    vshell_parse_cmdline(vshell);
 
-            if (strncmp(argv[i], "--version", strlen("--version")) == 0)
-            {
-                endwin();
-                vshell_print_help();
-                exit(0);
-            }
 
-            if (strncmp(argv[i], "--dump", strlen("--dump")) == 0)
-            {
-                flags |= VTERM_FLAG_DUMP;
-                continue;
-            }
-
-            if (strncmp(argv[i], "--rxvt", strlen("--rxvt")) == 0)
-            {
-                flags |= VTERM_FLAG_RXVT;
-                continue;
-            }
-
-            if (strncmp(argv[i], "--vt100", strlen("--vt100")) == 0)
-            {
-                flags |= VTERM_FLAG_VT100;
-                continue;
-            }
-
-            if (strncmp(argv[i], "--linux", strlen("--linux")) == 0)
-            {
-                flags |= VTERM_FLAG_LINUX;
-                continue;
-            }
-
-            if (strncmp(argv[i], "--c16", strlen("--c16")) == 0)
-            {
-                flags |= VTERM_FLAG_C16;
-                continue;
-            }
-
-            if (strncmp(argv[i], "--exec", strlen("--exec")) == 0)
-            {
-                // must have at least exec path
-                i++;
-                if (i < argc)
-                {
-                    exec_path = strdup(argv[i]);
-
-                    // first arg shouldbe same as path
-                    exec_argv = (char **)calloc(argc, sizeof(char *));
-                    exec_argv[0] = strdup(argv[i]);
-                    i++;
-                }
-
-                count = 1;
-                while(i < argc)
-                {
-                    exec_argv[count] = strdup(argv[i]);
-                    count++;
-                    i++;
-                }
-
-                // this will always be the last set of params we handle
-                break;
-            }
-        }
-    }
-
-    vshell_color_init();
+    vshell_color_init(vshell);
 
     // set default frame color
-    vshell_paint_frame(NULL);
+    vshell_paint_frame(vshell);
 
-    VWINDOW(twin) = newwin(screen_h - 2, screen_w - 2, 1, 1);
+    vshell->term_wnd = newwin(vshell->screen_h - 2, vshell->screen_w - 2, 1, 1);
 
-    wattrset(VWINDOW(twin), COLOR_PAIR(7 * 8 + 7 - 0)); // black over white
-    wrefresh(VWINDOW(twin));
+    wattrset(vshell->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0)); // black over white
+    wrefresh(vshell->term_wnd);
 
-    vterm = vterm_alloc();
+    vshell->vterm = vterm_alloc();
 
     // set the exec path if specified
-    if(exec_path != NULL)
+    if(vshell->exec_path != NULL)
     {
-        vterm_set_exec(vterm, exec_path, exec_argv);
+        vterm_set_exec(vshell->vterm, vshell->exec_path, vshell->exec_argv);
     }
 
-    vterm = vterm_init(vterm, screen_w - 2, screen_h - 2, flags);
+    vshell->vterm = vterm_init(vshell->vterm,
+        vshell->screen_w - 2, vshell->screen_h - 2, vshell->flags);
 
-    vterm_set_colors(vterm, COLOR_WHITE, COLOR_BLACK);
-    vterm_wnd_set(vterm, VWINDOW(twin));
+    vterm_set_colors(vshell->vterm, COLOR_WHITE, COLOR_BLACK);
+    vterm_wnd_set(vshell->vterm, vshell->term_wnd);
 
     // this illustrates how to install an event hook
-    vterm_set_event_mask(vterm, VTERM_MASK_BUFFER_ACTIVATED);
-    vterm_install_hook(vterm, vshell_hook);
+    vterm_set_event_mask(vshell->vterm, VTERM_MASK_BUFFER_ACTIVATED);
+    vterm_install_hook(vshell->vterm, vshell_hook);
 
     refresh_timer = ctimer_create();
 
@@ -227,21 +165,21 @@ int main(int argc, char **argv)
     ch = '\0';
     while (TRUE)
     {
-        bytes = vterm_read_pipe(vterm);
+        bytes = vterm_read_pipe(vshell->vterm);
         bytes_buffered += bytes;
 
         if(ctimer_compare(refresh_timer, &refresh_interval) > 0)
         {
             if(bytes_buffered > 0)
             {
-                if(!(term_mode & TERM_MODE_HISTORY))
+                if(!(vshell->term_mode & TERM_MODE_HISTORY))
                 {
-                    vshell_render_normal(vterm, VWINDOW(twin));
+                    vshell_render_normal(vshell, NULL);
                 }
 
-                if(term_mode & TERM_MODE_HISTORY)
+                if(vshell->term_mode & TERM_MODE_HISTORY)
                 {
-                    vshell_render_history(vterm, VWINDOW(twin), 0);
+                    vshell_render_history(vshell, &(int){0});
                 }
 
                 bytes_buffered = 0;
@@ -257,56 +195,56 @@ int main(int argc, char **argv)
         // handle special events like resize first
         if(ch == KEY_RESIZE)
         {
-            vshell_resize(twin, vterm);
+            vshell_resize(vshell);
             continue;
         }
 
         // alt z
         if(ch == 0x1b7a)
         {
-            if(term_mode & TERM_MODE_HISTORY)
+            if(vshell->term_mode & TERM_MODE_HISTORY)
             {
-                term_mode &= ~TERM_MODE_HISTORY;
-                cursor_pos = 0;
-                vshell_paint_frame(vterm);
-                vshell_render_normal(vterm, VWINDOW(twin));
+                vshell->term_mode &= ~TERM_MODE_HISTORY;
+                vshell->cursor_pos = 0;
+                vshell_paint_frame(vshell);
+                vshell_render_normal(vshell, NULL);
             }
             else
             {
-                term_mode |= TERM_MODE_HISTORY;
-                vshell_paint_frame(vterm);
-                vshell_render_history(vterm, VWINDOW(twin), 0);
+                vshell->term_mode |= TERM_MODE_HISTORY;
+                vshell_paint_frame(vshell);
+                vshell_render_history(vshell, &(int){0});
             }
 
             continue;
         }
 
-        if(term_mode & TERM_MODE_HISTORY)
+        if(vshell->term_mode & TERM_MODE_HISTORY)
         {
             if(ch == KEY_UP)
             {
-                vshell_paint_frame(vterm);
-                vshell_render_history(vterm, VWINDOW(twin), 1);
+                vshell_paint_frame(vshell);
+                vshell_render_history(vshell, &(int){1});
             }
 
             if(ch == KEY_DOWN)
             {
-                vshell_paint_frame(vterm);
-                vshell_render_history(vterm, VWINDOW(twin), -1);
+                vshell_paint_frame(vshell);
+                vshell_render_history(vshell, &(int){-1});
             }
         }
         else
         {
             if(ch != ERR)
             {
-                vterm_write_pipe(vterm, ch);
+                vterm_write_pipe(vshell->vterm, ch);
             }
         }
     }
 
     endwin();
 
-    vterm_destroy(vterm);
+    vterm_destroy(vshell->vterm);
 
     // print some debug info
     printf("%s\n\r", locale);
@@ -342,9 +280,8 @@ vshell_get_key(void)
 }
 
 void
-vshell_paint_frame(vterm_t *vterm)
+vshell_paint_frame(vshell_t *vshell)
 {
-    extern WINDOW   *screen_wnd;
     char            title[256] = " Term In A Box ";
     char            buf[254];
     wchar_t         wbuf[512];
@@ -354,30 +291,30 @@ vshell_paint_frame(vterm_t *vterm)
     int             frame_colors;
     int             i = 0;
 
-    if(term_mode == TERM_MODE_NORMAL)
+    if(vshell->term_mode == TERM_MODE_NORMAL)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     }
 
-    if(term_mode == TERM_MODE_ALT)
+    if(vshell->term_mode == TERM_MODE_ALT)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_RED);
     }
 
-    if(term_mode & TERM_MODE_HISTORY)
+    if(vshell->term_mode & TERM_MODE_HISTORY)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_MAGENTA);
     }
 
     // paint the screen blue
     attrset(COLOR_PAIR(frame_colors));    // white on blue
-    wattron(screen_wnd, A_BOLD);
-    box(screen_wnd, 0, 0);
+    wattron(vshell->screen_wnd, A_BOLD);
+    box(vshell->screen_wnd, 0, 0);
 
     // quick computer of title location
-    if(vterm != NULL)
+    if(vshell->vterm != NULL)
     {
-        vterm_get_title(vterm, buf, sizeof(buf));
+        vterm_get_title(vshell->vterm, buf, sizeof(buf));
         if(buf[0] != '\0')
         {
             sprintf(title, " %s ", buf);
@@ -387,15 +324,15 @@ vshell_paint_frame(vterm_t *vterm)
     len = strlen(title);
 
     // a right shift is the same as divide by 2 but quicker
-    offset = (screen_w >> 1) - (len >> 1);
+    offset = (vshell->screen_w >> 1) - (len >> 1);
     mvprintw(0, offset, title);
 
-    if(term_mode & TERM_MODE_HISTORY)
+    if(vshell->term_mode & TERM_MODE_HISTORY)
     {
         len = swprintf(wbuf, 512,
             L" Press [alt + z] to exit history | "
             L" [%lc] / [%lc] Scroll | Line %03d ",
-            WCS_UARROW, WCS_DARROW, cursor_pos);
+            WCS_UARROW, WCS_DARROW, vshell->cursor_pos);
         memset(cbuf, 0, sizeof(cbuf));
 
         for(i = 0; i < len; i++)
@@ -403,19 +340,20 @@ vshell_paint_frame(vterm_t *vterm)
             setcchar(&cbuf[i], &wbuf[i], WA_BOLD, frame_colors, NULL);
         }
 
-        offset = (screen_w >> 1) - (len >> 1);
+        offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwadd_wchnstr(screen_wnd, screen_h - 1, offset, cbuf, -1);
+        mvwadd_wchnstr(vshell->screen_wnd,
+            vshell->screen_h - 1, offset, cbuf, -1);
     }
     else
     {
         len = sprintf(title, " Press [alt + z] for history | %s | %d x %d ",
-            (term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
-            screen_w - 2, screen_h - 2);
+            (vshell->term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
+            vshell->screen_w - 2, vshell->screen_h - 2);
 
-        offset = (screen_w >> 1) - (len >> 1);
+        offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwprintw(screen_wnd, screen_h - 1, offset, title);
+        mvwprintw(vshell->screen_wnd, vshell->screen_h - 1, offset, title);
     }
 
     refresh();
@@ -424,18 +362,18 @@ vshell_paint_frame(vterm_t *vterm)
 }
 
 int
-vshell_resize(testwin_t *twin, vterm_t * vterm)
+vshell_resize(vshell_t *vshell)
 {
-    getmaxyx(stdscr, screen_h, screen_w);
+    getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
-    vshell_paint_frame(vterm);
+    vshell_paint_frame(vshell);
 
-    wresize(VWINDOW(twin), screen_h - 2, screen_w - 2);
+    wresize(vshell->term_wnd, vshell->screen_h - 2, vshell->screen_w - 2);
 
-    vterm_resize(vterm, screen_w - 2, screen_h - 2);
+    vterm_resize(vshell->vterm, vshell->screen_w - 2, vshell->screen_h - 2);
 
-    touchwin(VWINDOW(twin));
-    wrefresh(VWINDOW(twin));
+    touchwin(vshell->term_wnd);
+    wrefresh(vshell->term_wnd);
     refresh();
 
     return 0;
@@ -460,11 +398,11 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             idx = *(int *)anything;
 
             if(idx == 0)
-                term_mode = TERM_MODE_NORMAL;
+                vshell->term_mode = TERM_MODE_NORMAL;
             else
-                term_mode = TERM_MODE_ALT;
+                vshell->term_mode = TERM_MODE_ALT;
 
-            vshell_paint_frame(vterm);
+            vshell_paint_frame(vshell);
             break;
         }
     }
@@ -473,9 +411,8 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
 }
 
 void
-vshell_color_init(void)
+vshell_color_init(vshell_t *vshell)
 {
-    extern color_mtx_t  *color_mtx;
     extern short        color_table[];
     extern int          color_count;
     short               fg, bg;
@@ -494,15 +431,16 @@ vshell_color_init(void)
     */
     max_colors = color_count * color_count;
 
-    color_mtx  = (color_mtx_t *)calloc(1, max_colors * sizeof(color_mtx_t));
+    vshell->color_mtx  = (color_mtx_t *)calloc(1,
+        max_colors * sizeof(color_mtx_t));
 
     for(i = 0;i < max_colors; i++)
     {
         fg = i / color_count;
         bg = color_count - (i % color_count) - 1;
 
-        color_mtx[i].bg = fg;
-        color_mtx[i].fg = bg;
+        vshell->color_mtx[i].bg = fg;
+        vshell->color_mtx[i].fg = bg;
 
         /*
             according to ncurses documentation, color pair 0 is assumed to
@@ -510,8 +448,11 @@ vshell_color_init(void)
             pair, we need to make sure it gets swapped into index 0 and
             whatever is in index 0 gets put into this location.
         */
-        if(color_mtx[i].fg == COLOR_WHITE && color_mtx[i].bg == COLOR_BLACK)
+        if( vshell->color_mtx[i].fg == COLOR_WHITE &&
+            vshell->color_mtx[i].bg == COLOR_BLACK )
+        {
             hard_pair = i;
+        }
     }
 
     /*
@@ -520,15 +461,15 @@ vshell_color_init(void)
     */
     if(hard_pair != -1)
     {
-        fg = color_mtx[0].fg;
-        bg = color_mtx[0].bg;
-        color_mtx[hard_pair].fg = fg;
-        color_mtx[hard_pair].bg = bg;
+        fg = vshell->color_mtx[0].fg;
+        bg = vshell->color_mtx[0].bg;
+        vshell->color_mtx[hard_pair].fg = fg;
+        vshell->color_mtx[hard_pair].bg = bg;
     }
 
     for(i = 1; i < max_colors; i++)
     {
-        init_pair(i, color_mtx[i].fg, color_mtx[i].bg);
+        init_pair(i, vshell->color_mtx[i].fg, vshell->color_mtx[i].bg);
     }
 
     return;
@@ -551,49 +492,143 @@ vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 }
 
 void
-vshell_render_normal(vterm_t *vterm, WINDOW *window)
+vshell_render_normal(vshell_t *vshell, void *anything)
 {
-    vterm_wnd_update(vterm, -1, 0);
-    touchwin(window);
-    wrefresh(window);
+    (void)anything;     // make compiler happy
+
+    vterm_wnd_update(vshell->vterm, -1, 0);
+    touchwin(vshell->term_wnd);
+    wrefresh(vshell->term_wnd);
     refresh();
 
     return;
 }
 
 void
-vshell_render_history(vterm_t *vterm, WINDOW *window, int scrolled)
+vshell_render_history(vshell_t *vshell, void *anything)
 {
+    int         scrolled = *(int *)anything;
     int         history_sz;
     int         height, width;
     int         offset;
 
-    history_sz = vterm_get_history_size(vterm);
-    vterm_wnd_size(vterm, &width, &height);
+    history_sz = vterm_get_history_size(vshell->vterm);
+    vterm_wnd_size(vshell->vterm, &width, &height);
 
-    if((cursor_pos + scrolled) < 0)
+    if((vshell->cursor_pos + scrolled) < 0)
     {
-        cursor_pos = 0;
+        vshell->cursor_pos = 0;
         scrolled = 0;
     }
 
-    if((cursor_pos + scrolled) > history_sz - height)
+    if((vshell->cursor_pos + scrolled) > history_sz - height)
     {
-        cursor_pos = history_sz - height;
+        vshell->cursor_pos = history_sz - height;
         scrolled = 0;
     }
 
-    cursor_pos += scrolled;
-    offset = history_sz - height - cursor_pos;
+    vshell->cursor_pos += scrolled;
+    offset = history_sz - height - vshell->cursor_pos;
 
-    vterm_wnd_update(vterm, VTERM_BUF_HISTORY, offset);
-    touchwin(window);
-    wrefresh(window);
+    vterm_wnd_update(vshell->vterm, VTERM_BUF_HISTORY, offset);
+    touchwin(vshell->term_wnd);
+    wrefresh(vshell->term_wnd);
     refresh();
 
     return;
 }
 
+
+void
+vshell_parse_cmdline(vshell_t *vshell)
+{
+    int     count = 1;
+    int     i;
+
+    if(vshell == NULL) return;
+
+    if (vshell->argc > 1)
+    {
+        // interate through argv[] looking for params
+        for (i = 1; i < vshell->argc; i++)
+        {
+            if (strncmp(vshell->argv[i], "--help", strlen("--help")) == 0)
+            {
+                endwin();
+                vshell_print_help();
+                exit(0);
+            }
+
+            if (strncmp(vshell->argv[i], "--version", strlen("--version")) == 0)
+            {
+                endwin();
+                vshell_print_help();
+                exit(0);
+            }
+
+            if (strncmp(vshell->argv[i], "--dump", strlen("--dump")) == 0)
+            {
+                vshell->flags |= VTERM_FLAG_DUMP;
+                continue;
+            }
+
+            if (strncmp(vshell->argv[i], "--rxvt", strlen("--rxvt")) == 0)
+            {
+                vshell->flags |= VTERM_FLAG_RXVT;
+                continue;
+            }
+
+            if (strncmp(vshell->argv[i], "--vt100", strlen("--vt100")) == 0)
+            {
+                vshell->flags |= VTERM_FLAG_VT100;
+                continue;
+            }
+
+            if (strncmp(vshell->argv[i], "--linux", strlen("--linux")) == 0)
+            {
+                vshell->flags |= VTERM_FLAG_LINUX;
+                continue;
+            }
+
+            if (strncmp(vshell->argv[i], "--c16", strlen("--c16")) == 0)
+            {
+                vshell->flags |= VTERM_FLAG_C16;
+                continue;
+            }
+
+            if (strncmp(vshell->argv[i], "--exec", strlen("--exec")) == 0)
+            {
+                // must have at least exec path
+                i++;
+                if (i < vshell->argc)
+                {
+                    vshell->exec_path = strdup(vshell->argv[i]);
+
+                    // first arg should be same as path
+                    vshell->exec_argv = (char **)calloc(vshell->argc,
+                        sizeof(char *));
+
+                    vshell->exec_argv[0] = strdup(vshell->argv[i]);
+                    i++;
+                }
+
+                count = 1;
+                while(i < vshell->argc)
+                {
+                    vshell->exec_argv[count] = strdup(vshell->argv[i]);
+
+                    count++;
+                    i++;
+                }
+
+                // this will always be the last set of params we handle
+                break;
+            }
+        }
+    }
+
+    return;
+}
 
 void
 vshell_print_help(void)

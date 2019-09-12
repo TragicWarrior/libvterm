@@ -47,7 +47,6 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     uint16_t        j;
 
     if(vterm == NULL) return;
-    // if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     if(width == 0 || height == 0) return;
     if(width == -1 && height == -1) return;

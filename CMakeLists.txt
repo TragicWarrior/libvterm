@@ -23,8 +23,6 @@ if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR (("${CMAKE_C_COMPILER_ID}" ST
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra")
 endif()
 
-# the following is until we learn how to reorder the gcc arguments to correctly link on Ubuntu
-
 add_definitions("-D_REENTRANT")
 add_definitions("-D_POSIX_C_SOURCE=200809L")
 

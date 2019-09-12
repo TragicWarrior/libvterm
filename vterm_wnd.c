@@ -64,7 +64,6 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
 
     getmaxyx(vterm->window, height, width);
 
-    // for(r = 0; r < v_desc->rows; r++)
     for(r = 0; r < height; r++)
     {
         // start at the beginning of the row
