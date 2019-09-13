@@ -6,6 +6,7 @@
 #include <ncurses/ncurses.h>
 #endif
 
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
@@ -63,6 +64,8 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
     v_desc = &vterm->vterm_desc[idx];
 
     getmaxyx(vterm->window, height, width);
+
+    height = USE_MIN(height, v_desc->rows);
 
     for(r = 0; r < height; r++)
     {

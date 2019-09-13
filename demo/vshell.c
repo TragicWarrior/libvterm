@@ -95,7 +95,6 @@ vshell_t    *vshell;
 int main(int argc, char **argv)
 {
     int32_t         keystroke;
-    // int		        i;
     ssize_t         bytes;
     ssize_t         bytes_buffered = 0;
     char            *locale;
@@ -246,6 +245,9 @@ vshell_paint_frame(vshell_t *vshell)
     int             len;
     int             offset;
     int             frame_colors;
+    int             history_sz;
+    int             width;
+    int             height;
     int             i = 0;
 
     if(vshell->term_mode == TERM_MODE_NORMAL)
@@ -286,10 +288,14 @@ vshell_paint_frame(vshell_t *vshell)
 
     if(vshell->term_mode & TERM_MODE_HISTORY)
     {
+        history_sz = vterm_get_history_size(vshell->vterm);
+        vterm_wnd_size(vshell->vterm, &width, &height);
+
         len = swprintf(wbuf, 512,
-            L" Press [alt + z] to exit history | "
-            L" [%lc] / [%lc] Scroll | Line %03d ",
-            WCS_UARROW, WCS_DARROW, vshell->cursor_pos);
+            L" [alt + z] Terminal | "
+            L" [%lc] [PgUp] / [%lc] [PgDn] Scroll | Line %03d / %03d ",
+            WCS_UARROW, WCS_DARROW,
+            vshell->cursor_pos + height, history_sz);
         memset(cbuf, 0, sizeof(cbuf));
 
         for(i = 0; i < len; i++)
@@ -304,7 +310,7 @@ vshell_paint_frame(vshell_t *vshell)
     }
     else
     {
-        len = sprintf(title, " Press [alt + z] for history | %s | %d x %d ",
+        len = sprintf(title, " [alt + z] History | %s | %d x %d ",
             (vshell->term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
             vshell->screen_w - 2, vshell->screen_h - 2);
 
@@ -359,6 +365,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             else
                 vshell->term_mode = TERM_MODE_ALT;
 
+            vshell_paint_frame(vshell);
             vshell->render(vshell, &(int){0});
             break;
         }
@@ -477,7 +484,7 @@ vshell_render_normal(vshell_t *vshell, void *anything)
 {
     (void)anything;     // make compiler happy
 
-    vshell_paint_frame(vshell);
+    // vshell_paint_frame(vshell);
     vterm_wnd_update(vshell->vterm, -1, 0);
     touchwin(vshell->term_wnd);
     wrefresh(vshell->term_wnd);
@@ -489,6 +496,10 @@ vshell_render_normal(vshell_t *vshell, void *anything)
 void
 vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
 {
+    int     history_sz;
+    int     width;
+    int     height;
+
     // alt-z
     if(keystroke == 0x1b7a)
     {
@@ -497,7 +508,48 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         vshell->render = vshell_render_normal;
         vshell->kinput = vshell_kinput_normal;
 
+        vshell_paint_frame(vshell);
         vshell->render(vshell, &(int){0});
+
+        return;
+    }
+
+
+    if(keystroke == '-')
+    {
+        history_sz = vterm_get_history_size(vshell->vterm);
+        history_sz--;
+        vterm_set_history_size(vshell->vterm, history_sz);
+
+        vshell->render(vshell, &(int){0});
+
+        return;
+    }
+
+    if(keystroke == '+')
+    {
+        history_sz = vterm_get_history_size(vshell->vterm);
+        history_sz++;
+        vterm_set_history_size(vshell->vterm, history_sz);
+
+        vshell->render(vshell, &(int){0});
+
+        return;
+    }
+
+    vterm_wnd_size(vshell->vterm, &width, &height);
+
+    if(keystroke == KEY_PPAGE)
+    {
+        vshell->render(vshell, &height);
+
+        return;
+    }
+
+    if(keystroke == KEY_NPAGE)
+    {
+        height = 0 - height;
+        vshell->render(vshell, &height);
 
         return;
     }
