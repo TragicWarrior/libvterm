@@ -48,7 +48,7 @@ typedef struct _color_mtx_s     color_mtx_t;
 
 typedef struct _vshell_s        vshell_t;
 
-// globals
+// global struct
 struct _vshell_s
 {
     int             argc;
@@ -58,7 +58,7 @@ struct _vshell_s
     char            **exec_argv;
 
     vterm_t         *vterm;
-    uint32_t        flags ;
+    uint32_t        flags;
     WINDOW          *screen_wnd;
     WINDOW          *term_wnd;
     int             screen_w;
@@ -68,7 +68,8 @@ struct _vshell_s
     int             cursor_pos;
 
     // object "methods"
-    void            (*renderer)   (vshell_t *, void *);
+    void            (*render)       (vshell_t *, void *);
+    void            (*kinput)       (vshell_t *, int32_t);
 };
 
 // prototypes
@@ -82,6 +83,8 @@ int     vshell_resize(vshell_t *vshell);
 
 void    vshell_render_normal(vshell_t *vshell, void *anything);
 void    vshell_render_history(vshell_t *vshell, void *anything);
+void    vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
+void    vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
 
 void    vshell_hook(vterm_t *vterm, int event, void *anything);
 short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
@@ -91,7 +94,7 @@ vshell_t    *vshell;
 
 int main(int argc, char **argv)
 {
-    int32_t         ch;
+    int32_t         keystroke;
     // int		        i;
     ssize_t         bytes;
     ssize_t         bytes_buffered = 0;
@@ -127,7 +130,8 @@ int main(int argc, char **argv)
     vshell_parse_cmdline(vshell);
 
     vshell_color_init(vshell);
-    vshell->renderer = vshell_render_normal;
+    vshell->render = vshell_render_normal;
+    vshell->kinput = vshell_kinput_normal;
 
     // set default frame color
     vshell_paint_frame(vshell);
@@ -162,7 +166,7 @@ int main(int argc, char **argv)
         the terminal;  also, redraw the terminal to the window at each
         iteration
     */
-    ch = '\0';
+    keystroke = '\0';
     while (TRUE)
     {
         bytes = vterm_read_pipe(vshell->vterm);
@@ -172,7 +176,7 @@ int main(int argc, char **argv)
         {
             if(bytes_buffered > 0)
             {
-                vshell->renderer(vshell, &(int){0});
+                vshell->render(vshell, &(int){0});
 
                 bytes_buffered = 0;
             }
@@ -182,54 +186,17 @@ int main(int argc, char **argv)
 
         if(bytes == -1) break;
 
-        ch = vshell_get_key();
+        keystroke = vshell_get_key();
 
         // handle special events like resize first
-        if(ch == KEY_RESIZE)
+        if(keystroke == KEY_RESIZE)
         {
             vshell_resize(vshell);
             continue;
         }
 
-        // alt z
-        if(ch == 0x1b7a)
-        {
-            if(vshell->term_mode & TERM_MODE_HISTORY)
-            {
-                vshell->term_mode &= ~TERM_MODE_HISTORY;
-                vshell->cursor_pos = 0;
-                vshell->renderer = vshell_render_normal;
-            }
-            else
-            {
-                vshell->term_mode |= TERM_MODE_HISTORY;
-                vshell->renderer = vshell_render_history;
-            }
-
-            vshell->renderer(vshell, &(int){0});
-
-            continue;
-        }
-
-        if(vshell->term_mode & TERM_MODE_HISTORY)
-        {
-            if(ch == KEY_UP)
-            {
-                vshell->renderer(vshell, &(int){1});
-            }
-
-            if(ch == KEY_DOWN)
-            {
-                vshell->renderer(vshell, &(int){-1});
-            }
-        }
-        else
-        {
-            if(ch != ERR)
-            {
-                vterm_write_pipe(vshell->vterm, ch);
-            }
-        }
+        // pass the keystroke into the active keyboard handler
+        vshell->kinput(vshell, keystroke);
     }
 
     endwin();
@@ -356,7 +323,7 @@ vshell_resize(vshell_t *vshell)
 {
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
-    vshell->renderer(vshell, &(int){0});
+    vshell->render(vshell, &(int){0});
 
     wresize(vshell->term_wnd, vshell->screen_h - 2, vshell->screen_w - 2);
 
@@ -392,7 +359,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             else
                 vshell->term_mode = TERM_MODE_ALT;
 
-            vshell->renderer(vshell, &(int){0});
+            vshell->render(vshell, &(int){0});
             break;
         }
     }
@@ -482,6 +449,30 @@ vshell_pair_selector(vterm_t *vterm, short fg, short bg)
 }
 
 void
+vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
+{
+    // alt-z
+    if(keystroke == 0x1b7a)
+    {
+        vshell->term_mode |= TERM_MODE_HISTORY;
+        vshell->render = vshell_render_history;
+        vshell->kinput = vshell_kinput_history;
+
+        vshell->render(vshell, &(int){0});
+
+        return;
+    }
+
+    if(keystroke != ERR)
+    {
+        vterm_write_pipe(vshell->vterm, keystroke);
+
+        return;
+    }
+}
+
+
+void
 vshell_render_normal(vshell_t *vshell, void *anything)
 {
     (void)anything;     // make compiler happy
@@ -493,6 +484,37 @@ vshell_render_normal(vshell_t *vshell, void *anything)
     refresh();
 
     return;
+}
+
+void
+vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
+{
+    // alt-z
+    if(keystroke == 0x1b7a)
+    {
+        vshell->term_mode &= ~TERM_MODE_HISTORY;
+        vshell->cursor_pos = 0;
+        vshell->render = vshell_render_normal;
+        vshell->kinput = vshell_kinput_normal;
+
+        vshell->render(vshell, &(int){0});
+
+        return;
+    }
+
+    if(keystroke == KEY_UP)
+    {
+        vshell->render(vshell, &(int){1});
+
+        return;
+    }
+
+    if(keystroke == KEY_DOWN)
+    {
+        vshell->render(vshell, &(int){-1});
+
+        return;
+    }
 }
 
 void
@@ -531,6 +553,7 @@ vshell_render_history(vshell_t *vshell, void *anything)
 
     return;
 }
+
 
 
 void
