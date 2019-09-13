@@ -21,8 +21,11 @@
 #include "../stringv.h"
 
 
-#define WCS_UARROW      0x2191
-#define WCS_DARROW      0x2193
+#define WCS_UARROW          0x2191
+#define WCS_DARROW          0x2193
+#define WCS_TRIANGLE_UP     0x2BC5
+#define WCS_TRIANGLE_DOWN   0x2BC6
+#define WCS_BLOCK           0x2588
 
 #define TERM_MODE_NORMAL    0
 #define TERM_MODE_ALT       1
@@ -241,13 +244,15 @@ vshell_paint_frame(vshell_t *vshell)
     char            title[256] = " Term In A Box ";
     char            buf[254];
     wchar_t         wbuf[512];
-    static cchar_t  cbuf[512];
+    cchar_t         cbuf[512];
     int             len;
     int             offset;
     int             frame_colors;
+    int             scroll_colors;
     int             history_sz;
     int             width;
     int             height;
+    float           pos;
     int             i = 0;
 
     if(vshell->term_mode == TERM_MODE_NORMAL)
@@ -263,6 +268,7 @@ vshell_paint_frame(vshell_t *vshell)
     if(vshell->term_mode & TERM_MODE_HISTORY)
     {
         frame_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_MAGENTA);
+        scroll_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     }
 
     // paint the screen blue
@@ -292,9 +298,10 @@ vshell_paint_frame(vshell_t *vshell)
         vterm_wnd_size(vshell->vterm, &width, &height);
 
         len = swprintf(wbuf, 512,
-            L" [alt + z] Terminal | "
-            L" [%lc] [PgUp] / [%lc] [PgDn] Scroll | Line %03d / %03d ",
-            WCS_UARROW, WCS_DARROW,
+            L" [alt + z] Terminal |"
+            // L" [%lc] [%lc] [PgUp] [PgDn] Scroll | [+] [-] Buffers size |"
+            L" %03d / %03d ",
+            // WCS_UARROW, WCS_DARROW,
             vshell->cursor_pos + height, history_sz);
         memset(cbuf, 0, sizeof(cbuf));
 
@@ -307,6 +314,31 @@ vshell_paint_frame(vshell_t *vshell)
 
         mvwadd_wchnstr(vshell->screen_wnd,
             vshell->screen_h - 1, offset, cbuf, -1);
+
+        mvwvline(vshell->screen_wnd, 1, vshell->screen_w - 1,
+            ACS_CKBOARD, height);
+
+        memset(cbuf, 0, sizeof(cbuf));
+        memset(wbuf, 0, sizeof(wbuf));
+
+        swprintf(wbuf, 512, L"%lc%lc%c",
+            WCS_TRIANGLE_UP, WCS_TRIANGLE_DOWN, ' ');
+        setcchar(&cbuf[0], &wbuf[0], WA_BOLD, scroll_colors, NULL);
+        setcchar(&cbuf[1], &wbuf[1], WA_BOLD, scroll_colors, NULL);
+        setcchar(&cbuf[2], &wbuf[2], WA_NORMAL, scroll_colors, NULL);
+
+        mvwadd_wch(vshell->screen_wnd, 1, vshell->screen_w - 1, &cbuf[0]);
+        mvwadd_wch(vshell->screen_wnd, vshell->screen_h - 2,
+            vshell->screen_w - 1, &cbuf[1]);
+
+        // pos = (float)vshell->cursor_pos / ((float)history_sz - (float)height);
+        // pos *= (height - 3);
+
+        pos = 1.0 - (float)vshell->cursor_pos / ((float)history_sz - (float)height);
+        pos *= (height - 3);
+
+        mvwadd_wch(vshell->screen_wnd, (int)pos + 2,
+            vshell->screen_w - 1, &cbuf[2]);
     }
     else
     {
