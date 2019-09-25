@@ -10,12 +10,25 @@
 #include <fcntl.h>
 #include <wchar.h>
 
+#ifdef __linux__
+#include <ncursesw/curses.h>
+#endif
+
 #ifdef __FreeBSD__
 #include <stdarg.h>
 #include <ncurses/ncurses.h>
-#else
-#include <ncurses.h>
 #endif
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <ncursesw/ncurses.h>
+#endif
+
+//#ifdef __FreeBSD__
+//#include <stdarg.h>
+//#include <ncurses/ncurses.h>
+//#else
+//#include <ncurses.h>
+//#endif
 
 #include "ctimer.h"
 #include "../vterm.h"
@@ -267,7 +280,7 @@ vshell_paint_frame(vshell_t *vshell)
     int             len;
     int             offset;
     int             frame_colors;
-    int             scroll_colors;
+    int             scroll_colors = 0;
     int             history_sz;
     int             width;
     int             height;
@@ -848,7 +861,7 @@ mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
 
         getcchar(&cch, wch, &attrs, &cell_colors, NULL);
 
-        swprintf(wch, sizeof(wch), L"%lc", wchstr[i]);
+        swprintf(wch, sizeof(wch) - 1, L"%lc", wchstr[i]);
 
         setcchar(&cch, wch, attrs, cell_colors, NULL);
 
