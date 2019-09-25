@@ -173,7 +173,7 @@ struct _vterm_s
                                                     others.
                                                 */
 #ifdef __FreeBSD__
-    char            padding[10];                //  without this padding FreeBSD
+    char            padding[20];                //  without this padding FreeBSD
 #endif                                          //  trashes mouse_config and
                                                 //  keymap_str causing all sorts
                                                 //  of bad things to happen

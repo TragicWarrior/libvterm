@@ -23,13 +23,6 @@
 #include <ncursesw/ncurses.h>
 #endif
 
-//#ifdef __FreeBSD__
-//#include <stdarg.h>
-//#include <ncurses/ncurses.h>
-//#else
-//#include <ncurses.h>
-//#endif
-
 #include "ctimer.h"
 #include "../vterm.h"
 #include "../stringv.h"
@@ -157,6 +150,7 @@ int main(int argc, char **argv)
                                            there is no keypress available
                                         */
     keypad(stdscr, TRUE);
+    scrollok(stdscr, FALSE);
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
     vshell->argc = argc;
@@ -867,8 +861,6 @@ mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
 
         wadd_wch(win, &cch);
         wmove(win, row, col);
-
-        // endwin(); printf("%d\n", row); fflush(stdout); exit(0);
 
         col++;
     }
