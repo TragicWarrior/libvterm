@@ -33,6 +33,7 @@
 #define CCHARW_MAX  5
 #endif
 
+#define WBUF_MAX    128         // maximum size of wchar string buffer
 
 #define WC_SYMS_X(i, s)    i,
 enum
@@ -270,7 +271,7 @@ vshell_paint_frame(vshell_t *vshell)
 {
     char            title[256] = " Term In A Box ";
     char            buf[254];
-    wchar_t         wbuf[512];
+    wchar_t         wbuf[WBUF_MAX];
     int             len;
     int             offset;
     int             frame_colors;
@@ -322,54 +323,33 @@ vshell_paint_frame(vshell_t *vshell)
         history_sz = vterm_get_history_size(vshell->vterm);
         vterm_wnd_size(vshell->vterm, &width, &height);
 
-        memset(wbuf, 0, sizeof(wbuf));
-
-        len = swprintf(wbuf, 512,
-            L" [alt + z] Terminal |"
-            // L" [%lc] [%lc] [PgUp] [PgDn] Scroll | [+] [-] Buffers size |"
-            L" %03d / %03d ",
-            // WCS_UARROW, WCS_DARROW,
+        len = swprintf(wbuf, WBUF_MAX,
+            L" [alt + z] Terminal | %03d / %03d ",
             vshell->cursor_pos + height, history_sz);
 
         offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        // free(vshell->status_line);
-        // vshell->status_line = NULL;
-        // vshell->status_line = cchar_alloc(wbuf, A_NORMAL, frame_colors);
-
-        // mvwadd_wchnstr(vshell->screen_wnd,
-        //    vshell->screen_h - 1, offset,
-        //    (const cchar_t *)vshell->status_line, -1);
-
         mvwadd_wchars(vshell->screen_wnd, vshell->screen_h - 1, offset, wbuf);
 
+        // configure cchar for cblock
         setcchar(&cc_syms[WCS_CKBOARD_MEDIUM], &wc_syms[WCS_CKBOARD_MEDIUM],
             WA_NORMAL, scroll_colors, NULL);
-
         mvwvline_set(vshell->screen_wnd, 1, vshell->screen_w - 1,
             &cc_syms[WCS_CKBOARD_MEDIUM], height);
 
-#ifndef __linux__
+        // configure arrows
         setcchar(&cc_syms[WCS_UARROW], &wc_syms[WCS_UARROW],
             WA_NORMAL, scroll_colors, NULL);
         setcchar(&cc_syms[WCS_DARROW], &wc_syms[WCS_DARROW],
             WA_NORMAL, scroll_colors, NULL);
 
+        // draw arrows
         mvwadd_wch(vshell->screen_wnd, 1,
             vshell->screen_w - 1, &cc_syms[WCS_UARROW]);
         mvwadd_wch(vshell->screen_wnd, vshell->screen_h - 2,
             vshell->screen_w - 1, &cc_syms[WCS_DARROW]);
-#else
-        setcchar(&cc_syms[WCS_TRIANGLE_UP], &wc_syms[WCS_TRIANGLE_UP],
-            WA_NORMAL, scroll_colors, NULL);
-        setcchar(&cc_syms[WCS_TRIANGLE_DOWN], &wc_syms[WCS_TRIANGLE_DOWN],
-            WA_NORMAL, scroll_colors, NULL);
 
-        mvwadd_wch(vshell->screen_wnd, 1,
-            vshell->screen_w - 1, &cc_syms[WCS_TRIANGLE_UP]);
-        mvwadd_wch(vshell->screen_wnd, vshell->screen_h - 2,
-            vshell->screen_w - 1, &cc_syms[WCS_TRIANGLE_DOWN]);
-#endif
+        // draw block
         setcchar(&cc_syms[WCS_BLOCK], &wc_syms[WCS_BLOCK],
             WA_REVERSE, scroll_colors, NULL);
 
@@ -381,22 +361,12 @@ vshell_paint_frame(vshell_t *vshell)
     }
     else
     {
-        memset(wbuf, 0, sizeof(wbuf));
-
-        len = swprintf(wbuf, 512,
+        len = swprintf(wbuf, WBUF_MAX,
             L" [alt + z] History | %ls | %d x %d ",
             (vshell->term_mode == TERM_MODE_NORMAL) ? L"std" : L"alt",
             vshell->screen_w - 2, vshell->screen_h - 2);
 
         offset = (vshell->screen_w >> 1) - (len >> 1);
-
-        //free(vshell->status_line);
-        //vshell->status_line = NULL;
-        //vshell->status_line = cchar_alloc(wbuf, A_NORMAL, frame_colors);
-
-        //mvwadd_wchnstr(vshell->screen_wnd,
-        //    vshell->screen_h - 1, offset,
-        //    (const cchar_t *)vshell->status_line, -1);
 
         mvwadd_wchars(vshell->screen_wnd, vshell->screen_h - 1, offset, wbuf);
     }
@@ -808,29 +778,6 @@ vshell_print_help(void)
     return;
 }
 
-cchar_t*
-cchar_alloc(wchar_t *wcs, attr_t attrs, short color_pair)
-{
-    wchar_t         wbuf[2];
-    cchar_t         *ccstr;
-    size_t          len;
-    unsigned int    i;
-
-    len = wcslen(wcs);
-
-    // calloc with len + 1 for array null termination
-    ccstr = (cchar_t *)calloc(len + 1, sizeof(cchar_t));
-
-    for(i = 0; i < len; i++)
-    {
-        swprintf(wbuf, 2, L"%lc", wcs[i]);
-
-        setcchar(&ccstr[i], wbuf, attrs, color_pair, NULL);
-    }
-
-    return ccstr;
-}
-
 void
 mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
 {
@@ -849,7 +796,7 @@ mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
 
         getcchar(&cch, wch, &attrs, &cell_colors, NULL);
 
-        swprintf(wch, sizeof(wch) - 1, L"%lc", wchstr[i]);
+        swprintf(wch, CCHARW_MAX - 1, L"%lc", wchstr[i]);
 
         setcchar(&cch, wch, attrs, cell_colors, NULL);
 
