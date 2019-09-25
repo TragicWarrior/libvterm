@@ -11,6 +11,7 @@
 #include <wchar.h>
 
 #ifdef __FreeBSD__
+#include <stdarg.h>
 #include <ncurses/ncurses.h>
 #else
 #include <ncurses.h>
@@ -19,13 +20,28 @@
 #include "ctimer.h"
 #include "../vterm.h"
 #include "../stringv.h"
+#include "../macros.h"
+
+// this is necessary for FreeBSD in some compilation scenarios
+#ifndef CCHARW_MAX
+#define CCHARW_MAX  5
+#endif
 
 
-#define WCS_UARROW          0x2191
-#define WCS_DARROW          0x2193
-#define WCS_TRIANGLE_UP     0x2BC5
-#define WCS_TRIANGLE_DOWN   0x2BC6
-#define WCS_BLOCK           0x2588
+#define WC_SYMS_X(i, s)    i,
+enum
+{
+#include "wc_syms.def"
+};
+#undef WC_SYMS_X
+
+#define WC_SYMS_X(i, s)    s,
+static wchar_t wc_syms[] = {
+#include "wc_syms.def"
+};
+#undef WC_SYMS_X
+
+static cchar_t *cc_syms;
 
 #define TERM_MODE_NORMAL    0
 #define TERM_MODE_ALT       1
@@ -76,22 +92,25 @@ struct _vshell_s
 };
 
 // prototypes
-void    vshell_parse_cmdline(vshell_t *vshell);
-void    vshell_print_help(void);
-void    vshell_color_init(vshell_t *vshell);
+void        vshell_parse_cmdline(vshell_t *vshell);
+void        vshell_print_help(void);
+void        vshell_color_init(vshell_t *vshell);
 
-void    vshell_paint_frame(vshell_t *vshell);
-int32_t vshell_get_key(void);
-int     vshell_resize(vshell_t *vshell);
+void        vshell_paint_frame(vshell_t *vshell);
+int32_t     vshell_get_key(void);
+int         vshell_resize(vshell_t *vshell);
 
-void    vshell_render_normal(vshell_t *vshell, void *anything);
-void    vshell_render_history(vshell_t *vshell, void *anything);
-void    vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
-void    vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
+void        vshell_render_normal(vshell_t *vshell, void *anything);
+void        vshell_render_history(vshell_t *vshell, void *anything);
+void        vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
+void        vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
 
-void    vshell_hook(vterm_t *vterm, int event, void *anything);
-short   vshell_pair_selector(vterm_t *vterm, short fg, short bg);
+void        vshell_hook(vterm_t *vterm, int event, void *anything);
+short       vshell_pair_selector(vterm_t *vterm, short fg, short bg);
 
+
+cchar_t*    cchar_alloc(wchar_t *wcs, attr_t attrs, short color_pair);
+void        mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr);
 
 vshell_t    *vshell;
 
@@ -102,12 +121,13 @@ int main(int argc, char **argv)
     ssize_t         bytes_buffered = 0;
     char            *locale;
 
-    vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
-
     // 1,000,000 usec = 1 sec
     // effective 30000 usec = 30 fps
     struct timeval  refresh_interval = { .tv_sec = 0, .tv_usec = 30000 };
     ctimer_t        *refresh_timer;
+
+    vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
+    cc_syms = (cchar_t *)calloc(ARRAY_SZ(wc_syms), sizeof(cchar_t));
 
     locale = getenv("LANG");
     if(locale == NULL) locale = "en_US.UTF-8";
@@ -211,7 +231,7 @@ int main(int argc, char **argv)
         NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
     fflush(NULL);
 
-    return 0;
+    exit(0);
 }
 
 int32_t
@@ -244,7 +264,6 @@ vshell_paint_frame(vshell_t *vshell)
     char            title[256] = " Term In A Box ";
     char            buf[254];
     wchar_t         wbuf[512];
-    cchar_t         cbuf[512];
     int             len;
     int             offset;
     int             frame_colors;
@@ -253,7 +272,6 @@ vshell_paint_frame(vshell_t *vshell)
     int             width;
     int             height;
     float           pos;
-    int             i = 0;
 
     if(vshell->term_mode == TERM_MODE_NORMAL)
     {
@@ -272,9 +290,9 @@ vshell_paint_frame(vshell_t *vshell)
     }
 
     // paint the screen blue
-    attrset(COLOR_PAIR(frame_colors));    // white on blue
+    attrset(COLOR_PAIR(frame_colors));      // white on blue
     wattron(vshell->screen_wnd, A_BOLD);
-    box(vshell->screen_wnd, 0, 0);
+    box_set(vshell->screen_wnd, 0, 0);      // wide char version of box()
 
     // quick computer of title location
     if(vshell->vterm != NULL)
@@ -297,58 +315,89 @@ vshell_paint_frame(vshell_t *vshell)
         history_sz = vterm_get_history_size(vshell->vterm);
         vterm_wnd_size(vshell->vterm, &width, &height);
 
+        memset(wbuf, 0, sizeof(wbuf));
+
         len = swprintf(wbuf, 512,
             L" [alt + z] Terminal |"
             // L" [%lc] [%lc] [PgUp] [PgDn] Scroll | [+] [-] Buffers size |"
             L" %03d / %03d ",
             // WCS_UARROW, WCS_DARROW,
             vshell->cursor_pos + height, history_sz);
-        memset(cbuf, 0, sizeof(cbuf));
-
-        for(i = 0; i < len; i++)
-        {
-            setcchar(&cbuf[i], &wbuf[i], WA_BOLD, frame_colors, NULL);
-        }
 
         offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwadd_wchnstr(vshell->screen_wnd,
-            vshell->screen_h - 1, offset, cbuf, -1);
+        // free(vshell->status_line);
+        // vshell->status_line = NULL;
+        // vshell->status_line = cchar_alloc(wbuf, A_NORMAL, frame_colors);
 
-        mvwvline(vshell->screen_wnd, 1, vshell->screen_w - 1,
-            ACS_CKBOARD, height);
+        // mvwadd_wchnstr(vshell->screen_wnd,
+        //    vshell->screen_h - 1, offset,
+        //    (const cchar_t *)vshell->status_line, -1);
 
-        memset(cbuf, 0, sizeof(cbuf));
-        memset(wbuf, 0, sizeof(wbuf));
+        mvwadd_wchars(vshell->screen_wnd, vshell->screen_h - 1, offset, wbuf);
 
-        swprintf(wbuf, 512, L"%lc%lc%c",
-            WCS_TRIANGLE_UP, WCS_TRIANGLE_DOWN, ' ');
-        setcchar(&cbuf[0], &wbuf[0], WA_BOLD, scroll_colors, NULL);
-        setcchar(&cbuf[1], &wbuf[1], WA_BOLD, scroll_colors, NULL);
-        setcchar(&cbuf[2], &wbuf[2], WA_NORMAL, scroll_colors, NULL);
+        setcchar(&cc_syms[WCS_CKBOARD_MEDIUM], &wc_syms[WCS_CKBOARD_MEDIUM],
+            WA_NORMAL, scroll_colors, NULL);
 
-        mvwadd_wch(vshell->screen_wnd, 1, vshell->screen_w - 1, &cbuf[0]);
+#ifdef __FreeBSD__
+        mvwvline_set(vshell->screen_wnd, 1, vshell->screen_w - 1,
+            &cc_syms[WCS_CKBOARD_MEDIUM], height);
+#else
+        mvwvline_set(vshell->screen_wnd, 1, vshell->screen_w - 1,
+            &cc_syms[WCS_CKBOARD_MEDIUM], height);
+#endif
+
+
+#ifdef __FreeBSD__
+        setcchar(&cc_syms[WCS_UARROW], &wc_syms[WCS_UARROW],
+            WA_NORMAL, scroll_colors, NULL);
+        setcchar(&cc_syms[WCS_DARROW], &wc_syms[WCS_DARROW],
+            WA_NORMAL, scroll_colors, NULL);
+
+        mvwadd_wch(vshell->screen_wnd, 1,
+            vshell->screen_w - 1, &cc_syms[WCS_UARROW]);
         mvwadd_wch(vshell->screen_wnd, vshell->screen_h - 2,
-            vshell->screen_w - 1, &cbuf[1]);
+            vshell->screen_w - 1, &cc_syms[WCS_DARROW]);
+#else
+        setcchar(&cc_syms[WCS_TRIANGLE_UP], &wc_syms[WCS_TRIANGLE_UP],
+            WA_NORMAL, scroll_colors, NULL);
+        setcchar(&cc_syms[WCS_TRIANGLE_DOWN], &wc_syms[WCS_TRIANGLE_DOWN],
+            WA_NORMAL, scroll_colors, NULL);
 
-        // pos = (float)vshell->cursor_pos / ((float)history_sz - (float)height);
-        // pos *= (height - 3);
+        mvwadd_wch(vshell->screen_wnd, 1,
+            vshell->screen_w - 1, &cc_syms[WCS_TRIANGLE_UP]);
+        mvwadd_wch(vshell->screen_wnd, vshell->screen_h - 2,
+            vshell->screen_w - 1, &cc_syms[WCS_TRIANGLE_DOWN]);
+#endif
+        setcchar(&cc_syms[WCS_BLOCK], &wc_syms[WCS_BLOCK],
+            WA_REVERSE, scroll_colors, NULL);
 
         pos = 1.0 - (float)vshell->cursor_pos / ((float)history_sz - (float)height);
         pos *= (height - 3);
 
         mvwadd_wch(vshell->screen_wnd, (int)pos + 2,
-            vshell->screen_w - 1, &cbuf[2]);
+            vshell->screen_w - 1, &cc_syms[WCS_BLOCK]);
     }
     else
     {
-        len = sprintf(title, " [alt + z] History | %s | %d x %d ",
-            (vshell->term_mode == TERM_MODE_NORMAL) ? "std" : "alt",
+        memset(wbuf, 0, sizeof(wbuf));
+
+        len = swprintf(wbuf, 512,
+            L" [alt + z] History | %ls | %d x %d ",
+            (vshell->term_mode == TERM_MODE_NORMAL) ? L"std" : L"alt",
             vshell->screen_w - 2, vshell->screen_h - 2);
 
         offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwprintw(vshell->screen_wnd, vshell->screen_h - 1, offset, title);
+        //free(vshell->status_line);
+        //vshell->status_line = NULL;
+        //vshell->status_line = cchar_alloc(wbuf, A_NORMAL, frame_colors);
+
+        //mvwadd_wchnstr(vshell->screen_wnd,
+        //    vshell->screen_h - 1, offset,
+        //    (const cchar_t *)vshell->status_line, -1);
+
+        mvwadd_wchars(vshell->screen_wnd, vshell->screen_h - 1, offset, wbuf);
     }
 
     refresh();
@@ -754,6 +803,62 @@ vshell_print_help(void)
 
     printf("\n\rLibvterm version: %s\n\r\n\r%s\n\r",
         LIBVTERM_VERSION, help_msg);
+
+    return;
+}
+
+cchar_t*
+cchar_alloc(wchar_t *wcs, attr_t attrs, short color_pair)
+{
+    wchar_t         wbuf[2];
+    cchar_t         *ccstr;
+    size_t          len;
+    unsigned int    i;
+
+    len = wcslen(wcs);
+
+    // calloc with len + 1 for array null termination
+    ccstr = (cchar_t *)calloc(len + 1, sizeof(cchar_t));
+
+    for(i = 0; i < len; i++)
+    {
+        swprintf(wbuf, 2, L"%lc", wcs[i]);
+
+        setcchar(&ccstr[i], wbuf, attrs, color_pair, NULL);
+    }
+
+    return ccstr;
+}
+
+void
+mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
+{
+    cchar_t         cch;
+    wchar_t         wch[CCHARW_MAX]; 
+    attr_t          attrs;
+    short           cell_colors;
+    size_t          len;
+    unsigned int    i;
+
+    len = wcslen(wchstr);
+
+    for(i = 0; i < len; i++)
+    {
+        mvwin_wch(win, row, col, &cch);
+
+        getcchar(&cch, wch, &attrs, &cell_colors, NULL);
+
+        swprintf(wch, sizeof(wch), L"%lc", wchstr[i]);
+
+        setcchar(&cch, wch, attrs, cell_colors, NULL);
+
+        wadd_wch(win, &cch);
+        wmove(win, row, col);
+
+        // endwin(); printf("%d\n", row); fflush(stdout); exit(0);
+
+        col++;
+    }
 
     return;
 }

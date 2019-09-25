@@ -1,0 +1,10 @@
+
+WC_SYMS_X(  WCS_UARROW,         0x2191 )    // arrow pointing up
+WC_SYMS_X(  WCS_DARROW,         0x2193 )    // arrow pointing down 
+WC_SYMS_X(  WCS_TRIANGLE_UP,    0x2BC5 )    // triangle pointing up
+WC_SYMS_X(  WCS_TRIANGLE_DOWN,  0x2BC6 )    // triangle pointing down
+WC_SYMS_X(  WCS_BLOCK,          0x2588 )    // solid block
+WC_SYMS_X(  WCS_CKBOARD_LIGHT,  0x2591 )    // light checkerboard block
+WC_SYMS_X(  WCS_CKBOARD_MEDIUM, 0x2592 )    // medium checkerboard block
+WC_SYMS_X(  WCS_CKBOARD_HEAVY,  0x2593 )    // heavy checkerboard block
+
