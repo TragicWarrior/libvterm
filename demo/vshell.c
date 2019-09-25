@@ -346,16 +346,10 @@ vshell_paint_frame(vshell_t *vshell)
         setcchar(&cc_syms[WCS_CKBOARD_MEDIUM], &wc_syms[WCS_CKBOARD_MEDIUM],
             WA_NORMAL, scroll_colors, NULL);
 
-#ifdef __FreeBSD__
         mvwvline_set(vshell->screen_wnd, 1, vshell->screen_w - 1,
             &cc_syms[WCS_CKBOARD_MEDIUM], height);
-#else
-        mvwvline_set(vshell->screen_wnd, 1, vshell->screen_w - 1,
-            &cc_syms[WCS_CKBOARD_MEDIUM], height);
-#endif
 
-
-#ifdef __FreeBSD__
+#ifndef __linux__
         setcchar(&cc_syms[WCS_UARROW], &wc_syms[WCS_UARROW],
             WA_NORMAL, scroll_colors, NULL);
         setcchar(&cc_syms[WCS_DARROW], &wc_syms[WCS_DARROW],
