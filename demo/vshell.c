@@ -61,7 +61,7 @@ short   color_table[] =
                 COLOR_CYAN, COLOR_WHITE
             };
 
-int      color_count = sizeof(color_table) / sizeof(color_table[0]);
+int      color_count = ARRAY_SZ(color_table);
 
 
 struct _color_mtx_s
@@ -117,7 +117,7 @@ short       vshell_pair_selector(vterm_t *vterm, short fg, short bg);
 
 
 cchar_t*    cchar_alloc(wchar_t *wcs, attr_t attrs, short color_pair);
-void        mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr);
+void        mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr);
 
 vshell_t    *vshell;
 
@@ -269,7 +269,7 @@ vshell_get_key(void)
 void
 vshell_paint_frame(vshell_t *vshell)
 {
-    char            title[256] = " Term In A Box ";
+    wchar_t         title[256] = L" Term In A Box ";
     char            buf[254];
     wchar_t         wbuf[WBUF_MAX];
     int             len;
@@ -302,21 +302,21 @@ vshell_paint_frame(vshell_t *vshell)
     wattron(vshell->screen_wnd, A_BOLD);
     box_set(vshell->screen_wnd, 0, 0);      // wide char version of box()
 
+    len = wcslen(title);
+
     // quick computer of title location
     if(vshell->vterm != NULL)
     {
         vterm_get_title(vshell->vterm, buf, sizeof(buf));
         if(buf[0] != '\0')
         {
-            sprintf(title, " %s ", buf);
+            len = swprintf(title, 256, L" %s ", buf);
         }
     }
 
-    len = strlen(title);
-
     // a right shift is the same as divide by 2 but quicker
     offset = (vshell->screen_w >> 1) - (len >> 1);
-    mvprintw(0, offset, title);
+    mvwadd_wchars(vshell->screen_wnd, 0, offset, title);
 
     if(vshell->term_mode & TERM_MODE_HISTORY)
     {
@@ -779,7 +779,7 @@ vshell_print_help(void)
 }
 
 void
-mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
+mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr)
 {
     cchar_t         cch;
     wchar_t         wch[CCHARW_MAX]; 
@@ -792,7 +792,7 @@ mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
 
     for(i = 0; i < len; i++)
     {
-        mvwin_wch(win, row, col, &cch);
+        mvwin_wch(win, row_y, col_x, &cch);
 
         getcchar(&cch, wch, &attrs, &cell_colors, NULL);
 
@@ -800,10 +800,10 @@ mvwadd_wchars(WINDOW *win, int row, int col, wchar_t *wchstr)
 
         setcchar(&cch, wch, attrs, cell_colors, NULL);
 
+        wmove(win, row_y, col_x);
         wadd_wch(win, &cch);
-        wmove(win, row, col);
 
-        col++;
+        col_x++;
     }
 
     return;
