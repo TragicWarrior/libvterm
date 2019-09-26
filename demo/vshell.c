@@ -97,7 +97,7 @@ struct _vshell_s
     int             cursor_pos;
 
     // object "methods"
-    void            (*render)       (vshell_t *, void *);
+    void            (*render)       (vshell_t *, int, void *);
     void            (*kinput)       (vshell_t *, int32_t);
 };
 
@@ -110,8 +110,8 @@ void        vshell_paint_frame(vshell_t *vshell);
 int32_t     vshell_get_key(void);
 int         vshell_resize(vshell_t *vshell);
 
-void        vshell_render_normal(vshell_t *vshell, void *anything);
-void        vshell_render_history(vshell_t *vshell, void *anything);
+void        vshell_render_normal(vshell_t *vshell, int flags, void *anything);
+void        vshell_render_history(vshell_t *vshell, int flags, void *anything);
 void        vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
 void        vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
 
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
         {
             if(bytes_buffered > 0)
             {
-                vshell->render(vshell, &(int){0});
+                vshell->render(vshell, 1, &(int){0});
 
                 bytes_buffered = 0;
             }
@@ -377,7 +377,6 @@ vshell_paint_frame(vshell_t *vshell)
     }
 
     wnoutrefresh(vshell->canvas);
-    doupdate();
 
     return;
 }
@@ -385,15 +384,15 @@ vshell_paint_frame(vshell_t *vshell)
 int
 vshell_resize(vshell_t *vshell)
 {
-
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
     wresize(vshell->canvas, vshell->screen_h, vshell->screen_w);
+    werase(vshell->canvas);
     wresize(vshell->term_wnd, vshell->screen_h - 2, vshell->screen_w - 2);
 
     vterm_resize(vshell->vterm, vshell->screen_w - 2, vshell->screen_h - 2);
 
-    vshell->render(vshell, &(int){0});
+    vshell->render(vshell, 1, &(int){0});
 
     touchwin(vshell->term_wnd);
     wrefresh(vshell->term_wnd);
@@ -426,8 +425,7 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             else
                 vshell->term_mode = TERM_MODE_ALT;
 
-            vshell_paint_frame(vshell);
-            vshell->render(vshell, &(int){0});
+            vshell->render(vshell, 1, &(int){0});
             break;
         }
     }
@@ -526,7 +524,7 @@ vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
         vshell->render = vshell_render_history;
         vshell->kinput = vshell_kinput_history;
 
-        vshell->render(vshell, &(int){0});
+        vshell->render(vshell, 0, &(int){0});
 
         return;
     }
@@ -541,15 +539,22 @@ vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
 
 
 void
-vshell_render_normal(vshell_t *vshell, void *anything)
+vshell_render_normal(vshell_t *vshell, int flags, void *anything)
 {
-    (void)anything;     // make compiler happy
+    VAR_UNUSED(anything);
 
-    vshell_paint_frame(vshell);
+    // a 1 indicates do a full repaint
+    if(flags == 1)
+    {
+        vshell_paint_frame(vshell);
+    }
+
     vterm_wnd_update(vshell->vterm, -1, 0);
-    touchwin(vshell->term_wnd);
-    wrefresh(vshell->term_wnd);
-    refresh();
+    wnoutrefresh(vshell->term_wnd);
+    doupdate();
+    // touchwin(vshell->term_wnd);
+    // wrefresh(vshell->term_wnd);
+    // refresh();
 
     return;
 }
@@ -569,8 +574,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         vshell->render = vshell_render_normal;
         vshell->kinput = vshell_kinput_normal;
 
-        vshell_paint_frame(vshell);
-        vshell->render(vshell, &(int){0});
+        vshell->render(vshell, 1, &(int){0});
 
         return;
     }
@@ -582,7 +586,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         history_sz--;
         vterm_set_history_size(vshell->vterm, history_sz);
 
-        vshell->render(vshell, &(int){0});
+        vshell->render(vshell, 1, &(int){0});
 
         return;
     }
@@ -593,7 +597,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         history_sz++;
         vterm_set_history_size(vshell->vterm, history_sz);
 
-        vshell->render(vshell, &(int){0});
+        vshell->render(vshell, 1, &(int){0});
 
         return;
     }
@@ -602,7 +606,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
 
     if(keystroke == KEY_PPAGE)
     {
-        vshell->render(vshell, &height);
+        vshell->render(vshell, 1, &height);
 
         return;
     }
@@ -610,28 +614,28 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == KEY_NPAGE)
     {
         height = 0 - height;
-        vshell->render(vshell, &height);
+        vshell->render(vshell, 1, &height);
 
         return;
     }
 
     if(keystroke == KEY_UP)
     {
-        vshell->render(vshell, &(int){1});
+        vshell->render(vshell, 1, &(int){1});
 
         return;
     }
 
     if(keystroke == KEY_DOWN)
     {
-        vshell->render(vshell, &(int){-1});
+        vshell->render(vshell, 1, &(int){-1});
 
         return;
     }
 }
 
 void
-vshell_render_history(vshell_t *vshell, void *anything)
+vshell_render_history(vshell_t *vshell, int flags, void *anything)
 {
     int         *scrolled;
     int         history_sz;
@@ -658,11 +662,15 @@ vshell_render_history(vshell_t *vshell, void *anything)
     vshell->cursor_pos += *scrolled;
     offset = history_sz - height - vshell->cursor_pos;
 
-    vshell_paint_frame(vshell);
+    if(flags == 1)
+    {
+        vshell_paint_frame(vshell);
+    }
+
     vterm_wnd_update(vshell->vterm, VTERM_BUF_HISTORY, offset);
-    touchwin(vshell->term_wnd);
-    wrefresh(vshell->term_wnd);
-    refresh();
+    // touchwin(vshell->term_wnd);
+    wnoutrefresh(vshell->term_wnd);
+    doupdate();
 
     return;
 }
