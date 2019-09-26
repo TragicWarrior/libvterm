@@ -64,6 +64,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
     v_desc = &vterm->vterm_desc[idx];
 
     getmaxyx(vterm->window, height, width);
+    VAR_UNUSED(width);
 
     height = USE_MIN(height, v_desc->rows);
 

@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <wchar.h>
+#include <termios.h>
+
+// #include <sys/ioctl.h>
 
 #ifdef __linux__
 #include <ncursesw/curses.h>
@@ -85,7 +88,7 @@ struct _vshell_s
 
     vterm_t         *vterm;
     uint32_t        flags;
-    WINDOW          *screen_wnd;
+    WINDOW          *canvas;
     WINDOW          *term_wnd;
     int             screen_w;
     int             screen_h;
@@ -141,7 +144,7 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL, locale);
 
-    vshell->screen_wnd = initscr();
+    initscr();
     noecho();
     raw();
     curs_set(0);                        // hide cursor
@@ -166,8 +169,10 @@ int main(int argc, char **argv)
     // set default frame color
     vshell_paint_frame(vshell);
 
-    vshell->term_wnd = newwin(vshell->screen_h - 2, vshell->screen_w - 4, 1, 1);
-    // vshell->term_wnd = subwin(stdscr, vshell->screen_h - 2, vshell->screen_w - 4, 1, 1);
+    vshell->canvas = newwin(vshell->screen_h, vshell->screen_w, 0, 0);
+    scrollok(vshell->canvas, FALSE);
+
+    vshell->term_wnd = newwin(vshell->screen_h - 2, vshell->screen_w - 2, 1, 1);
 
     wattrset(vshell->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0)); // black over white
     wrefresh(vshell->term_wnd);
@@ -298,9 +303,9 @@ vshell_paint_frame(vshell_t *vshell)
     }
 
     // paint the screen blue
-    attrset(COLOR_PAIR(frame_colors));      // white on blue
-    wattron(vshell->screen_wnd, A_BOLD);
-    box_set(vshell->screen_wnd, 0, 0);      // wide char version of box()
+    wattrset(vshell->canvas, COLOR_PAIR(frame_colors));      // white on blue
+    wattron(vshell->canvas, A_BOLD);
+    box_set(vshell->canvas, 0, 0);      // wide char version of box()
 
     // quick computer of title location
     if(vshell->vterm != NULL)
@@ -318,14 +323,18 @@ vshell_paint_frame(vshell_t *vshell)
             (buf[0] == '\0') ? "Vshell" : buf,
             vshell->cursor_pos + height, history_sz);
 
-        offset = (vshell->screen_w >> 1) - (len >> 1);
+        // make sure contents will fit
+        if(len < vshell->screen_w - 2)
+        {
+            offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwadd_wchars(vshell->screen_wnd, 0, offset, wbuf);
+            mvwadd_wchars(vshell->canvas, 0, offset, wbuf);
+        }
 
         // configure cchar for cblock
         setcchar(&cc_syms[WCS_CKBOARD_MEDIUM], &wc_syms[WCS_CKBOARD_MEDIUM],
             WA_NORMAL, scroll_colors, NULL);
-        mvwvline_set(vshell->screen_wnd, 1, vshell->screen_w - 1,
+        mvwvline_set(vshell->canvas, 1, vshell->screen_w - 1,
             &cc_syms[WCS_CKBOARD_MEDIUM], height);
 
         // configure arrows
@@ -335,9 +344,9 @@ vshell_paint_frame(vshell_t *vshell)
             WA_NORMAL, scroll_colors, NULL);
 
         // draw arrows
-        mvwadd_wch(vshell->screen_wnd, 1,
+        mvwadd_wch(vshell->canvas, 1,
             vshell->screen_w - 1, &cc_syms[WCS_UARROW]);
-        mvwadd_wch(vshell->screen_wnd, vshell->screen_h - 2,
+        mvwadd_wch(vshell->canvas, vshell->screen_h - 2,
             vshell->screen_w - 1, &cc_syms[WCS_DARROW]);
 
         // draw block
@@ -347,7 +356,7 @@ vshell_paint_frame(vshell_t *vshell)
         pos = 1.0 - (float)vshell->cursor_pos / ((float)history_sz - (float)height);
         pos *= (height - 3);
 
-        mvwadd_wch(vshell->screen_wnd, (int)pos + 2,
+        mvwadd_wch(vshell->canvas, (int)pos + 2,
             vshell->screen_w - 1, &cc_syms[WCS_BLOCK]);
     }
     else
@@ -358,12 +367,17 @@ vshell_paint_frame(vshell_t *vshell)
             (vshell->term_mode == TERM_MODE_NORMAL) ? L"std" : L"alt",
             vshell->screen_w - 2, vshell->screen_h - 2);
 
-        offset = (vshell->screen_w >> 1) - (len >> 1);
+        // make sure contents will fit
+        if(len < vshell->screen_w - 2)
+        {
+            offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwadd_wchars(vshell->screen_wnd, 0, offset, wbuf);
+            mvwadd_wchars(vshell->canvas, 0, offset, wbuf);
+        }
     }
 
-    refresh();
+    wnoutrefresh(vshell->canvas);
+    doupdate();
 
     return;
 }
@@ -371,16 +385,19 @@ vshell_paint_frame(vshell_t *vshell)
 int
 vshell_resize(vshell_t *vshell)
 {
+
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
-    vshell->render(vshell, &(int){0});
-
+    wresize(vshell->canvas, vshell->screen_h, vshell->screen_w);
     wresize(vshell->term_wnd, vshell->screen_h - 2, vshell->screen_w - 2);
 
     vterm_resize(vshell->vterm, vshell->screen_w - 2, vshell->screen_h - 2);
 
+    vshell->render(vshell, &(int){0});
+
     touchwin(vshell->term_wnd);
     wrefresh(vshell->term_wnd);
+
     refresh();
 
     return 0;
@@ -528,7 +545,7 @@ vshell_render_normal(vshell_t *vshell, void *anything)
 {
     (void)anything;     // make compiler happy
 
-    // vshell_paint_frame(vshell);
+    vshell_paint_frame(vshell);
     vterm_wnd_update(vshell->vterm, -1, 0);
     touchwin(vshell->term_wnd);
     wrefresh(vshell->term_wnd);
