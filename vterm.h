@@ -142,6 +142,13 @@ enum
 #define VTERM_MASK_TERM_PRECLEAR        (1UL << 8)
 #define VTERM_MASK_TERM_SCROLLED        (1UL << 9)
 
+enum
+{
+    VTERM_BUF_STANDARD    =   0x00,     // nomral / standard buffer
+    VTERM_BUF_ALTERNATE,                // typically used for lineart progs
+    VTERM_BUF_HISTORY                   // the history buffer
+};
+
 /*
     alloc a raw terminal object.
 
@@ -164,6 +171,30 @@ vterm_t*        vterm_alloc(void);
 */
 vterm_t*        vterm_init(vterm_t *vterm, uint16_t width, uint16_t height,
                     uint32_t flags);
+
+/*
+    determines the number of lines that will be preserved in the history
+    buffer.
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+        rows            the maximum number of lines that will be preserved.
+                        when the vterm object is first initialized the
+                        default limit is set to 4x the height of the
+                        terminal.
+*/
+void            vterm_set_history_size(vterm_t *vterm, int rows);
+
+/*
+    get the maximum number of lines that will be preserved in the history
+    buffer.
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+
+    @return:            the number of lines preserved by the history buffer.
+*/
+int            vterm_get_history_size(vterm_t *vterm);
 
 /*
     convenience macro for alloc-ing a ready to use terminal object.
@@ -367,12 +398,29 @@ void            vterm_wnd_set(vterm_t *vterm, WINDOW *window);
 WINDOW*         vterm_wnd_get(vterm_t *vterm);
 
 /*
+    get the size of the WINDOW that is attached to the vterm object
+
+    @params:
+        vterm           a valid vterm object handle.
+        width           pointer to an integer where the width will be returned.
+        height          pointer to an integer where the height will be returned.
+*/
+void            vterm_wnd_size(vterm_t *vterm, int *width, int *height);
+
+/*
     cause updates to the terminal to be rendered
 
     @params:
         vterm           a valid vterm object handle.
+        idx             the index of the buffer to render.  passing a value
+                        of -1 will automatically select the active buffer
+                        which will either be VTERM_BUF_STANDARD or
+                        VTERM_BUF_ALTERNATE.
+
+    @return:            returns 0 or success or -1 on error if an invalid
+                        buffer index was specfied.
 */
-void            vterm_wnd_update(vterm_t *vterm);
+int             vterm_wnd_update(vterm_t *vterm, int idx, int offset);
 #endif
 
 /*
@@ -456,8 +504,10 @@ void                vterm_free_mapped_colors(vterm_t *vterm);
     @params:
         vterm           handle to a vterm object
         idx             index of the buffer or -1 for current
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase(vterm_t *vterm, int idx);
+void                vterm_erase(vterm_t *vterm, int idx, char fill_char);
 
 /*
     erase the specified row of the terminal.
@@ -469,8 +519,11 @@ void                vterm_erase(vterm_t *vterm, int idx);
         reset_colors    a value of TRUE indicates that the erased row should
                         also have its color attributes reset to the default
                         foreground and background colors.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
+void                vterm_erase_row(vterm_t *vterm, int row,
+                        bool reset_color, char fill_char);
 
 /*
     erase the terminal beginning at a certain row and toward the bottom
@@ -480,8 +533,11 @@ void                vterm_erase_row(vterm_t *vterm, int row, bool reset_color);
         vterm           handle to a vterm object
         start_row       zero-based index of the row and subsequent rows below
                         to erase.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_rows(vterm_t *vterm, int start_row);
+void                vterm_erase_rows(vterm_t *vterm, int start_row,
+                        char fill_char);
 
 /*
     erase the specified column of the terminal.
@@ -490,8 +546,10 @@ void                vterm_erase_rows(vterm_t *vterm, int start_row);
         vterm           handle to a vterm object
         col             zero-based index of the column to delete.  specifying
                         a value of -1 indicates current column.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_col(vterm_t *vterm, int col);
+void                vterm_erase_col(vterm_t *vterm, int col, char fill_char);
 
 /*
     erase the terminal at a specific column and toward the right margin.
@@ -500,8 +558,11 @@ void                vterm_erase_col(vterm_t *vterm, int col);
         vterm           handle to a vterm object
         start_col       zero-based index of the column and subsequent columns
                         to the right to erase.
+        fill_char       the ascii character to use for the erase character.
+                        if 0 (nul) is specified, then space is used.
 */
-void                vterm_erase_cols(vterm_t *vterm, int start_col);
+void                vterm_erase_cols(vterm_t *vterm, int start_col,
+                        char fill_char);
 
 /*
     cause the terminal to be scrolled up by one row and placing an empty

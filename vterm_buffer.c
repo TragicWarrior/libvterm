@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include <sys/ioctl.h>
 
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_cursor.h"
@@ -18,7 +18,6 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
     vterm_desc_t    *v_desc;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     if(width < 0 || height < 0) return;
 
@@ -48,12 +47,16 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     uint16_t        j;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
 
     if(width == 0 || height == 0) return;
+    if(width == -1 && height == -1) return;
 
     // set the vterm description buffer selector
     v_desc = &vterm->vterm_desc[idx];
+
+    // a -1 means the caller wants to keep an existing dimension
+    if(width == -1) width = v_desc->cols;
+    if(height == -1) height = v_desc->rows;
 
     delta_y = height - v_desc->rows;
 
@@ -114,9 +117,6 @@ vterm_buffer_dealloc(vterm_t *vterm, int idx)
     int             i;
 
     if(vterm == NULL) return;
-    if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return;
-
-    // endwin(); printf("%d\n", idx); fflush(stdout);
 
     v_desc = &vterm->vterm_desc[idx];
 
@@ -186,7 +186,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
             a few housekeeping items and then tear down the other
             buffer before switching.
         */
-        if(curr_idx != VTERM_BUF_STANDARD)
+        if(curr_idx == VTERM_BUF_ALTERNATE)
         {
             // check to see if a resize happened
             std_width = vterm->vterm_desc[VTERM_BUF_STANDARD].cols;
@@ -208,15 +208,25 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
                     vterm->event_hook(vterm, VTERM_EVENT_BUFFER_DEACTIVATED,
                         (void *)&curr_idx);
                 }
-
-                vterm_buffer_dealloc(vterm, curr_idx);
             }
+
+            vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY,
+                -1, -1, curr_height);
+            vterm_buffer_clone(vterm,
+                VTERM_BUF_ALTERNATE, VTERM_BUF_HISTORY, 0,
+                vterm->vterm_desc[VTERM_BUF_HISTORY].rows - curr_height,
+                curr_height);
+
+            // destroy the old buffer
+            vterm_buffer_dealloc(vterm, VTERM_BUF_ALTERNATE);
 
             vterm_cursor_show(vterm, VTERM_BUF_STANDARD);
         }
     }
 
     /*
+        Switch to the ALT buffer.
+
         given the above conditional, this could have been an if-else.
         however, this is more readable and it should optimize
         about the same.
@@ -231,7 +241,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
             vterm->vterm_desc[VTERM_BUF_STANDARD].default_colors;
 
         // erase the newly created buffer
-        vterm_erase(vterm, idx);
+        vterm_erase(vterm, idx, 0);
     }
 
     // update the vterm buffer desc index
@@ -258,6 +268,116 @@ vterm_buffer_get_active(vterm_t *vterm)
     return vterm->vterm_desc_idx;
 }
 
+int
+vterm_buffer_shift_up(vterm_t *vterm, int idx,
+    int top_row, int bottom_row, int stride)
+{
+    vterm_desc_t    *v_desc = NULL;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
+    int             curr_row;
+    int             region;
+    int             i;
+
+    // set vterm desc buffer selector
+    v_desc = &vterm->vterm_desc[idx];
+
+    // computer real values when -1 is supplied
+    if(top_row == -1) top_row = 0;
+    if(bottom_row == -1) bottom_row = v_desc->rows - 1;
+
+    // endwin(); printf("%d %d\n", top_row, bottom_row); fflush(stdout); exit(0);
+
+    region = bottom_row - top_row;
+    if(region < 1) return -1;
+
+    curr_row = top_row + stride;
+
+    vcell_src = &v_desc->cells[curr_row];
+    vcell_dst = &v_desc->cells[top_row];
+
+    for(i = 0; i < region; i++)
+    {
+        if(curr_row > bottom_row) break;
+
+        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * v_desc->cols);
+
+        curr_row++;
+        vcell_src++;
+        vcell_dst++;
+    }
+
+    return 0;
+}
+
+int
+vterm_buffer_shift_down(vterm_t *vterm, int idx,
+    int top_row, int bottom_row, int stride)
+{
+    vterm_desc_t    *v_desc = NULL;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
+    int             region;
+    int             i;
+
+    // set vterm desc buffer selector
+    v_desc = &vterm->vterm_desc[idx];
+
+    // computer real values when -1 is supplied
+    if(top_row == -1) top_row = 0;
+    if(bottom_row == -1) bottom_row = v_desc->rows - 1;
+
+    region = bottom_row - top_row;
+    if(region < 1) return -1;
+
+    vcell_src = &v_desc->cells[bottom_row - stride];
+    vcell_dst = &v_desc->cells[bottom_row];
+
+    for(i = 0; i < region; i++)
+    {
+        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * v_desc->cols);
+
+        vcell_src--;
+        vcell_dst--;
+    }
+
+    return 0;
+}
+
+int
+vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
+     int src_offset, int dst_offset, int rows)
+{
+    vterm_desc_t    *v_desc_src = NULL;
+    vterm_desc_t    *v_desc_dst = NULL;
+    vterm_cell_t    **vcell_src;
+    vterm_cell_t    **vcell_dst;
+    int             stride;
+    int             i;
+
+    if(vterm == NULL) return -1;
+
+    v_desc_src = &vterm->vterm_desc[src_idx];
+    v_desc_dst = &vterm->vterm_desc[dst_idx];
+
+    vcell_src = &v_desc_src->cells[src_offset];
+    vcell_dst = &v_desc_dst->cells[dst_offset];
+
+    stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
+
+    // endwin(); printf("%d\n", rows); fflush(stdout); exit(0);
+
+    for(i = 0; i < rows; i++)
+    {
+        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * stride);
+
+        vcell_src++;
+        vcell_dst++;
+    }
+
+    return 0;
+}
+
 vterm_cell_t**
 vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
 {
@@ -274,7 +394,6 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
     v_desc = &vterm->vterm_desc[idx];
 
     *rows = v_desc->rows;
-    // *cols = v_desc->cols;
     *cols = v_desc->max_cols;
 
     buffer = _vterm_buffer_alloc_raw(*rows, *cols);

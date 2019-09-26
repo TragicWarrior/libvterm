@@ -86,7 +86,7 @@ struct _vterm_cmap_s
 
 struct _vterm_desc_s
 {
-    int             rows, cols;                 // terminal height & width
+    int             rows, cols;                 // buffer height & width
     vterm_cell_t    **cells;
     vterm_cell_t    last_cell;                  // contents of last cell write
 
@@ -118,7 +118,7 @@ typedef struct _vterm_desc_s    vterm_desc_t;
 
 struct _vterm_s
 {
-    vterm_desc_t    vterm_desc[2];              // normal buffer and alt buffer
+    vterm_desc_t    vterm_desc[3];              // normal buffer and alt buffer
     int             vterm_desc_idx;             // index of active buffer;
 
     WINDOW          *window;                    // curses window
@@ -173,7 +173,7 @@ struct _vterm_s
                                                     others.
                                                 */
 #ifdef __FreeBSD__
-    char            padding[10];                //  without this padding FreeBSD
+    char            padding[20];                //  without this padding FreeBSD
 #endif                                          //  trashes mouse_config and
                                                 //  keymap_str causing all sorts
                                                 //  of bad things to happen

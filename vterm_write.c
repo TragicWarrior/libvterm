@@ -12,55 +12,147 @@
 #include "stringv.h"
 #include "macros.h"
 
-#define KEY_BUFFER_SZ   64
+#define KEY_BUFFER_SZ           64
 
-#define KEY_DYNAMIC     (KEY_MAX + 1)
+#define KEY_DYNAMIC             (KEY_MAX + 1)
 
 // necessary for KEYMAP x-macro to work correctly
 // standard function keys
-#define KEY_F1          KEY_F(1)
-#define KEY_F2          KEY_F(2)
-#define KEY_F3          KEY_F(3)
-#define KEY_F4          KEY_F(4)
-#define KEY_F5          KEY_F(5)
-#define KEY_F6          KEY_F(6)
-#define KEY_F7          KEY_F(7)
-#define KEY_F8          KEY_F(8)
-#define KEY_F9          KEY_F(9)
-#define KEY_F10         KEY_F(10)
-#define KEY_F11         KEY_F(11)
-#define KEY_F12         KEY_F(12)
+#define KEY_F1                  KEY_F(1)
+#define KEY_F2                  KEY_F(2)
+#define KEY_F3                  KEY_F(3)
+#define KEY_F4                  KEY_F(4)
+#define KEY_F5                  KEY_F(5)
+#define KEY_F6                  KEY_F(6)
+#define KEY_F7                  KEY_F(7)
+#define KEY_F8                  KEY_F(8)
+#define KEY_F9                  KEY_F(9)
+#define KEY_F10                 KEY_F(10)
+#define KEY_F11                 KEY_F(11)
+#define KEY_F12                 KEY_F(12)
 
 // shift + function keys
-#define SHIFT_KEY_F1    KEY_F(13)
-#define SHIFT_KEY_F2    KEY_F(14)
-#define SHIFT_KEY_F3    KEY_F(15)
-#define SHIFT_KEY_F4    KEY_F(16)
-#define SHIFT_KEY_F5    KEY_F(17)
-#define SHIFT_KEY_F6    KEY_F(18)
-#define SHIFT_KEY_F7    KEY_F(19)
-#define SHIFT_KEY_F8    KEY_F(20)
-#define SHIFT_KEY_F9    KEY_F(21)
-#define SHIFT_KEY_F10   KEY_F(22)
-#define SHIFT_KEY_F11   KEY_F(23)
-#define SHIFT_KEY_F12   KEY_F(24)
+#define SHIFT_KEY_F1            KEY_F(13)
+#define SHIFT_KEY_F2            KEY_F(14)
+#define SHIFT_KEY_F3            KEY_F(15)
+#define SHIFT_KEY_F4            KEY_F(16)
+#define SHIFT_KEY_F5            KEY_F(17)
+#define SHIFT_KEY_F6            KEY_F(18)
+#define SHIFT_KEY_F7            KEY_F(19)
+#define SHIFT_KEY_F8            KEY_F(20)
+#define SHIFT_KEY_F9            KEY_F(21)
+#define SHIFT_KEY_F10           KEY_F(22)
+#define SHIFT_KEY_F11           KEY_F(23)
+#define SHIFT_KEY_F12           KEY_F(24)
 
 // ctrl + function keys
-#define CTRL_KEY_F1     KEY_F(25)
-#define CTRL_KEY_F2     KEY_F(26)
-#define CTRL_KEY_F3     KEY_F(27)
-#define CTRL_KEY_F4     KEY_F(28)
-#define CTRL_KEY_F5     KEY_F(29)
-#define CTRL_KEY_F6     KEY_F(30)
-#define CTRL_KEY_F7     KEY_F(31)
-#define CTRL_KEY_F8     KEY_F(32)
-#define CTRL_KEY_F9     KEY_F(33)
-#define CTRL_KEY_F10    KEY_F(34)
-#define CTRL_KEY_F11    KEY_F(35)
-#define CTRL_KEY_F12    KEY_F(36)
+#define CTRL_KEY_F1             KEY_F(25)
+#define CTRL_KEY_F2             KEY_F(26)
+#define CTRL_KEY_F3             KEY_F(27)
+#define CTRL_KEY_F4             KEY_F(28)
+#define CTRL_KEY_F5             KEY_F(29)
+#define CTRL_KEY_F6             KEY_F(30)
+#define CTRL_KEY_F7             KEY_F(31)
+#define CTRL_KEY_F8             KEY_F(32)
+#define CTRL_KEY_F9             KEY_F(33)
+#define CTRL_KEY_F10            KEY_F(34)
+#define CTRL_KEY_F11            KEY_F(35)
+#define CTRL_KEY_F12            KEY_F(36)
 
-#define CTRL_HOME       KEY_DYNAMIC
-#define CTRL_END        KEY_DYNAMIC
+// modified home key
+#define SHIFT_HOME              KEY_DYNAMIC
+#define ALT_HOME                KEY_DYNAMIC
+#define ALT_SHIFT_HOME          KEY_DYNAMIC
+#define CTRL_HOME               KEY_DYNAMIC
+#define CTRL_SHIFT_HOME         KEY_DYNAMIC
+#define CTRL_ALT_HOME           KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_HOME     KEY_DYNAMIC
+
+// modified end key
+#define SHIFT_END               KEY_DYNAMIC
+#define ALT_END                 KEY_DYNAMIC
+#define ALT_SHIFT_END           KEY_DYNAMIC
+#define CTRL_END                KEY_DYNAMIC
+#define CTRL_SHIFT_END          KEY_DYNAMIC
+#define CTRL_ALT_END            KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_END      KEY_DYNAMIC
+
+// modified up key
+#define SHIFT_UP                KEY_DYNAMIC
+#define ALT_UP                  KEY_DYNAMIC
+#define ALT_SHIFT_UP            KEY_DYNAMIC
+#define CTRL_UP                 KEY_DYNAMIC
+#define CTRL_SHIFT_UP           KEY_DYNAMIC
+#define CTRL_ALT_UP             KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_UP       KEY_DYNAMIC
+
+// modified down key
+#define SHIFT_DOWN              KEY_DYNAMIC
+#define ALT_DOWN                KEY_DYNAMIC
+#define ALT_SHIFT_DOWN          KEY_DYNAMIC
+#define CTRL_DOWN               KEY_DYNAMIC
+#define CTRL_SHIFT_DOWN         KEY_DYNAMIC
+#define CTRL_ALT_DOWN           KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_DOWN     KEY_DYNAMIC
+
+// modified right key
+#define SHIFT_RIGHT             KEY_DYNAMIC
+#define ALT_RIGHT               KEY_DYNAMIC
+#define ALT_SHIFT_RIGHT         KEY_DYNAMIC
+#define CTRL_RIGHT              KEY_DYNAMIC
+#define CTRL_SHIFT_RIGHT        KEY_DYNAMIC
+#define CTRL_ALT_RIGHT          KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_RIGHT    KEY_DYNAMIC
+
+// modified left key
+#define SHIFT_LEFT              KEY_DYNAMIC
+#define ALT_LEFT                KEY_DYNAMIC
+#define ALT_SHIFT_LEFT          KEY_DYNAMIC
+#define CTRL_LEFT               KEY_DYNAMIC
+#define CTRL_SHIFT_LEFT         KEY_DYNAMIC
+#define CTRL_ALT_LEFT           KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_LEFT     KEY_DYNAMIC
+
+// modified insert key
+#define SHIFT_IC                KEY_DYNAMIC
+#define ALT_IC                  KEY_DYNAMIC
+#define ALT_SHIFT_IC            KEY_DYNAMIC
+#define CTRL_IC                 KEY_DYNAMIC
+#define CTRL_SHIFT_IC           KEY_DYNAMIC
+#define CTRL_ALT_IC             KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_IC       KEY_DYNAMIC
+
+// modified delete key
+#define SHIFT_DC                KEY_DYNAMIC
+#define ALT_DC                  KEY_DYNAMIC
+#define ALT_SHIFT_DC            KEY_DYNAMIC
+#define CTRL_DC                 KEY_DYNAMIC
+#define CTRL_SHIFT_DC           KEY_DYNAMIC
+#define CTRL_ALT_DC             KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_DC       KEY_DYNAMIC
+
+// modified page up
+#define SHIFT_PPAGE             KEY_DYNAMIC
+#define ALT_PPAGE               KEY_DYNAMIC
+#define ALT_SHIFT_PPAGE         KEY_DYNAMIC
+#define CTRL_PPAGE              KEY_DYNAMIC
+#define CTRL_SHIFT_PPAGE        KEY_DYNAMIC
+#define CTRL_SHIFT_PPAGE        KEY_DYNAMIC
+#define CTRL_ALT_PPAGE          KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_PPAGE    KEY_DYNAMIC
+
+// modified page down
+#define SHIFT_NPAGE             KEY_DYNAMIC
+#define ALT_NPAGE               KEY_DYNAMIC
+#define ALT_SHIFT_NPAGE         KEY_DYNAMIC
+#define CTRL_NPAGE              KEY_DYNAMIC
+#define CTRL_SHIFT_NPAGE        KEY_DYNAMIC
+#define CTRL_SHIFT_NPAGE        KEY_DYNAMIC
+#define CTRL_ALT_NPAGE          KEY_DYNAMIC
+#define CTRL_ALT_SHIFT_NPAGE    KEY_DYNAMIC
+
+
+
 
 // load keymap table for xterm and xterm256
 #define KEYMAP(k, s)    k,

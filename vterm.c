@@ -87,6 +87,13 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUF_STANDARD, width, height);
 
+    /*
+        allocate the scrollback buffer to 4x height and erase the buffer
+        with all blanks.
+    */
+    vterm_buffer_alloc(vterm, VTERM_BUF_HISTORY, width, height * 4);
+    vterm_erase(vterm, VTERM_BUF_HISTORY, '-');
+
     // initializes the color cache or updates the ref count
     color_cache_init();
 
@@ -103,7 +110,7 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     }
 
     // initialize all cells with defaults
-    vterm_erase(vterm, VTERM_BUF_STANDARD);
+    vterm_erase(vterm, VTERM_BUF_STANDARD, 0);
 
     if(flags & VTERM_FLAG_DUMP)
     {
@@ -240,7 +247,7 @@ vterm_destroy(vterm_t *vterm)
     mouse_driver_free(vterm);
 
     // todo:  do something more elegant in the future
-    for(i = 0; i < 2; i++)
+    for(i = 0; i < 3; i++)
     {
         vterm_buffer_dealloc(vterm, i);
     }

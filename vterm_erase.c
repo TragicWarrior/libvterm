@@ -5,13 +5,16 @@
 #include "vterm_buffer.h"
 
 void
-vterm_erase(vterm_t *vterm, int idx)
+vterm_erase(vterm_t *vterm, int idx, char fill_char)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             r, c;
 
     if(vterm == NULL) return;
+
+    // use a space if no fill char is specified
+    if(fill_char == 0) fill_char = ' ';
 
     // a value of -1 means current, active buffer
     if(idx == -1)
@@ -38,7 +41,7 @@ vterm_erase(vterm_t *vterm, int idx)
 
         for(c = 0; c < v_desc->cols; c++)
         {
-            VCELL_SET_CHAR((*vcell), ' ');
+            VCELL_SET_CHAR((*vcell), fill_char);
             VCELL_SET_ATTR((*vcell), A_NORMAL);
             VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
@@ -50,7 +53,7 @@ vterm_erase(vterm_t *vterm, int idx)
 }
 
 void
-vterm_erase_row(vterm_t *vterm, int row, bool reset_colors)
+vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
@@ -58,6 +61,8 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors)
     int             idx;
 
     if(vterm == NULL) return;
+
+    if(fill_char == 0) fill_char = ' ';
 
     // set the vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
@@ -68,10 +73,9 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors)
 
     for(c = 0;c < v_desc->cols; c++)
     {
-        VCELL_SET_CHAR((*vcell), ' ');
+        VCELL_SET_CHAR((*vcell), fill_char);
         VCELL_SET_ATTR((*vcell), A_NORMAL);
 
-        // reset_colors = TRUE;
         if(reset_colors == TRUE)
             VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
@@ -82,7 +86,7 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors)
 }
 
 void
-vterm_erase_rows(vterm_t *vterm, int start_row)
+vterm_erase_rows(vterm_t *vterm, int start_row, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -90,13 +94,15 @@ vterm_erase_rows(vterm_t *vterm, int start_row)
     if(vterm == NULL) return;
     if(start_row < 0) return;
 
+    if(fill_char == 0) fill_char = ' ';
+
     // set the vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     while(start_row < v_desc->rows)
     {
-        vterm_erase_row(vterm, start_row, FALSE);
+        vterm_erase_row(vterm, start_row, FALSE, fill_char);
         start_row++;
     }
 
@@ -104,7 +110,7 @@ vterm_erase_rows(vterm_t *vterm, int start_row)
 }
 
 void
-vterm_erase_col(vterm_t *vterm, int col)
+vterm_erase_col(vterm_t *vterm, int col, char fill_char)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
@@ -112,6 +118,8 @@ vterm_erase_col(vterm_t *vterm, int col)
     int             r;
 
     if(vterm == NULL) return;
+
+    if(fill_char == 0) fill_char = ' ';
 
     // set the vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
@@ -124,7 +132,7 @@ vterm_erase_col(vterm_t *vterm, int col)
         // store the cell address to reduce scalar look-ups
         vcell = &v_desc->cells[r][col];
 
-        VCELL_SET_CHAR((*vcell), ' ');
+        VCELL_SET_CHAR((*vcell), fill_char);
         VCELL_SET_ATTR((*vcell), A_NORMAL);
         VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
     }
@@ -133,7 +141,7 @@ vterm_erase_col(vterm_t *vterm, int col)
 }
 
 void
-vterm_erase_cols(vterm_t *vterm,int start_col)
+vterm_erase_cols(vterm_t *vterm, int start_col, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -141,13 +149,15 @@ vterm_erase_cols(vterm_t *vterm,int start_col)
     if(vterm == NULL) return;
     if(start_col < 0) return;
 
+    if(fill_char == 0) fill_char = ' ';
+
     // set the vterm description buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     while(start_col < v_desc->cols)
     {
-        vterm_erase_col(vterm, start_col);
+        vterm_erase_col(vterm, start_col, fill_char);
         start_col++;
     }
 

@@ -6,6 +6,7 @@
 #include <ncurses/ncurses.h>
 #endif
 
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
@@ -29,30 +30,48 @@ vterm_wnd_get(vterm_t *vterm)
 }
 
 void
-vterm_wnd_update(vterm_t *vterm)
+vterm_wnd_size(vterm_t *vterm, int *width, int *height)
 {
-    vterm_cell_t    *vcell;
-    vterm_desc_t    *v_desc = NULL;
-    int             r, c;
-    int             idx;
-    attr_t          attrs;
-    short           colors;
-
-
-    // static cchar_t  uch;                    // Mac OS blows up if not static
-    cchar_t         uch;
-
     if(vterm == NULL) return;
     if(vterm->window == NULL) return;
 
+    getmaxyx(vterm->window, *height, *width);
+
+    return;
+}
+
+int
+vterm_wnd_update(vterm_t *vterm, int idx, int offset)
+{
+    vterm_cell_t    *vcell;
+    vterm_desc_t    *v_desc = NULL;
+    int             width;
+    int             height;
+    int             r, c;
+    attr_t          attrs;
+    short           colors;
+    cchar_t         uch;
+
+    if(vterm == NULL) return -1;
+    if(vterm->window == NULL) return -1;
+
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
+    if(idx == -1)
+    {
+        idx = vterm_buffer_get_active(vterm);
+    }
+
     v_desc = &vterm->vterm_desc[idx];
 
-    for(r = 0; r < v_desc->rows; r++)
+    getmaxyx(vterm->window, height, width);
+    VAR_UNUSED(width);
+
+    height = USE_MIN(height, v_desc->rows);
+
+    for(r = 0; r < height; r++)
     {
         // start at the beginning of the row
-        vcell = &v_desc->cells[r][0];
+        vcell = &v_desc->cells[r + offset][0];
 
         for(c = 0; c < v_desc->cols; c++)
         {
@@ -76,13 +95,16 @@ vterm_wnd_update(vterm_t *vterm)
         }
     }
 
-    if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
+    if(idx != VTERM_BUF_HISTORY)
     {
-        mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
-            v_desc->default_colors, NULL);
+        if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
+        {
+            mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
+                v_desc->default_colors, NULL);
+        }
     }
 
-    return;
+    return -1;
 }
 
 #endif

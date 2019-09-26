@@ -19,9 +19,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
 {
     vterm_desc_t    *v_desc = NULL;
     struct winsize  ws = {.ws_xpixel = 0,.ws_ypixel = 0};
-    // int             delta_x;
     int             delta_y;
-    // int             start_x;
     int             start_y;
     int             idx;
 
@@ -38,9 +36,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    // delta_x = width - v_desc->cols;
     delta_y = height - v_desc->rows;
-    // start_x = v_desc->cols;
     start_y = v_desc->rows;
 
     // fire off the TERM RESIZED event hook if it's been set
@@ -56,6 +52,12 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     // realloc to accomodate the new matrix size
     vterm_buffer_realloc(vterm, idx, width, height);
 
+    /*
+        realloc the history buffer to the new width and keep the
+        height the same.
+    */
+    vterm_buffer_realloc(vterm, VTERM_BUF_HISTORY, width, -1);
+
     if(!(v_desc->buffer_state & STATE_SCROLL_SHORT))
     {
         v_desc->scroll_max = height - 1;
@@ -67,7 +69,7 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     clamp_cursor_to_bounds(vterm);
 
     // if(delta_x > 0) vterm_erase_cols(vterm, start_x);
-    if(delta_y > 0) vterm_erase_rows(vterm, start_y);
+    if(delta_y > 0) vterm_erase_rows(vterm, start_y, 0);
 
     // signal the child process that terminal changed size
     if(!(vterm->flags & VTERM_FLAG_NOPTY))

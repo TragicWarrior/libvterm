@@ -1,6 +1,8 @@
 #ifndef _MACROS_H_
 #define _MACROS_H_
 
+#define VAR_UNUSED(x)       ((void) x)
+
 // speedy way to get the absolute value of on a 2s-complement system
 #define ABSINT(x)	((x^(x>>((sizeof(x)*8)-1)))-(x>>((sizeof(x)*8)-1)))
 
@@ -20,5 +22,12 @@
                     goto *jtable[idx];      \
             }                               \
             while(0)
+
+#define USE_MIN(a, b)                       \
+            ({                              \
+                __typeof__ (a) _a = (a);    \
+                __typeof__ (b) _b = (b);    \
+                _a < _b ? _a : _b;          \
+            })
 
 #endif

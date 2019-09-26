@@ -38,7 +38,7 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
         */
         if(param[i] == 3)
         {
-            vterm_erase(vterm, idx);
+            vterm_erase(vterm, idx, 0);
             v_desc->ccol = 0;
             v_desc->crow = 0;
             continue;
