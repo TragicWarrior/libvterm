@@ -1,3 +1,13 @@
+7.0
+
+* [Bryan Christ] Added a history buffer / scrollback capabilites to the
+  underlying data structures and API.
+* [Bryan Christ] Updated the vshell demo program to showcase the history
+  buffer features.
+* [Bryan Christ] Refactored the vshell demo program to use wide character
+  routines exclusively.
+* [Bryan Christ] Lots of bugfixes for FreeBSD.
+
 6.22
 
 * [Bryan Christ] Remove some code that wasn't needed addressing some
