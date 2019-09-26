@@ -524,7 +524,7 @@ vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
         vshell->render = vshell_render_history;
         vshell->kinput = vshell_kinput_history;
 
-        vshell->render(vshell, 0, &(int){0});
+        vshell->render(vshell, 1, &(int){0});
 
         return;
     }
