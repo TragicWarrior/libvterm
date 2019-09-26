@@ -166,7 +166,8 @@ int main(int argc, char **argv)
     // set default frame color
     vshell_paint_frame(vshell);
 
-    vshell->term_wnd = newwin(vshell->screen_h - 2, vshell->screen_w - 2, 1, 1);
+    vshell->term_wnd = newwin(vshell->screen_h - 2, vshell->screen_w - 4, 1, 1);
+    // vshell->term_wnd = subwin(stdscr, vshell->screen_h - 2, vshell->screen_w - 4, 1, 1);
 
     wattrset(vshell->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0)); // black over white
     wrefresh(vshell->term_wnd);
@@ -269,8 +270,7 @@ vshell_get_key(void)
 void
 vshell_paint_frame(vshell_t *vshell)
 {
-    wchar_t         title[256] = L" Term In A Box ";
-    char            buf[254];
+    char            buf[254] = "\0";
     wchar_t         wbuf[WBUF_MAX];
     int             len;
     int             offset;
@@ -302,21 +302,11 @@ vshell_paint_frame(vshell_t *vshell)
     wattron(vshell->screen_wnd, A_BOLD);
     box_set(vshell->screen_wnd, 0, 0);      // wide char version of box()
 
-    len = wcslen(title);
-
     // quick computer of title location
     if(vshell->vterm != NULL)
     {
         vterm_get_title(vshell->vterm, buf, sizeof(buf));
-        if(buf[0] != '\0')
-        {
-            len = swprintf(title, 256, L" %s ", buf);
-        }
     }
-
-    // a right shift is the same as divide by 2 but quicker
-    offset = (vshell->screen_w >> 1) - (len >> 1);
-    mvwadd_wchars(vshell->screen_wnd, 0, offset, title);
 
     if(vshell->term_mode & TERM_MODE_HISTORY)
     {
@@ -324,12 +314,13 @@ vshell_paint_frame(vshell_t *vshell)
         vterm_wnd_size(vshell->vterm, &width, &height);
 
         len = swprintf(wbuf, WBUF_MAX,
-            L" [alt + z] Terminal | %03d / %03d ",
+            L" %s | [alt + z] Terminal | %03d / %03d ",
+            (buf[0] == '\0') ? "Vshell" : buf,
             vshell->cursor_pos + height, history_sz);
 
         offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwadd_wchars(vshell->screen_wnd, vshell->screen_h - 1, offset, wbuf);
+        mvwadd_wchars(vshell->screen_wnd, 0, offset, wbuf);
 
         // configure cchar for cblock
         setcchar(&cc_syms[WCS_CKBOARD_MEDIUM], &wc_syms[WCS_CKBOARD_MEDIUM],
@@ -362,13 +353,14 @@ vshell_paint_frame(vshell_t *vshell)
     else
     {
         len = swprintf(wbuf, WBUF_MAX,
-            L" [alt + z] History | %ls | %d x %d ",
+            L" %s | [alt + z] History | %ls | %d x %d ",
+            (buf[0] == '\0') ? "Vshell" : buf,
             (vshell->term_mode == TERM_MODE_NORMAL) ? L"std" : L"alt",
             vshell->screen_w - 2, vshell->screen_h - 2);
 
         offset = (vshell->screen_w >> 1) - (len >> 1);
 
-        mvwadd_wchars(vshell->screen_wnd, vshell->screen_h - 1, offset, wbuf);
+        mvwadd_wchars(vshell->screen_wnd, 0, offset, wbuf);
     }
 
     refresh();
