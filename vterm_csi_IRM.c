@@ -1,10 +1,11 @@
+#include "macros.h"
 #include "vterm_csi.h"
 #include "vterm_private.h"
 
 void
 interpret_csi_IRM(vterm_t *vterm, bool replace_mode)
 {
-    (void)replace_mode;     // silence complier warning
+    VAR_UNUSED(replace_mode);     // silence complier warning
 
     if(vterm == NULL) return;
 
