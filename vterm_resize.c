@@ -7,6 +7,7 @@
 
 #include <sys/ioctl.h>
 
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_misc.h"
@@ -24,10 +25,10 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     int             idx;
 
     // suppress warnings
-    (void)grip_top;
-    (void)grip_left;
-    (void)grip_bottom;
-    (void)grip_right;
+    VAR_UNUSED(grip_top);
+    VAR_UNUSED(grip_left);
+    VAR_UNUSED(grip_bottom);
+    VAR_UNUSED(grip_right);
 
     if(vterm == NULL) return;
     if(width == 0 || height == 0) return;

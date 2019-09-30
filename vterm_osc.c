@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -175,7 +174,7 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
     short   new_color;
     short   r, g, b;
 
-    (void)vterm;    // make compiler happy
+    VAR_UNUSED(vterm);    // make compiler happy
 
     pos = buf;
 
