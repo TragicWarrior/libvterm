@@ -1,3 +1,8 @@
+7.1
+
+* [Bryan Christ] Suppress compiler warnings in a more intuitive way
+  using macro.
+
 7.0
 
 * [Bryan Christ] Added a history buffer / scrollback capabilites to the
