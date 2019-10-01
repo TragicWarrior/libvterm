@@ -53,8 +53,10 @@ static wchar_t wc_syms[] = {
 
 static cchar_t *cc_syms;
 
+#define VSHELL_FLAG_VSPLIT  (1UL << 0)
+
 #define TERM_MODE_NORMAL    0
-#define TERM_MODE_ALT       1
+#define TERM_MODE_ALT       (1 << 1)
 #define TERM_MODE_HISTORY   (1 << 4)
 
 short   color_table[] =
@@ -86,15 +88,19 @@ struct _vshell_s
     char            *exec_path;
     char            **exec_argv;
 
-    vterm_t         *vterm[2];
-    uint32_t        flags;
+    unsigned int    vshell_flags;
+
     WINDOW          *canvas;
-    WINDOW          *term_wnd[2];
     int             screen_w;
     int             screen_h;
-    int             term_mode[2];
     color_mtx_t     *color_mtx;
     int             cursor_pos[2];
+
+    // term specific data stores
+    vterm_t         *vterm[2];
+    uint32_t        vterm_flags;
+    WINDOW          *term_wnd[2];
+    int             term_mode[2];
 
     // object "methods"
     void            (*render[2])    (vshell_t *, int, void *);
@@ -195,7 +201,7 @@ int main(int argc, char **argv)
     }
 
     vshell->vterm[0] = vterm_init(vshell->vterm[0],
-        vshell->screen_w - 2, vshell->screen_h - 2, vshell->flags);
+        vshell->screen_w - 2, vshell->screen_h - 2, vshell->vterm_flags);
 
     vterm_set_colors(vshell->vterm[0], COLOR_WHITE, COLOR_BLACK);
     vterm_wnd_set(vshell->vterm[0], vshell->term_wnd[0]);
@@ -237,6 +243,24 @@ int main(int argc, char **argv)
         if(keystroke == KEY_RESIZE)
         {
             vshell_resize(vshell);
+            continue;
+        }
+
+        // alt-s
+        if(keystroke == 0x1b73)
+        {
+            if(vshell->vshell_flags & VSHELL_FLAG_VSPLIT)
+            {
+                vshell->vshell_flags &= ~VSHELL_FLAG_VSPLIT;
+            }
+            else
+            {
+                vshell->vshell_flags |= VSHELL_FLAG_VSPLIT;
+            }
+
+            vshell_resize(vshell);
+            // vshell->render[0](vshell, 1, &(int){ 0 });
+
             continue;
         }
 
@@ -387,6 +411,16 @@ vshell_paint_frame(vshell_t *vshell)
         }
     }
 
+    // draw a vertical line if split screen mode
+    if(vshell->vshell_flags != 0)
+    {
+        setcchar(&cc_syms[WCS_VLINE_NORMAL],
+            &wc_syms[WCS_VLINE_NORMAL], WA_NORMAL, frame_colors, NULL);
+
+        mvwvline_set(vshell->canvas, 1, (vshell->screen_w >> 1),
+            &cc_syms[WCS_VLINE_NORMAL], vshell->screen_h - 2);
+    }
+
     wnoutrefresh(vshell->canvas);
 
     return;
@@ -399,11 +433,25 @@ vshell_resize(vshell_t *vshell)
 
     wresize(vshell->canvas, vshell->screen_h, vshell->screen_w);
     werase(vshell->canvas);
-    wresize(vshell->term_wnd[0], vshell->screen_h - 2, vshell->screen_w - 2);
 
-    vterm_resize(vshell->vterm[0], vshell->screen_w - 2, vshell->screen_h - 2);
+    if(vshell->vshell_flags & VSHELL_FLAG_VSPLIT)
+    {
+        wresize(vshell->term_wnd[0],
+            vshell->screen_h - 2, (vshell->screen_w - 2) >> 1);
 
-    vshell->render[0](vshell, 1, &(int){0});
+        vterm_resize(vshell->vterm[0],
+            (vshell->screen_w - 2) >> 1, vshell->screen_h - 2);
+    }
+    else
+    {
+        wresize(vshell->term_wnd[0],
+            vshell->screen_h - 2, vshell->screen_w - 2);
+
+        vterm_resize(vshell->vterm[0],
+            vshell->screen_w - 2, vshell->screen_h - 2);
+    }
+
+    vshell->render[0](vshell, 1, NULL);
 
     touchwin(vshell->term_wnd[0]);
     wrefresh(vshell->term_wnd[0]);
@@ -713,31 +761,31 @@ vshell_parse_cmdline(vshell_t *vshell)
 
             if (strncmp(vshell->argv[i], "--dump", strlen("--dump")) == 0)
             {
-                vshell->flags |= VTERM_FLAG_DUMP;
+                vshell->vterm_flags |= VTERM_FLAG_DUMP;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--rxvt", strlen("--rxvt")) == 0)
             {
-                vshell->flags |= VTERM_FLAG_RXVT;
+                vshell->vterm_flags |= VTERM_FLAG_RXVT;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--vt100", strlen("--vt100")) == 0)
             {
-                vshell->flags |= VTERM_FLAG_VT100;
+                vshell->vterm_flags |= VTERM_FLAG_VT100;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--linux", strlen("--linux")) == 0)
             {
-                vshell->flags |= VTERM_FLAG_LINUX;
+                vshell->vterm_flags |= VTERM_FLAG_LINUX;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--c16", strlen("--c16")) == 0)
             {
-                vshell->flags |= VTERM_FLAG_C16;
+                vshell->vterm_flags |= VTERM_FLAG_C16;
                 continue;
             }
 
