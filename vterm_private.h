@@ -198,6 +198,8 @@ struct _vterm_s
                                                     the custom event hook.
                                                 */
 
+    void            *userptr;                   //  user-defined data
+
     // internal callbacks
     int             (*write)            (vterm_t *, uint32_t);
     int             (*esc_handler)      (vterm_t *);
