@@ -210,7 +210,11 @@ int main(int argc, char **argv)
     keypad(vshell->canvas, TRUE);
 
     // create the first pane and vterm instance
-    vshell_create_pane(vshell, TERM_STATE_DIRTY);
+    if(vshell->exec_path != NULL)
+        vshell_create_pane(vshell, TERM_STATE_DIRTY | TERM_STATE_EXECV);
+    else
+        vshell_create_pane(vshell, TERM_STATE_DIRTY);
+
     vshell->active_pane = 1;
 
     // render frame
