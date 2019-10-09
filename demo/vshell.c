@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <wchar.h>
 #include <termios.h>
+#include <limits.h>
 
 // #include <sys/ioctl.h>
 
@@ -104,7 +105,7 @@ struct _vpane_s
     vpane_t         *prev;
 
     void            (*render)       (vpane_t *, int);
-    void            (*kinput)       (vpane_t *, int32_t);
+    void            (*kinput)       (vshell_t *, int32_t);
 };
 
 // global struct
@@ -142,7 +143,7 @@ void        vshell_destroy_pane(vshell_t *vshell, int pane_id);
 vpane_t*    vshell_get_pane(vshell_t *vshell, int pane_id);
 
 void        vshell_update_canvas(vshell_t *vshell, int flags);
-int32_t     vshell_get_key(void);
+int32_t     vshell_get_key(vshell_t *vshell);
 int         vshell_resize(vshell_t *vshell);
 
 void        vshell_render_normal(vpane_t *vpane, int flags);
@@ -206,6 +207,8 @@ int main(int argc, char **argv)
     */
     vshell->canvas = newwin(vshell->screen_h, vshell->screen_w, 0, 0);
     scrollok(vshell->canvas, FALSE);
+    nodelay(vshell->canvas, TRUE);
+    keypad(vshell->canvas, TRUE);
 
     // create the first pane and vterm instance
     vshell_create_pane(vshell, TERM_STATE_DIRTY);
@@ -228,8 +231,12 @@ int main(int argc, char **argv)
         // read data from each term instance
         CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
         {
-            vpane->bytes = vterm_read_pipe(vpane->vterm);
-            vpane->bytes_buffered += vpane->bytes;
+            do
+            {
+                vpane->bytes = vterm_read_pipe(vpane->vterm);
+                vpane->bytes_buffered += vpane->bytes;
+            }
+            while(vpane->bytes > 512);
 
             if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
             {
@@ -251,7 +258,7 @@ int main(int argc, char **argv)
             }
         }
 
-        keystroke = vshell_get_key();
+        keystroke = vshell_get_key(vshell);
 
         // handle special events like resize first
         if(keystroke == KEY_RESIZE)
@@ -353,6 +360,8 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
 
     vpane->term_wnd = newwin(vpane->height - 2, vpane->width - 2,
         vpane->y + 1, vpane->x + 1);
+    nodelay(vpane->term_wnd, TRUE);
+    keypad(vpane->term_wnd, TRUE);
 
     // set term window colors to black on white
     wattrset(vpane->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0));
@@ -436,19 +445,24 @@ vshell_destroy_pane(vshell_t *vshell, int pane_id)
 
 
 int32_t
-vshell_get_key(void)
+vshell_get_key(vshell_t *vshell)
 {
-    int32_t keystroke;
-    int     ch;
+    // vpane_t     *vpane;
+    int32_t     keystroke;
+    int         ch;
 
-    ch = getch();
+    //vpane = vshell_get_pane(vshell, vshell->active_pane);
+
+    ch = wgetch(vshell->canvas);
+    // ch = wgetch(vpane->term_wnd);
     keystroke = ch;
 
     if(ch == 0x1b)
     {
         for(;;)
         {
-            ch = getch();
+            ch = wgetch(vshell->canvas);
+            // ch = wgetch(vpane->term_wnd);
             if(ch == -1) break;
 
             keystroke = keystroke << 8;
@@ -465,13 +479,14 @@ vshell_update_canvas(vshell_t *vshell, int flags)
     vpane_t         *vpane;
     char            buf[254] = "\0";
     wchar_t         wbuf[WBUF_MAX];
+    char            *mode;
     int             len;
     int             offset;
     int             frame_colors;
     int             scroll_colors = 0;
     int             history_sz;
-    int             width;
-    int             height;
+    // int             width;
+    // int             height;
     float           total_height;
     float           pos;
     int             i = 0;
@@ -490,13 +505,19 @@ vshell_update_canvas(vshell_t *vshell, int flags)
         lc = (vshell->active_pane == i) ? COLOR_WHITE: COLOR_BLACK;
 
         if(vpane->state & TERM_STATE_ALT)
+        {
             frame_colors = vshell_pair_selector(NULL, lc, COLOR_RED);
+            mode = "ALTERNATE";
+        }
         else
+        {
             frame_colors = vshell_pair_selector(NULL, lc, COLOR_BLUE);
-
+            mode = "NORMAL";
+        }
         if(vpane->state & TERM_STATE_HISTORY)
         {
             frame_colors = vshell_pair_selector(NULL, lc, COLOR_MAGENTA);
+            mode = "HISTORY";
         }
 
         wattron(vshell->canvas, WA_BOLD);
@@ -506,9 +527,7 @@ vshell_update_canvas(vshell_t *vshell, int flags)
 
         if(vshell->active_pane == i)
         {
-            len = swprintf(wbuf, WBUF_MAX,
-                L"[ Active | %s ]",
-                ((vpane->state & TERM_STATE_ALT) ? "ALT" : "STD"));
+            len = swprintf(wbuf, WBUF_MAX, L"[ Active | %s ]", mode);
 
             wattron(vshell->canvas, WA_BOLD);
             mvwadd_wchars(vshell->canvas, 0,
@@ -565,11 +584,6 @@ vshell_update_canvas(vshell_t *vshell, int flags)
     }
 
 
-    // quick computer of title location
-    //if(vshell->vpane[0].vterm != NULL)
-    //{
-    //    vterm_get_title(vshell->vpane[0].vterm, buf, sizeof(buf));
-    //}
 
     //if(vshell->vpane[0].term_mode & TERM_MODE_HISTORY)
     //{
