@@ -284,6 +284,7 @@ int main(int argc, char **argv)
         if(keystroke == 0x1b2b)
         {
             vshell_create_pane(vshell, 0);
+            vshell->active_pane = vshell->pane_count;
             vshell_resize(vshell);
 
             continue;
