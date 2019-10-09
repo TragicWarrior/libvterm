@@ -490,7 +490,8 @@ vshell_update_canvas(vshell_t *vshell, int flags)
     float           total_height;
     float           pos;
     int             i = 0;
-    short           lc;                     // line color of border
+    short           fg;                     // fg color of border
+    short           bg;                     // bg color of border 
 
 
     CDL_FOREACH(vshell->vpane_list, vpane)
@@ -502,23 +503,27 @@ vshell_update_canvas(vshell_t *vshell, int flags)
             if(!(vpane->state & TERM_STATE_DIRTY)) continue;
         }
 
-        lc = (vshell->active_pane == i) ? COLOR_WHITE: COLOR_BLACK;
-
         if(vpane->state & TERM_STATE_ALT)
         {
-            frame_colors = vshell_pair_selector(NULL, lc, COLOR_RED);
+            fg = (vshell->active_pane == i) ? COLOR_WHITE : COLOR_RED;
+            bg = (vshell->active_pane == i) ? COLOR_RED : COLOR_BLACK;
             mode = "ALTERNATE";
         }
         else
         {
-            frame_colors = vshell_pair_selector(NULL, lc, COLOR_BLUE);
+            fg = (vshell->active_pane == i) ? COLOR_WHITE : COLOR_BLUE;
+            bg = (vshell->active_pane == i) ? COLOR_BLUE : COLOR_BLACK;
             mode = "NORMAL";
         }
+
         if(vpane->state & TERM_STATE_HISTORY)
         {
-            frame_colors = vshell_pair_selector(NULL, lc, COLOR_MAGENTA);
+            fg = (vshell->active_pane == i) ? COLOR_WHITE : COLOR_MAGENTA;
+            bg = (vshell->active_pane == i) ? COLOR_MAGENTA : COLOR_BLACK;
             mode = "HISTORY";
         }
+
+        frame_colors = vshell_pair_selector(NULL, fg, bg);
 
         wattron(vshell->canvas, WA_BOLD);
         wchar_box(vshell->canvas, frame_colors, vpane->x, vpane->y,
@@ -527,7 +532,19 @@ vshell_update_canvas(vshell_t *vshell, int flags)
 
         if(vshell->active_pane == i)
         {
-            len = swprintf(wbuf, WBUF_MAX, L"[ Active | %s ]", mode);
+            if(vpane->state & TERM_STATE_HISTORY)
+            {
+                history_sz = vterm_get_history_size(vpane->vterm);
+
+                len = swprintf(wbuf, WBUF_MAX,
+                    L"[ Active | %s | %04d / %04d ]", mode,
+                    vpane->cursor_pos + vpane->height, history_sz);
+            }
+            else
+            {
+                len = swprintf(wbuf, WBUF_MAX,
+                    L"[ Active | %s ]", mode);
+            }
 
             wattron(vshell->canvas, WA_BOLD);
             mvwadd_wchars(vshell->canvas, 0,
@@ -538,7 +555,7 @@ vshell_update_canvas(vshell_t *vshell, int flags)
     }
 
     // configure cchar for cblock
-    scroll_colors = vshell_pair_selector(NULL, lc, COLOR_BLUE);
+    scroll_colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLUE);
     setcchar(&cc_syms[WCS_CKBOARD_MEDIUM], &wc_syms[WCS_CKBOARD_MEDIUM],
         WA_NORMAL, scroll_colors, NULL);
     i = 0;
