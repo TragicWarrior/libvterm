@@ -168,7 +168,6 @@ int main(int argc, char **argv)
     vpane_t         *tmp2;
     int32_t         keystroke;
     char            *locale;
-    int             i = 0;
 
 
     vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
@@ -477,16 +476,12 @@ void
 vshell_update_canvas(vshell_t *vshell, int flags)
 {
     vpane_t         *vpane;
-    char            buf[254] = "\0";
     wchar_t         wbuf[WBUF_MAX];
     char            *mode;
     int             len;
-    int             offset;
     int             frame_colors;
     int             scroll_colors = 0;
     int             history_sz;
-    // int             width;
-    // int             height;
     float           total_height;
     float           pos;
     int             i = 0;
@@ -542,14 +537,12 @@ vshell_update_canvas(vshell_t *vshell, int flags)
             }
             else
             {
-                len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s ]", mode);
+                len = swprintf(wbuf, WBUF_MAX, L"[ Active | %s ]", mode);
             }
 
             wattron(vshell->canvas, WA_BOLD);
-            mvwadd_wchars(vshell->canvas, 0,
-                vpane->x + (vpane->width >> 1) - (len >> 1),
-                wbuf);
+            mvwadd_wchars(vshell->canvas,
+                0, vpane->x + (vpane->width >> 1) - (len >> 1), wbuf);
             wattroff(vshell->canvas, WA_BOLD);
         }
     }
@@ -600,50 +593,7 @@ vshell_update_canvas(vshell_t *vshell, int flags)
         }
     }
 
-
-
-    //if(vshell->vpane[0].term_mode & TERM_MODE_HISTORY)
-    //{
-    //    history_sz = vterm_get_history_size(vshell->vpane[0].vterm);
-    //    vterm_wnd_size(vshell->vpane[0].vterm, &width, &height);
-
-    //    len = swprintf(wbuf, WBUF_MAX,
-    //        L" %s | [alt + z] Terminal | %03d / %03d ",
-    //        (buf[0] == '\0') ? "Vshell" : buf,
-    //        vshell->cursor_pos[0] + height, history_sz);
-
-        // make sure contents will fit
-    //    if(len < vshell->screen_w - 2)
-    //    {
-    //        offset = (vshell->screen_w >> 1) - (len >> 1);
-
-    //        mvwadd_wchars(vshell->canvas, 0, offset, wbuf);
-    //    }
-
-
-
-
-    //}
-    //else
-    //{
-    //    len = swprintf(wbuf, WBUF_MAX,
-    //        L" %s | [alt + z] History | %ls | %d x %d ",
-    //        (buf[0] == '\0') ? "Vshell" : buf,
-    //        (vshell->vpane[0].term_mode == TERM_MODE_NORMAL) ? L"std" : L"alt",
-    //        vshell->screen_w - 2, vshell->screen_h - 2);
-
-        // make sure contents will fit
-    //    if(len < vshell->screen_w - 2)
-    //    {
-    //        offset = (vshell->screen_w >> 1) - (len >> 1);
-
-    //        mvwadd_wchars(vshell->canvas, 0, offset, wbuf);
-    //    }
-    //}
-
-
     // blit each window to the canvas
-
     if(flags & FLAG_PAINT_ALL)
     {
         CDL_FOREACH(vshell->vpane_list, vpane)
@@ -856,6 +806,8 @@ vshell_render_normal(vpane_t *vpane, int flags)
 {
     vshell_t    *vshell;
 
+    VAR_UNUSED(flags);
+
     vshell = (vshell_t *)vterm_get_userptr(vpane->vterm);
 
     vterm_wnd_update(vpane->vterm, -1, 0);
@@ -955,6 +907,8 @@ vshell_render_history(vpane_t *vpane, int flags)
     int         history_sz;
     int         height, width;
     int         offset;
+
+    VAR_UNUSED(flags);
 
     vshell = (vshell_t *)vterm_get_userptr(vpane->vterm);
 
