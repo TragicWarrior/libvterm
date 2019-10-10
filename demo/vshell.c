@@ -55,12 +55,17 @@ static wchar_t wc_syms[] = {
 
 static cchar_t *cc_syms;
 
-#define TERM_STATE_ALT          (1 << 1)
+#define TERM_STATE_ALT          (1 << 0)
 #define TERM_STATE_HISTORY      (1 << 4)
 #define TERM_STATE_EXECV        (1 << 6)
 #define TERM_STATE_DIRTY        (1 << 7)
 
 #define FLAG_PAINT_ALL          1
+
+#define VSHELL_FLAG_HELP        (1 << 0)
+
+#define HELP_WIDTH              40
+#define HELP_HEIGHT             21
 
 short   color_table[] =
             {
@@ -120,6 +125,7 @@ struct _vshell_s
     unsigned int    vshell_flags;
 
     WINDOW          *canvas;
+    WINDOW          *help;
     int             screen_w;
     int             screen_h;
     color_mtx_t     *color_mtx;
@@ -137,6 +143,7 @@ struct _vshell_s
 void        vshell_parse_cmdline(vshell_t *vshell);
 void        vshell_print_help(void);
 void        vshell_color_init(vshell_t *vshell);
+void        vshell_help_init(vshell_t *vshell);
 
 void        vshell_create_pane(vshell_t *vshell, unsigned int state);
 void        vshell_destroy_pane(vshell_t *vshell, int pane_id);
@@ -159,16 +166,14 @@ void        mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr);
 void        wchar_box(WINDOW *win, int colors, int x, int y,
                 int width, int height);
 
-vshell_t    *vshell;
-
 int main(int argc, char **argv)
 {
+    vshell_t        *vshell;
     vpane_t         *vpane;
     vpane_t         *tmp1;
     vpane_t         *tmp2;
     int32_t         keystroke;
     char            *locale;
-
 
     vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
     cc_syms = (cchar_t *)calloc(ARRAY_SZ(wc_syms), sizeof(cchar_t));
@@ -216,6 +221,8 @@ int main(int argc, char **argv)
         vshell_create_pane(vshell, TERM_STATE_DIRTY);
 
     vshell->active_pane = 1;
+
+    vshell_help_init(vshell);
 
     // render frame
     vshell_update_canvas(vshell, FLAG_PAINT_ALL);
@@ -267,6 +274,19 @@ int main(int argc, char **argv)
         if(keystroke == KEY_RESIZE)
         {
             vshell_resize(vshell);
+            continue;
+        }
+
+        // alt H
+        if(keystroke == 0x1b48)
+        {
+            if(vshell->vshell_flags & VSHELL_FLAG_HELP)
+                vshell->vshell_flags &= ~VSHELL_FLAG_HELP;
+            else
+                vshell->vshell_flags |= VSHELL_FLAG_HELP;
+
+            vshell_update_canvas(vshell, FLAG_PAINT_ALL);
+
             continue;
         }
 
@@ -451,14 +471,10 @@ vshell_destroy_pane(vshell_t *vshell, int pane_id)
 int32_t
 vshell_get_key(vshell_t *vshell)
 {
-    // vpane_t     *vpane;
     int32_t     keystroke;
     int         ch;
 
-    //vpane = vshell_get_pane(vshell, vshell->active_pane);
-
     ch = wgetch(vshell->canvas);
-    // ch = wgetch(vpane->term_wnd);
     keystroke = ch;
 
     if(ch == 0x1b)
@@ -466,7 +482,6 @@ vshell_get_key(vshell_t *vshell)
         for(;;)
         {
             ch = wgetch(vshell->canvas);
-            // ch = wgetch(vpane->term_wnd);
             if(ch == -1) break;
 
             keystroke = keystroke << 8;
@@ -537,12 +552,13 @@ vshell_update_canvas(vshell_t *vshell, int flags)
                 history_sz = vterm_get_history_size(vpane->vterm);
 
                 len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s | %04d / %04d ]", mode,
+                    L"[ Active | %s | %04d / %04d | Help = < Alt H > ]", mode,
                     vpane->cursor_pos + vpane->height, history_sz);
             }
             else
             {
-                len = swprintf(wbuf, WBUF_MAX, L"[ Active | %s ]", mode);
+                len = swprintf(wbuf, WBUF_MAX,
+                    L"[ Active | %s | Help < Alt H > ]", mode);
             }
 
             wattron(vshell->canvas, WA_BOLD);
@@ -619,6 +635,13 @@ vshell_update_canvas(vshell_t *vshell, int flags)
         }
     }
 
+    if(vshell->vshell_flags & VSHELL_FLAG_HELP)
+    {
+        mvwin(vshell->help,
+            (vshell->screen_h - HELP_HEIGHT) >> 1,
+            (vshell->screen_w - HELP_WIDTH) >> 1);
+        overwrite(vshell->help, vshell->canvas);
+    }
 
     // blit the window to the canvas
     wnoutrefresh(vshell->canvas);
@@ -708,8 +731,6 @@ vshell_color_init(vshell_t *vshell)
     int                 hard_pair = -1;
 
     start_color();
-
-    // if(COLOR_PAIRS > 0x7FFF) COLOR_PAIRS = 0x7FFF;
 
     /*
         calculate the size of the matrix.  this is necessary because
@@ -1037,6 +1058,63 @@ vshell_parse_cmdline(vshell_t *vshell)
 }
 
 void
+vshell_help_init(vshell_t *vshell)
+{
+    wchar_t         *help[] =
+                        {   L"Alt +     Create new pane",
+                            L"Alt -     Close pane",
+                            L"Alt w     Switch pane",
+                            L"",
+                            L"",
+                            L"",
+                            L"Alt z     Toggle history mode",
+                            L"+ / -     Grow / shrink buffer",
+                            L"\u2191 / \u2193     Scroll up / down one line",
+                            L"PgUp      Scroll up one page",
+                            L"PgDn      Scroll down one page",
+                            L"",
+                            L"",
+                            L"",
+                            L"Alt H     Show / hide help"   };
+
+
+    wchar_t         wbuf[WBUF_MAX];
+    short           colors;
+    int             len;
+    unsigned int    i;
+
+
+    vshell->help = newwin(HELP_HEIGHT, HELP_WIDTH, 0, 0);
+    scrollok(vshell->help, FALSE);
+
+    colors = vshell_pair_selector(NULL, COLOR_YELLOW, COLOR_BLACK);
+    wattrset(vshell->help, COLOR_PAIR(colors) | WA_BOLD);
+    wborder_set(vshell->help, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+    len = wcslen(L"[ Help ]");
+    mvwadd_wchars(vshell->help, 0, (HELP_WIDTH - len) >> 1, L"[ Help ]");
+
+    for(i = 0; i < ARRAY_SZ(help); i++)
+    {
+        mvwadd_wchars(vshell->help, i + 4, 2, help[i]);
+    }
+
+    colors = vshell_pair_selector(NULL, COLOR_WHITE, COLOR_BLACK);
+    wattrset(vshell->help, COLOR_PAIR(colors) | WA_BOLD);
+
+    len = wcslen(L"Pane Controls");
+    mvwadd_wchars(vshell->help, 2, (HELP_WIDTH - len) >> 1, L"Pane Controls");
+
+    len = swprintf(wbuf, WBUF_MAX, L"History Controls");
+    mvwadd_wchars(vshell->help, 8, (HELP_WIDTH - len) >> 1, wbuf);
+
+    len = swprintf(wbuf, WBUF_MAX, L"General Controls");
+    mvwadd_wchars(vshell->help, 16, (HELP_WIDTH - len) >> 1, wbuf);
+
+    return;
+}
+
+void
 vshell_print_help(void)
 {
     char    *help_msg =
@@ -1123,8 +1201,6 @@ wchar_box(WINDOW *win, int colors, int x, int y, int cols, int rows)
 
     mvwvline_set(win, y, x + cols -1 , &cc_syms[WCS_VLINE_NORMAL], rows);
 
-    // wattr_set(win, WA_NORMAL, colors, NULL);
-    // mvwchgat(win, 1, 0, 0, WA_NORMAL, colors, NULL);
     mvwadd_wch(win, y, x, &cc_syms[WCS_TLCORNER_NORMAL]);
 
     mvwadd_wch(win, y, x + (cols - 1), &cc_syms[WCS_TRCORNER_NORMAL]);
