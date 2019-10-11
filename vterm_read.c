@@ -72,8 +72,6 @@ vterm_read_pipe(vterm_t *vterm)
     // no data or poll() error.
     if(retval <= 0)
     {
-        // vterm_reply_buffer(vterm);
-
         if(errno == EINTR) return 0;
         return retval;
     }
@@ -92,10 +90,12 @@ vterm_read_pipe(vterm_t *vterm)
 
 #if defined(__APPLE__) && defined(__MACH__)
     /*
-        the FIONREAD ioctl() seems to be busted on Mac OS and seems
-        to be related to a 1 byte read.
+        the FIONREAD ioctl() seems to be busted on Mac OS.  the
+        ioctl will claim 0 bytes to read.  setting it to a value
+        of PIPE buf and then expecting what read() actually
+        does is the best way to handle this.
     */
-    if(bytes_peek == 0) bytes_peek = 1;
+    if(bytes_peek == 0) bytes_peek = PIPE_BUF;
 #else
     if(bytes_peek == 0) return 0;
 #endif
@@ -125,6 +125,11 @@ vterm_read_pipe(vterm_t *vterm)
         }
 
         if(bytes_read <= 0) break;
+
+#if defined(__APPLE__) && defined(__MACH__)
+        // shore up bytes read (see MacOS ioctl comment above)
+        bytes_remaining = bytes_read;
+#endif
 
         bytes_remaining -= bytes_read;
         bytes_total += bytes_read;
