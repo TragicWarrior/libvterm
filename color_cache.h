@@ -52,6 +52,7 @@ typedef struct _rgb_values_s    rgb_values_t;
 typedef struct _hsl_values_s    hsl_values_t;
 typedef struct _cie_values_s    cie_values_t;
 
+typedef struct _color_pair_s    color_pair_t;
 
 struct _color_pair_s
 {
@@ -74,12 +75,11 @@ struct _color_pair_s
                                                 loaded from the host
                                                 palette.
                                             */
-    struct _color_pair_s    *next;
-    struct _color_pair_s    *prev;
+    //struct _color_pair_s    *next;
+    //struct _color_pair_s    *prev;
+    color_pair_t            *next;
+    color_pair_t            *prev;
 };
-
-
-typedef struct _color_pair_s    color_pair_t;
 
 struct _color_cache_s
 {

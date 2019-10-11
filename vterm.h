@@ -346,6 +346,28 @@ ssize_t         vterm_read_pipe(vterm_t *vterm);
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
 /*
+    sets a pointer that can be used for anything.  it is extremely useful
+    for handling ancillary data or operations when an event hook is
+    triggered.
+
+    @params:
+        vterm           a valid vterm object handle.
+        anything        user defined data pointer
+*/
+void            vterm_set_userptr(vterm_t *vterm, void *anything);
+
+/*
+    retrieves the pointer to user defined data that gets passed around
+    with the vterm_t object.
+
+    @params:
+        vterm           a valid vterm object handle.
+
+    @return:            a pointer to user defined data
+*/
+void*           vterm_get_userptr(vterm_t *vterm);
+
+/*
     installs an event hook.
 
     @params:

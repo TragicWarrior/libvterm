@@ -9,25 +9,27 @@
 // calculate the number of elements in a static array (scalar)
 #define ARRAY_SZ(x)    (sizeof(x) / sizeof(x[0]))
 
-#define CALLOC_PTR(_ptr)                    \
-    (_ptr) = calloc(1, sizeof(*(_ptr)))
+#define CALLOC_PTR(_ptr)                        \
+        ({                                      \
+            __typeof__ (*_ptr) _tmp;            \
+            (_ptr) = calloc(1, sizeof(_tmp));   \
+        })
 
-
-#define SWITCH(jtable, idx, catchall)       \
-            do                              \
-            {                               \
-                if(jtable[idx] == 0)        \
-                    goto *jtable[catchall]; \
-                else                        \
-                    goto *jtable[idx];      \
-            }                               \
+#define SWITCH(jtable, idx, catchall)           \
+            do                                  \
+            {                                   \
+                if(jtable[idx] == 0)            \
+                    goto *jtable[catchall];     \
+                else                            \
+                    goto *jtable[idx];          \
+            }                                   \
             while(0)
 
-#define USE_MIN(a, b)                       \
-            ({                              \
-                __typeof__ (a) _a = (a);    \
-                __typeof__ (b) _b = (b);    \
-                _a < _b ? _a : _b;          \
+#define USE_MIN(a, b)                           \
+            ({                                  \
+                __typeof__ (a) _a = (a);        \
+                __typeof__ (b) _b = (b);        \
+                _a < _b ? _a : _b;              \
             })
 
 #endif

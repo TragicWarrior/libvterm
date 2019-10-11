@@ -1,10 +1,21 @@
 
-WC_SYMS_X(  WCS_UARROW,         0x2191 )    // arrow pointing up
-WC_SYMS_X(  WCS_DARROW,         0x2193 )    // arrow pointing down 
-WC_SYMS_X(  WCS_TRIANGLE_UP,    0x2BC5 )    // triangle pointing up
-WC_SYMS_X(  WCS_TRIANGLE_DOWN,  0x2BC6 )    // triangle pointing down
-WC_SYMS_X(  WCS_BLOCK,          0x2588 )    // solid block
-WC_SYMS_X(  WCS_CKBOARD_LIGHT,  0x2591 )    // light checkerboard block
-WC_SYMS_X(  WCS_CKBOARD_MEDIUM, 0x2592 )    // medium checkerboard block
-WC_SYMS_X(  WCS_CKBOARD_HEAVY,  0x2593 )    // heavy checkerboard block
-
+WC_SYMS_X(  WCS_UARROW,             0x2191 )    // arrow pointing up
+WC_SYMS_X(  WCS_DARROW,             0x2193 )    // arrow pointing down 
+WC_SYMS_X(  WCS_TRIANGLE_UP,        0x2BC5 )    // triangle pointing up
+WC_SYMS_X(  WCS_TRIANGLE_DOWN,      0x2BC6 )    // triangle pointing down
+WC_SYMS_X(  WCS_BLOCK,              0x2588 )    // solid block
+WC_SYMS_X(  WCS_CKBOARD_LIGHT,      0x2591 )    // light checkerboard block
+WC_SYMS_X(  WCS_CKBOARD_MEDIUM,     0x2592 )    // medium checkerboard block
+WC_SYMS_X(  WCS_CKBOARD_HEAVY,      0x2593 )    // heavy checkerboard block
+WC_SYMS_X(  WCS_HLINE_NORMAL,       0x2500 )    // normal horizontal line
+WC_SYMS_X(  WCS_HLINE_MEDIUM,       0x2501 )    // medium horizontal line
+WC_SYMS_X(  WCS_VLINE_NORMAL,       0x2502 )    // normal vertical line
+WC_SYMS_X(  WCS_VLINE_MEDIUM,       0x2503 )    // medium vertical line
+WC_SYMS_X(  WCS_TLCORNER_NORMAL,    0x250C )    // normal top-left corner
+WC_SYMS_X(  WCS_TLCORNER_MEDIUM,    0x250F )    // medium top-left corner
+WC_SYMS_X(  WCS_TRCORNER_NORMAL,    0x2510 )    // normal top-right corner
+WC_SYMS_X(  WCS_TRCORNER_MEDIUM,    0x2511 )    // medium top-right corner
+WC_SYMS_X(  WCS_BLCORNER_NORMAL,    0x2514 )    // normal bottom-left corner
+WC_SYMS_X(  WCS_BLCORNER_MEDIUM,    0x2517 )    // medium bottom-left corner
+WC_SYMS_X(  WCS_BRCORNER_NORMAL,    0x2518 )    // normal bottom-right corner
+WC_SYMS_X(  WCS_BRCORNER_MEDIUM,    0x251B )    // medium bottmo-right corner
