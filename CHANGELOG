@@ -1,3 +1,8 @@
+7.3
+
+* [Bryan Christ] Refactored the demo program to showcase the ease of
+  integration and provide a tmux like experience.
+
 7.2
 
 * [Bryan Christ] Fixed a long-standing bug with MacOS performance.
