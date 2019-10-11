@@ -1,3 +1,7 @@
+7.2
+
+* [Bryan Christ] Fixed a long-standing bug with MacOS performance.
+
 7.1
 
 * [Bryan Christ] Suppress compiler warnings in a more intuitive way
