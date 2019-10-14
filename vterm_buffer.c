@@ -260,7 +260,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     return 0;
 }
 
-int
+inline int
 vterm_buffer_get_active(vterm_t *vterm)
 {
     if(vterm == NULL) return -1;
