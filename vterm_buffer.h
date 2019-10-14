@@ -33,7 +33,8 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
 #define VCELL_SET_CHAR(_cell, _ch) \
             { \
-                swprintf(_cell.wch, 2, L"%c", _ch); \
+                _cell.wch[0] = _ch; \
+                _cell.wch[1] = '\0';    \
             }
 
 #define VCELL_SET_ATTR(_cell, _attr) \

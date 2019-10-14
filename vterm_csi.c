@@ -108,6 +108,7 @@ vterm_interpret_csi(vterm_t *vterm)
         break;
     }
 
+    // jump table
     SWITCH(csi_table, (unsigned int)verb, 0);
 
     // delegate handling depending on command character (verb)

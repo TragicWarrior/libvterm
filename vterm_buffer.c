@@ -286,8 +286,6 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
     if(top_row == -1) top_row = 0;
     if(bottom_row == -1) bottom_row = v_desc->rows - 1;
 
-    // endwin(); printf("%d %d\n", top_row, bottom_row); fflush(stdout); exit(0);
-
     region = bottom_row - top_row;
     if(region < 1) return -1;
 
@@ -364,8 +362,6 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     vcell_dst = &v_desc_dst->cells[dst_offset];
 
     stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
-
-    // endwin(); printf("%d\n", rows); fflush(stdout); exit(0);
 
     for(i = 0; i < rows; i++)
     {
