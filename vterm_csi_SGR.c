@@ -25,6 +25,8 @@
     48  Custom background color
 */
 
+#include <wchar.h>
+
 #include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
