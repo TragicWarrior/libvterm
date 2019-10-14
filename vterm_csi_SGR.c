@@ -279,8 +279,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // no color pair found so we'll try and add it
             if(colors == -1)
             {
-                colors = color_cache_add_pair(vterm,
-                        v_desc->fg, v_desc->bg);
+                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
             }
 
             _vterm_set_color_pair_safe(vterm, colors, v_desc->fg, v_desc->bg);
