@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <wchar.h>
 
 #include "macros.h"
 #include "vterm.h"
