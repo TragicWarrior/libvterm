@@ -97,9 +97,7 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char *data)
         // bell
         case '\a':
         {
-#ifndef NOCURSES
             beep();
-#endif
             break;
         }
 
