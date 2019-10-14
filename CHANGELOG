@@ -1,3 +1,8 @@
+7.4
+
+* [Bryan Christ] Eliminated thousands of calls to swprintf which greatly
+  improves performance in many areas of the code.
+
 7.3
 
 * [Bryan Christ] Refactored the demo program to showcase the ease of
