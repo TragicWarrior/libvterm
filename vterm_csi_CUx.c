@@ -1,4 +1,5 @@
 
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
@@ -37,6 +38,23 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             idx;
     int             n = 1;
+    static void     *curmove_table[] =
+                        {
+                            [0]     = &&csi_DEFAULT,
+                            ['A']   = &&csi_CUU,
+                            ['B']   = &&csi_CUD,
+                            ['e']   = &&csi_CUD,
+                            ['C']   = &&csi_CUF,
+                            ['a']   = &&csi_CUF,
+                            ['D']   = &&csi_CUB,
+                            ['E']   = &&csi_CNL,
+                            ['F']   = &&csi_CPL,
+                            ['G']   = &&csi_CHA,
+                            ['`']   = &&csi_CHA,
+                            ['d']   = &&csi_VPA,
+                            ['f']   = &&csi_HVP,
+                            ['H']   = &&csi_HVP,
+                        };
 
     if(pcount > 0)
     {
@@ -47,39 +65,53 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    switch (verb)
-    {
+    SWITCH(curmove_table, (unsigned int)verb, 0);
+
+    csi_CUU:
         // CSI 'CUU' (cursor up)
-        case 'A':   v_desc->crow -= n;             break;
+        v_desc->crow -= n;
+        goto csi_DEFAULT;
 
+    csi_CUD:
         // CSI 'CUD' (cursor down)
-        case 'B':
-        case 'e':   v_desc->crow += n;             break;
+        v_desc->crow += n;
+        goto csi_DEFAULT;
 
+    csi_CUF:
         // CSI 'CUF' (cursor forward)
-        case 'C':
-        case 'a':   v_desc->ccol += n;             break;
+        v_desc->ccol += n;
+        goto csi_DEFAULT;
 
+    csi_CUB:
         // CSI 'CUB' (cursor backward)
-        case 'D':   v_desc->ccol -= n;             break;
+        v_desc->ccol -= n;
+        goto csi_DEFAULT;
 
-        case 'E':
-        {
-            v_desc->crow += n;
-            v_desc->ccol = 0;
-            break;
-        }
-        case 'F':
-        {
-            v_desc->crow -= n;
-            v_desc->ccol = 0;
-            break;
-        }
-        case 'G':
-        case '`':   v_desc->ccol = param[0] - 1;   break;
-        case 'd':   v_desc->crow = param[0] - 1;   break;
+    csi_CNL:
+        // CSI 'CNL' (next line x times)
+        v_desc->crow += n;
+        v_desc->ccol = 0;
+        goto csi_DEFAULT;
 
+    csi_CPL:
+        // CSI 'CPL' (prev line x times)
+        v_desc->crow -= n;
+        v_desc->ccol = 0;
+        goto csi_DEFAULT;
+
+    csi_CHA:
+        // CSI 'CHA' / 'HPA' (move to absolute column)
+        v_desc->ccol = param[0] - 1;
+        goto csi_DEFAULT;
+
+    csi_VPA:
+        // CSI 'VPA' (move to absolute row)
+        v_desc->crow = param[0] - 1;
+        goto csi_DEFAULT;
+
+    csi_HVP:
         /*
+            CSI 'HVP' / 'CUP'
             ESC [ r ; c H
             where 'r' is row number and 'c' is column number
 
@@ -92,22 +124,19 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
 
             ESC [ r ; c f
         */
-        case 'f':
-        case 'H':
+        if(pcount == 0)
         {
-            if(pcount == 0)
-            {
-                v_desc->crow = 0;
-                v_desc->ccol = 0;
-                break;
-            }
-
-            v_desc->crow = param[0] - 1;
-            v_desc->ccol = param[1] - 1;
-
-            break;
+            v_desc->crow = 0;
+            v_desc->ccol = 0;
+            goto csi_DEFAULT;
         }
-    }
+        v_desc->crow = param[0] - 1;
+        v_desc->ccol = param[1] - 1;
+
+
+// all calls above jump here
+
+    csi_DEFAULT:
 
     clamp_cursor_to_bounds(vterm);
 
