@@ -186,7 +186,8 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         }
 
         // "remember" what was written in case the next call is csi REP.
-        memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+        // memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+        v_desc->last_cell = vcell;
 
         v_desc->ccol++;
 

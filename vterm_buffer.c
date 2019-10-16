@@ -356,6 +356,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     vterm_desc_t    *v_desc_dst = NULL;
     vterm_cell_t    **vcell_src;
     vterm_cell_t    **vcell_dst;
+    int             col_mem;
     int             stride;
     int             i;
 
@@ -369,9 +370,11 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
     stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
 
+    col_mem = sizeof(vterm_cell_t) * stride;
+
     for(i = 0; i < rows; i++)
     {
-        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * stride);
+        memcpy(*vcell_dst, *vcell_src, col_mem);
 
         vcell_src++;
         vcell_dst++;
