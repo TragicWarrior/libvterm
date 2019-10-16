@@ -97,8 +97,7 @@ struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
     vterm_cell_t    **cells;
-    // vterm_cell_t    last_cell;                  // contents of last cell write
-    vterm_cell_t    *last_cell;
+    vterm_cell_t    *last_cell;                 // contents of last cell write
 
     unsigned long   buffer_state;               // internal state control
 
