@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <wchar.h>
 
 #include "macros.h"
 #include "vterm.h"
@@ -15,7 +16,7 @@ vterm_interpret_csi(vterm_t *vterm)
     char            verb;
     bool            dec_private = FALSE;
 
-    static void     *csi_table[128] =
+    static void     *csi_table[] =
                     {
                         [0] = &&csi_char_unknown,
                         ['c'] = &&csi_DA,

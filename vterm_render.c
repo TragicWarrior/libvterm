@@ -79,7 +79,8 @@ vterm_render(vterm_t *vterm, char *data, int len)
             vterm->utf8_buf[vterm->utf8_buf_len] = 0;
 
             // we're in UTF-8 mode... do this
-            memset(wch, 0, sizeof(wch));
+            // memset(wch, 0, sizeof(wch));
+            wch[0] = '\0';
             bytes = vterm_utf8_decode(vterm, &utf8_char, wch);
 
             // we're done
@@ -186,7 +187,8 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         }
 
         // "remember" what was written in case the next call is csi REP.
-        memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+        // v_desc->last_cell = vcell;
+        // memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
 
         v_desc->ccol++;
 
@@ -200,7 +202,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     VCELL_SET_COLORS((*vcell), v_desc);
 
     // "remember" what was written in case the next call is csi REP.
-    memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
+    // memcpy(&v_desc->last_cell, vcell, sizeof(vterm_cell_t));
 
     v_desc->ccol++;
 

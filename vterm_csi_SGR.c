@@ -25,13 +25,14 @@
     48  Custom background color
 */
 
+#include <wchar.h>
+
+#include "macros.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 #include "color_cache.h"
-
-
 
 void
 _vterm_set_color_pair_safe(vterm_t *vterm, short colors, int fg, int bg);
@@ -53,6 +54,32 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     int             idx;
     short           fg, bg;
     int             retval;
+    static void     *sgr_table[] =
+                        {
+                            [0]             = &&csi_sgr_RESET,
+                            [1]             = &&csi_sgr_BOLD_ON,
+                            [2]             = &&csi_sgr_DIM_ON,
+                            [3]             = &&csi_sgr_UNDERLINE_ON,
+                            [5]             = &&csi_sgr_BLINK_ON,
+                            [7]             = &&csi_sgr_REVERSE_ON,
+                            [8]             = &&csi_sgr_INVISIBLE_ON,
+                            [10]            = &&csi_sgr_RMACS,
+                            [11]            = &&csi_sgr_SMACS,
+                            [22]            = &&csi_sgr_NORMAL,
+                            [24]            = &&csi_sgr_UNDERLINE_OFF,
+                            [25]            = &&csi_sgr_BLINK_OFF,
+                            [27]            = &&csi_sgr_REVERSE_OFF,
+                            [28]            = &&csi_sgr_INVISIBLE_OFF,
+                            [30 ... 37]     = &&csi_sgr_FG,
+                            [38]            = &&csi_sgr_XCOLOR_FG,
+                            [39]            = &&csi_sgr_RESET_FG,
+                            [40 ... 47]     = &&csi_sgr_BG,
+                            [48]            = &&csi_sgr_XCOLOR_BG,
+                            [49]            = &&csi_sgr_RESET_BG,
+                            [90 ... 97]     = &&csi_sgr_AIX_FG,
+                            [100 ... 107]   = &&csi_sgr_AIX_BG,
+                            [127]           = &&csi_sgr_DEFAULT,
+                        };
 
     // this depth counter prevents a recursion bomb.  depth limit is arbitary.
     if (depth > 6) return;
@@ -84,376 +111,295 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
-        // jump tables are always faster than conditionals
-        switch(param[i])
-        {
-            case 0:
-            {
-                // reset attributes
-                v_desc->curattr = A_NORMAL;
+        // jump table
+        SWITCH(sgr_table, (unsigned int)param[i], 127);
 
-                _vterm_set_color_pair_safe(vterm, v_desc->default_colors,
-                    v_desc->fg, v_desc->bg);
+        csi_sgr_RESET:
+            // SGR 0
+            // reset attributes
+            v_desc->curattr = A_NORMAL;
 
-                // attribute reset is an implicit color reset too so we'll
-                // do a nested call to handle it.
-                nested_params[0] = 39;
-                nested_params[1] = 49;
+            _vterm_set_color_pair_safe(vterm, v_desc->default_colors,
+                v_desc->fg, v_desc->bg);
 
-                depth++;
+            // attribute reset is an implicit color reset too so we'll
+            // do a nested call to handle it.
+            nested_params[0] = 39;
+            nested_params[1] = 49;
 
-                interpret_csi_SGR(vterm, nested_params, 2);
-                depth--;
+            depth++;
 
-                break;
-            }
+            interpret_csi_SGR(vterm, nested_params, 2);
+            depth--;
 
-            case 1:
-            {
-                v_desc->curattr |= A_BOLD;
-                break;
-            }
+            continue;
 
-            case 2:
-            {
-                v_desc->curattr |= A_DIM;
-                break;
-            }
+        csi_sgr_BOLD_ON:
+            // code 1
+            v_desc->curattr |= A_BOLD;
+            continue;
 
-            case 4:
-            {
-                v_desc->curattr |= A_UNDERLINE;
-                break;
-            }
+        csi_sgr_DIM_ON:
+            // code 2
+            v_desc->curattr |= A_DIM;
+            continue;
 
-            // blink on
-            case 5:
-            {
-                v_desc->curattr |= A_BLINK;
-                break;
-            }
+        csi_sgr_UNDERLINE_ON:
+            // code 3
+            v_desc->curattr |= A_UNDERLINE;
+            continue;
 
-            // reverse on
-            case 7:
-            {
-                v_desc->curattr |= A_REVERSE;
-                break;
-            }
+        csi_sgr_BLINK_ON:
+            // code 5
+            v_desc->curattr |= A_BLINK;
+            continue;
 
-            // invisible on
-            case 8:
-            {
-                v_desc->curattr |= A_INVIS;
-                break;
-            }
+        csi_sgr_REVERSE_ON:
+            // code 7
+            v_desc->curattr |= A_REVERSE;
+            continue;
 
-            // rmacs
-            case 10:
-            {
-                vterm->internal_state &= ~(STATE_ALT_CHARSET);
-                break;
-            }
+        csi_sgr_INVISIBLE_ON:
+            // code 8
+            v_desc->curattr |= A_INVIS;
+            continue;
 
-            // smacs
-            case 11:
-            {
-                vterm->internal_state |= STATE_ALT_CHARSET;
-                break;
-            }
+        csi_sgr_RMACS:
+            // code 10
+            vterm->internal_state &= ~(STATE_ALT_CHARSET);
+            continue;
 
+        csi_sgr_SMACS:
+            // code 11
+            vterm->internal_state |= STATE_ALT_CHARSET;
+            continue;
+
+        csi_sgr_NORMAL:
+            // code 22
             // bold and dim off
-            case 22:
-            {
-                v_desc->curattr &= ~(A_BOLD);
-                v_desc->curattr &= ~(A_DIM);
-                break;
-            }
+            v_desc->curattr &= ~(A_BOLD);
+            v_desc->curattr &= ~(A_DIM);
+            continue;
 
-            case 24:
-            {
-                v_desc->curattr &= ~(A_UNDERLINE);
-                break;
-            }
+        csi_sgr_UNDERLINE_OFF:
+            // code 24
+            v_desc->curattr &= ~(A_UNDERLINE);
+            continue;
 
-            // blink off
-            case 25:
-            {
-                v_desc->curattr &= ~(A_BLINK);
-                break;
-            }
+        csi_sgr_BLINK_OFF:
+            // code 25
+            v_desc->curattr &= ~(A_BLINK);
+            continue;
 
-            // reverse off
-            case 27:
-            {
-                v_desc->curattr &= ~(A_REVERSE);
-                break;
-            }
+        csi_sgr_REVERSE_OFF:
+            // code 27
+            v_desc->curattr &= ~(A_REVERSE);
+            continue;
 
-            // invisible off
-            case 28:
-            {
-                v_desc->curattr &= ~A_INVIS;
-                break;
-            }
+        csi_sgr_INVISIBLE_OFF:
+            // code 28
+            v_desc->curattr &= ~A_INVIS;
+            continue;
 
+        csi_sgr_FG:
             // set fg color (case # - 30 = fg color)
-            case 30:
-            case 31:
-            case 32:
-            case 33:
-            case 34:
-            case 35:
-            case 36:
-            case 37:
+            v_desc->fg = param[i] - 30;
+
+            // find the required pair in the cache
+            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+            if(colors == -1)
             {
-                v_desc->fg = param[i] - 30;
-
-                // find the required pair in the cache
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                if(colors == -1)
-                {
-                    colors = color_cache_add_pair(vterm,
-                        v_desc->fg, v_desc->bg);
-                }
-
-                _vterm_set_color_pair_safe(vterm, colors,
+                colors = color_cache_add_pair(vterm,
                     v_desc->fg, v_desc->bg);
-
-                break;
             }
 
+            _vterm_set_color_pair_safe(vterm, colors,
+                v_desc->fg, v_desc->bg);
+
+            continue;
+
+        csi_sgr_XCOLOR_FG:
+            // code 38
             // set custom foreground color
-            case 38:
+            fg = interpret_custom_color(vterm, param, pcount);
+            mapped_color = vterm_get_mapped_color(vterm, fg, 0, 0, 0);
+
+            if(mapped_color > 0) fg = mapped_color;
+
+            if(fg != -1)
             {
-                fg = interpret_custom_color(vterm, param, pcount);
-                mapped_color = vterm_get_mapped_color(vterm, fg, 0, 0, 0);
+                v_desc->fg = fg;
 
-                if(mapped_color > 0) fg = mapped_color;
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
-                if(fg != -1)
+                if(colors == -1)
                 {
-                    v_desc->fg = fg;
-
-                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                    if(colors == -1)
-                    {
-                        colors = color_cache_add_pair(vterm,
-                            v_desc->fg, v_desc->bg);
-                    }
-
-                    _vterm_set_color_pair_safe(vterm, colors,
+                    colors = color_cache_add_pair(vterm, 
                         v_desc->fg, v_desc->bg);
                 }
 
-                i += 2;
-                break;
+                _vterm_set_color_pair_safe(vterm, colors,
+                    v_desc->fg, v_desc->bg);
             }
 
+            i += 2;
+            continue;
+
+        csi_sgr_RESET_FG:
+            // code 39
             // reset fg color
-            case 39:
+            retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
+
+            if(retval != -1)
             {
-                retval = color_cache_split_pair(v_desc->default_colors,
-                    &fg, &bg);
+                v_desc->fg = fg;
 
-                if(retval != -1)
-                {
-                    v_desc->fg = fg;
-
-                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-                }
-                else
-                {
-                    colors = 0;
-                }
-
-#ifdef NOCURSES
-                // should not ever execute - bad combination of flags and
-                // #define's.
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+            }
+            else
+            {
                 colors = 0;
-#endif
-
-                // one addtl safeguard
-                if(colors == -1) colors = 0;
-
-                _vterm_set_color_pair_safe(vterm, colors,
-                    v_desc->fg, v_desc->bg);
-
-            break;
             }
 
+            // one addtl safeguard
+            if(colors == -1) colors = 0;
+
+            _vterm_set_color_pair_safe(vterm, colors, v_desc->fg, v_desc->bg);
+
+            continue;
+
+        csi_sgr_BG:
             // set bg color (case # - 40 = fg color)
-            case 40:
-            case 41:
-            case 42:
-            case 43:
-            case 44:
-            case 45:
-            case 46:
-            case 47:
+            v_desc->bg = param[i] - 40;
+
+            // find the required pair in the cache
+            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+            // no color pair found so we'll try and add it
+            if(colors == -1)
             {
-                v_desc->bg = param[i] - 40;
-
-                // find the required pair in the cache
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                // no color pair found so we'll try and add it
-                if(colors == -1)
-                {
-                    colors = color_cache_add_pair(vterm,
-                        v_desc->fg, v_desc->bg);
-                }
-
-                _vterm_set_color_pair_safe(vterm, colors,
-                    v_desc->fg, v_desc->bg);
-
-                break;
+                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
             }
 
+            _vterm_set_color_pair_safe(vterm, colors, v_desc->fg, v_desc->bg);
+
+            continue;
+
+        csi_sgr_XCOLOR_BG:
+            // code 48
             // set custom background color
-            case 48:
+            bg = interpret_custom_color(vterm, param, pcount);
+            mapped_color = vterm_get_mapped_color(vterm, bg, 0, 0, 0);
+
+            if(mapped_color > 0) bg = mapped_color;
+
+            if(bg != -1)
             {
-                bg = interpret_custom_color(vterm, param, pcount);
-                mapped_color = vterm_get_mapped_color(vterm, bg, 0, 0, 0);
+                v_desc->bg = bg;
 
-                if(mapped_color > 0) bg = mapped_color;
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
-                if(bg != -1)
+                if(colors == -1)
                 {
-                    v_desc->bg = bg;
-
-                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                    if(colors == -1)
-                    {
-                        colors = color_cache_add_pair(vterm,
+                    colors = color_cache_add_pair(vterm,
                             v_desc->fg, v_desc->bg);
-                    }
-
-                    _vterm_set_color_pair_safe(vterm, colors,
-                        v_desc->fg, v_desc->bg);
-
                 }
 
-                i += 2;
+                _vterm_set_color_pair_safe(vterm, colors,
+                    v_desc->fg, v_desc->bg);
 
-                break;
             }
 
+            i += 2;
+
+            continue;
+
+        csi_sgr_RESET_BG:
+            // code 49
             // reset bg color
-            case 49:
+            retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
+
+            if(retval != -1)
             {
-                retval = color_cache_split_pair(v_desc->default_colors,
-                    &fg, &bg);
+                v_desc->bg = bg;
 
-                if(retval != -1)
-                {
-                    v_desc->bg = bg;
-
-                    colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-                }
-                else
-                {
-                    colors = 0;
-                }
-
-#ifdef NOCURSES
-                // should not ever execute - bad combination of flags and
-                // #define's.
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+            }
+            else
+            {
                 colors = 0;
-#endif
-
-                // one addtl safeguard
-                if(colors == -1) colors = 0;
-
-                _vterm_set_color_pair_safe(vterm, colors,
-                    v_desc->fg, v_desc->bg);
-
-                break;
             }
 
-            // set 16 color fg (aixterm)
-            case 90:
-            case 91:
-            case 92:
-            case 93:
-            case 94:
-            case 95:
-            case 96:
-            case 97:
+            // one addtl safeguard
+            if(colors == -1) colors = 0;
+
+            _vterm_set_color_pair_safe(vterm, colors,
+                v_desc->fg, v_desc->bg);
+
+            continue;
+
+        csi_sgr_AIX_FG:
+            // codes 90 - 97
+            // set 16 color fg (aixterm) 
+            if(vterm->flags & VTERM_FLAG_C16)
             {
-                if(vterm->flags & VTERM_FLAG_C16)
-                {
-                    fg = param[i] - 90;
-                    v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
-                        rRGB[fg], gRGB[fg], bRGB[fg]);
-                }
+                fg = param[i] - 90;
+                v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
+                    rRGB[fg], gRGB[fg], bRGB[fg]);
+            }
+            else
+            {
+                if(vterm->flags & VTERM_FLAG_C8) v_desc->fg = param[i] - 90;
                 else
                 {
-                    if(vterm->flags & VTERM_FLAG_C8)
-                        v_desc->fg = param[i] - 90;
-                    else
-                    {
-                        v_desc->fg = (param[i] - 90) + 8;
-                    }
+                    v_desc->fg = (param[i] - 90) + 8;
                 }
-
-                // find the required pair in the cache
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                if(colors == -1)
-                {
-                    colors = color_cache_add_pair(vterm,
-                        v_desc->fg, v_desc->bg);
-                }
-
-                _vterm_set_color_pair_safe(vterm, colors,
-                    v_desc->fg, v_desc->bg);
-
-                break;
             }
 
+            // find the required pair in the cache
+            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+
+            if(colors == -1)
+            {
+                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
+            }
+
+            _vterm_set_color_pair_safe(vterm, colors, v_desc->fg, v_desc->bg);
+
+            continue;
+
+        csi_sgr_AIX_BG:
+            // codes 100 - 107
             // set 16 color bg (aixterm)
-            case 100:
-            case 101:
-            case 102:
-            case 103:
-            case 104:
-            case 105:
-            case 106:
-            case 107:
+            if(vterm->flags & VTERM_FLAG_C16)
             {
-                if(vterm->flags & VTERM_FLAG_C16)
-                {
-                    bg = param[i] - 100;
-                    v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
-                        rRGB[bg], gRGB[bg], bRGB[bg]);
-                }
-                else
-                {
-                    v_desc->bg = param[i] - 100;
-                    if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg += 8;
-                }
-
-                // find the required pair in the cache
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                // no color pair found so we'll try and add it
-                if(colors == -1)
-                {
-                    colors = color_cache_add_pair(vterm,
-                        v_desc->fg, v_desc->bg);
-                }
-
-                _vterm_set_color_pair_safe(vterm, colors,
-                    v_desc->fg, v_desc->bg);
-
-                break;
+                bg = param[i] - 100;
+                v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
+                    rRGB[bg], gRGB[bg], bRGB[bg]);
+            }
+            else
+            {
+                v_desc->bg = param[i] - 100;
+                if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg += 8;
             }
 
+            // find the required pair in the cache
+            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
 
-        }
+            // no color pair found so we'll try and add it
+            if(colors == -1)
+            {
+                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
+            }
+
+            _vterm_set_color_pair_safe(vterm, colors,
+                 v_desc->fg, v_desc->bg);
+
+            continue;
+
+        csi_sgr_DEFAULT:
+            continue;
     }
 }
 

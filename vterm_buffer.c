@@ -260,7 +260,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     return 0;
 }
 
-int
+inline int
 vterm_buffer_get_active(vterm_t *vterm)
 {
     if(vterm == NULL) return -1;
@@ -277,6 +277,7 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
     vterm_cell_t    **vcell_dst;
     int             curr_row;
     int             region;
+    int             col_mem;
     int             i;
 
     // set vterm desc buffer selector
@@ -294,11 +295,13 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
     vcell_src = &v_desc->cells[curr_row];
     vcell_dst = &v_desc->cells[top_row];
 
+    col_mem = sizeof(vterm_cell_t) * v_desc->cols;
+
     for(i = 0; i < region; i++)
     {
         if(curr_row > bottom_row) break;
 
-        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * v_desc->cols);
+        memcpy(*vcell_dst, *vcell_src, col_mem);
 
         curr_row++;
         vcell_src++;
@@ -316,6 +319,7 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     vterm_cell_t    **vcell_src;
     vterm_cell_t    **vcell_dst;
     int             region;
+    int             col_mem;
     int             i;
 
     // set vterm desc buffer selector
@@ -331,9 +335,11 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     vcell_src = &v_desc->cells[bottom_row - stride];
     vcell_dst = &v_desc->cells[bottom_row];
 
+    col_mem = sizeof(vterm_cell_t) * v_desc->cols;
+
     for(i = 0; i < region; i++)
     {
-        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * v_desc->cols);
+        memcpy(*vcell_dst, *vcell_src, col_mem);
 
         vcell_src--;
         vcell_dst--;
@@ -350,6 +356,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     vterm_desc_t    *v_desc_dst = NULL;
     vterm_cell_t    **vcell_src;
     vterm_cell_t    **vcell_dst;
+    int             col_mem;
     int             stride;
     int             i;
 
@@ -363,9 +370,11 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
     stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
 
+    col_mem = sizeof(vterm_cell_t) * stride;
+
     for(i = 0; i < rows; i++)
     {
-        memcpy(*vcell_dst, *vcell_src, sizeof(vterm_cell_t) * stride);
+        memcpy(*vcell_dst, *vcell_src, col_mem);
 
         vcell_src++;
         vcell_dst++;

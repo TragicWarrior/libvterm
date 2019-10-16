@@ -195,6 +195,8 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     use_extended_names(TRUE);
     vterm->write = vterm_write_keymap;
 
+    vterm->read_buf = (char *)calloc(MAX_PIPE_READ + 10, sizeof(char));
+
     return vterm;
 }
 
@@ -251,6 +253,8 @@ vterm_destroy(vterm_t *vterm)
     {
         vterm_buffer_dealloc(vterm, i);
     }
+
+    free(vterm->read_buf);
 
     free(vterm);
 

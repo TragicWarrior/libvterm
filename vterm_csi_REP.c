@@ -13,6 +13,7 @@
 void
 interpret_csi_REP(vterm_t *vterm, int param[], int pcount)
 {
+    vterm_cell_t    *vcell_prev;
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -36,9 +37,12 @@ interpret_csi_REP(vterm_t *vterm, int param[], int pcount)
 
     vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
+    vcell_prev = &v_desc->cells[v_desc->crow][v_desc->ccol - 1];
+
     for(c = v_desc->ccol; c < max_col; c++)
     {
-        memcpy(vcell, &v_desc->last_cell, sizeof(vterm_cell_t));
+        // memcpy(vcell, &v_desc->last_cell, sizeof(vterm_cell_t));
+        memcpy(vcell, vcell_prev, sizeof(vterm_cell_t));
 
         vcell++;
     }

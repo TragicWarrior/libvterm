@@ -24,7 +24,7 @@
     a multiple of this to prevent blocking in the child
     process.
 */
-#define MAX_PIPE_READ   (PIPE_BUF * 8)
+// #define MAX_PIPE_READ   (PIPE_BUF * 8)
 
 
 ssize_t
@@ -107,8 +107,9 @@ vterm_read_pipe(vterm_t *vterm)
     bytes_remaining = bytes_waiting;
 
 	// 10 byte padding
-	buf = (char *)calloc(bytes_waiting + 10, sizeof(char));
-    pos = buf;
+	// buf = (char *)calloc(bytes_waiting + 10, sizeof(char));
+    // pos = buf;
+    pos = vterm->read_buf;
 
     do
     {
@@ -153,11 +154,12 @@ vterm_read_pipe(vterm_t *vterm)
             }
         }
 
-        vterm_render(vterm, buf, bytes_read);
+        // vterm_render(vterm, buf, bytes_read);
+        vterm_render(vterm, vterm->read_buf, bytes_read);
     }
 
     // release memory
-    if(buf != NULL) free(buf);
+    // if(buf != NULL) free(buf);
 
     if(bytes_read == -1 && errcpy != EINTR) return -1;
 

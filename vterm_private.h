@@ -59,6 +59,15 @@
 #define VTERM_MOUSE_ALTSCROLL   (1 << 13)
 
 
+/*
+    PIPE_BUF is defined as the maximum number of bytes that can be
+    written to a pipe atomically.  On many systems, this value
+    is relatively low (around 4KB).  We'll set our read size to
+    a multiple of this to prevent blocking in the child
+    process.
+*/
+#define MAX_PIPE_READ           (PIPE_BUF * 8)
+
 typedef struct _vterm_cmap_s   vterm_cmap_t;
 
 struct _vterm_cmap_s
@@ -88,7 +97,7 @@ struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
     vterm_cell_t    **cells;
-    vterm_cell_t    last_cell;                  // contents of last cell write
+    // vterm_cell_t    last_cell;               // contents of last cell write
 
     unsigned long   buffer_state;               // internal state control
 
@@ -133,6 +142,10 @@ struct _vterm_s
                                                     terminal.  the data is
                                                     supplied by the Xterm OSC
                                                     code sequences.
+                                                */
+    char            *read_buf;                  /*
+                                                    new incoming data goes
+                                                    here.
                                                 */
     char            esbuf[ESEQ_BUF_SIZE];       /*
                                                     0-terminated string. Does
