@@ -1,3 +1,7 @@
+7.5 
+
+* [Bryan Christ] Lots of code optimizations.
+
 7.4
 
 * [Bryan Christ] Eliminated thousands of calls to swprintf which greatly
