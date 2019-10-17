@@ -32,7 +32,10 @@ interpret_esc_RI(vterm_t *vterm)
     // check to see if we're at the top already
     if(v_desc->crow <= v_desc->scroll_min)
     {
-        // vterm_scroll_down(vterm, FALSE);
+        /*
+            setting reset_colors param to TRUE makes bastet happy but
+            breaks pspg when scrolling.
+        */
         vterm_scroll_down(vterm, TRUE);
         return;
     }
