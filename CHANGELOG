@@ -1,3 +1,8 @@
+7.6
+
+* [Bryan Christ] Fixed a debug issue where data buffer was invalid during
+  a raw data dump.
+
 7.5 
 
 * [Bryan Christ] Lots of code optimizations.
