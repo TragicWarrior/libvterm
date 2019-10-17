@@ -31,7 +31,6 @@ ssize_t
 vterm_read_pipe(vterm_t *vterm)
 {
     struct pollfd   fd_array[1];
-    char 			*buf = NULL;
     char            *pos;
     int             bytes_peek = 0;
 	size_t			bytes_waiting = 0;
@@ -96,9 +95,9 @@ vterm_read_pipe(vterm_t *vterm)
         does is the best way to handle this.
     */
     if(bytes_peek == 0) bytes_peek = PIPE_BUF;
-#else
-    if(bytes_peek == 0) return 0;
 #endif
+
+    if(bytes_peek == 0) return 0;
 
     bytes_waiting = bytes_peek;
 
@@ -145,12 +144,15 @@ vterm_read_pipe(vterm_t *vterm)
         if(vterm->flags & VTERM_FLAG_DUMP)
         {
             bytes_written = write(vterm->debug_fd,
-                (const void *)buf, bytes_read);
+                (const void *)vterm->read_buf, bytes_read);
             if( bytes_written != bytes_read )
             {
                 fprintf(stderr,
                     "ERROR: wrote fewer bytes than read (%d w / %d r)\n",
                     (int)bytes_written, (int)bytes_read);
+
+                if(bytes_written == -1)
+                    fprintf(stderr, "%s\n", strerror(errno));
             }
         }
 
