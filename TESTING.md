@@ -57,6 +57,8 @@ Centos 7.8
 5 - pamix
 5 - man
 5 - test-colorcube (ncurses test)
+5 - yetris
+5 - nsnake
 ```
 
 ### Mac OS Testing ###
@@ -164,5 +166,5 @@ emulator can mistake for legitimate escape sequences.  For this reason
 it makes for a brutal test on the parsing engine.  As of 2019-08-08,
 playback will cause libvte based emulators (xfce terminal, gnome terminal)
 to crash because of CSI SU sequences which are out of bounds.  A safety
-check makes libvterm less susceptible to it.  Both xterm and the  KDE
+check makes libvterm less susceptible to it.  Both xterm and the KDE
 konsole emulator also seem to be resistant to the bug.
