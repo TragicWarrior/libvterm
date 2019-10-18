@@ -1,3 +1,9 @@
+7.7
+
+* [Bryan Christ] Assume that whatever fg/bg colors were set before a
+  csi ED is issued are the new default colors.  This seems to make certain
+  erase functions work well with both "bastet" and "pspg".
+
 7.6
 
 * [Bryan Christ] Fixed a debug issue where data buffer was invalid during
