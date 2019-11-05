@@ -1,5 +1,10 @@
 #define _XOPEN_SOURCE 500               // needed for wcswidth()
 #define _XOPEN_SOURCE_EXTNEDED
+#define _GNU_SOURCE
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -11,6 +16,9 @@
 #include <wchar.h>
 #include <termios.h>
 #include <limits.h>
+#include <errno.h>
+#include <time.h>
+#include <poll.h>
 
 // #include <sys/ioctl.h>
 
@@ -166,14 +174,23 @@ void        mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr);
 void        wchar_box(WINDOW *win, int colors, int x, int y,
                 int width, int height);
 
+volatile sig_atomic_t   sio_count = 0;
+
 int main(int argc, char **argv)
 {
-    vshell_t        *vshell;
-    vpane_t         *vpane;
-    vpane_t         *tmp1;
-    vpane_t         *tmp2;
-    int32_t         keystroke;
-    char            *locale;
+    vshell_t            *vshell;
+    vpane_t             *vpane;
+    vpane_t             *tmp1;
+    vpane_t             *tmp2;
+    int32_t             keystroke;
+    char                *locale;
+    struct pollfd       fds[1];
+    int                 pty_fd;
+    int                 signum;
+    int                 sig_fd;
+    int                 retval;
+    int                 fds_ready;
+
 
     vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
     cc_syms = (cchar_t *)calloc(ARRAY_SZ(wc_syms), sizeof(cchar_t));
@@ -187,11 +204,6 @@ int main(int argc, char **argv)
     noecho();
     raw();
     curs_set(0);                        // hide cursor
-    nodelay(stdscr, TRUE);              /*
-                                           prevents getch() from blocking;
-                                           rather it will return ERR when
-                                           there is no keypress available
-                                        */
     keypad(stdscr, TRUE);
     scrollok(stdscr, FALSE);
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
@@ -211,7 +223,8 @@ int main(int argc, char **argv)
     */
     vshell->canvas = newwin(vshell->screen_h, vshell->screen_w, 0, 0);
     scrollok(vshell->canvas, FALSE);
-    nodelay(vshell->canvas, TRUE);
+    // nodelay(vshell->canvas, TRUE);
+    nodelay(vshell->canvas, FALSE);
     keypad(vshell->canvas, TRUE);
 
     // create the first pane and vterm instance
@@ -220,12 +233,18 @@ int main(int argc, char **argv)
     else
         vshell_create_pane(vshell, TERM_STATE_DIRTY);
 
+
     vshell->active_pane = 1;
 
     vshell_help_init(vshell);
 
     // render frame
     vshell_update_canvas(vshell, FLAG_PAINT_ALL);
+
+    vpane = vshell_get_pane(vshell, vshell->active_pane);
+    sig_fd = vterm_set_async(vpane->vterm);
+    fds[0].fd = sig_fd;
+    fds[0].events = POLLIN;
 
     /*
         keep reading keypresses from the user and passing them to
@@ -238,37 +257,95 @@ int main(int argc, char **argv)
         // all of the terminals have exited
         if(vshell->pane_count == 0) break;
 
-        // read data from each term instance
-        CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
+        fds_ready = poll(fds, 1, 10);
+
+        if(fds_ready == -1 && errno == EINTR) continue;
+
+        while(fds_ready > 0)
         {
-            do
-            {
-                vpane->bytes = vterm_read_pipe(vpane->vterm);
-                vpane->bytes_buffered += vpane->bytes;
-            }
-            while(vpane->bytes > 512);
+            retval = poll(fds, 1, 10);
 
-            if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
+            if(retval == -1 && errno == EINTR) continue;
+            if(retval > 0) fds_ready += retval;
+
+            retval = read(sig_fd, &signum, sizeof(signum));
+
+            if(retval == -1)
             {
-                if(vpane->bytes_buffered > 0)
+                if(errno == EINTR) continue;
+                if(errno == EAGAIN) break;
+            }
+
+            // no more signals in the pipe
+            if(retval == 0)
+            {
+                fds_ready--;
+                if(fds_ready < 0)
                 {
-                    vpane->render(vpane, 0);
-                    vpane->bytes_buffered = 0;
+                    fds_ready = 0;
+                    continue;
                 }
-
-                ctimer_reset(vpane->fps_timer);
             }
 
-            if(vpane->bytes == -1)
+            CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
             {
-                vshell_destroy_pane(vshell, vshell->active_pane);
-                if(vshell->pane_count == 0) break;
+                do
+                {
+                    retval = poll(fds, 1, 10);
 
-                vshell_resize(vshell);
+                    if(retval == -1 && errno == EINTR) continue;
+                    if(retval > 0) fds_ready += retval;
+
+                    for(;;)
+                    {
+                        retval = read(sig_fd, &signum, sizeof(signum));
+
+                        if(retval == -1)
+                        {
+                            if(errno == EINTR) continue;
+                            break;
+                        }
+
+                        if(retval > 0) continue;
+
+                        break;
+                    }
+
+                    vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
+                    vpane->bytes_buffered += vpane->bytes;
+                }
+                while(vpane->bytes > 0);
+
+                // if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
+                // {
+                //    if(vpane->bytes_buffered > 0)
+                //    {
+                        vpane->render(vpane, 0);
+                        vpane->bytes_buffered = 0;
+                //     }
+
+                //    ctimer_reset(vpane->fps_timer);
+                //}
+
+                if(vpane->bytes == -1)
+                {
+                    vshell_destroy_pane(vshell, vshell->active_pane);
+                    if(vshell->pane_count == 0) break;
+
+                    vshell_resize(vshell);
+                }
             }
         }
 
+        if(vshell->pane_count == 0) break;
+
         keystroke = vshell_get_key(vshell);
+
+        // interrupted by a signal
+        if(keystroke == -1 && errno == EINTR)
+        {
+            continue;
+        }
 
         // handle special events like resize first
         if(keystroke == KEY_RESIZE)
@@ -286,6 +363,7 @@ int main(int argc, char **argv)
                 vshell->vshell_flags |= VSHELL_FLAG_HELP;
 
             vshell_update_canvas(vshell, FLAG_PAINT_ALL);
+            // raise(SIGIO);
 
             continue;
         }
@@ -309,6 +387,8 @@ int main(int argc, char **argv)
         {
             vshell_create_pane(vshell, 0);
             vshell->active_pane = vshell->pane_count;
+            vpane = vshell_get_pane(vshell, vshell->active_pane);
+            vterm_set_async(vpane->vterm);
             vshell_resize(vshell);
 
             continue;
@@ -386,6 +466,7 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
         vpane->y + 1, vpane->x + 1);
     nodelay(vpane->term_wnd, TRUE);
     keypad(vpane->term_wnd, TRUE);
+    // cbreak();
 
     // set term window colors to black on white
     wattrset(vpane->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0));
@@ -475,18 +556,32 @@ vshell_get_key(vshell_t *vshell)
     int         ch;
 
     ch = wgetch(vshell->canvas);
+
+    if(ch == -1)
+    {
+        if(errno == EINTR) return -1;
+    }
+
     keystroke = ch;
 
     if(ch == 0x1b)
     {
+        nodelay(vshell->canvas, TRUE);
         for(;;)
         {
             ch = wgetch(vshell->canvas);
-            if(ch == -1) break;
+            // ch = getch();
+            if(ch == -1)
+            {
+                if(errno == EINTR) continue;
+
+                break;
+            }
 
             keystroke = keystroke << 8;
             keystroke |= ch;
         }
+        nodelay(vshell->canvas, FALSE);
     }
 
     return keystroke;
@@ -1212,3 +1307,4 @@ wchar_box(WINDOW *win, int colors, int x, int y, int cols, int rows)
 
     return;
 }
+

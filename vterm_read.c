@@ -28,7 +28,7 @@
 
 
 ssize_t
-vterm_read_pipe(vterm_t *vterm)
+vterm_read_pipe(vterm_t *vterm, int timeout)
 {
     struct pollfd   fd_array[1];
     char            *pos;
@@ -62,17 +62,21 @@ vterm_read_pipe(vterm_t *vterm)
         return -1;
     }
 
-    fd_array[0].fd = vterm->pty_fd;
-    fd_array[0].events = POLLIN;
-
-    // wait 10 millisecond for data on pty file descriptor.
-    retval = poll(fd_array, 1, 10);
-
-    // no data or poll() error.
-    if(retval <= 0)
+    // don't use poll in async io mode
+    if(!(vterm->flags & VTERM_FLAG_AIO))
     {
-        if(errno == EINTR) return 0;
-        return retval;
+        fd_array[0].fd = vterm->pty_fd;
+        fd_array[0].events = POLLIN;
+
+        // wait 10 millisecond for data on pty file descriptor.
+        retval = poll(fd_array, 1, timeout);
+
+        // no data or poll() error.
+        if(retval <= 0)
+        {
+            if(errno == EINTR) return 0;
+            return retval;
+        }
     }
 
     retval = 0;

@@ -36,6 +36,7 @@
 #define VTERM_FLAG_XTERM_256    (1UL << 3)      //  emulate xterm-256
 #define VTERM_FLAG_LINUX        (1UL << 4)      //  emulate linux
 
+#define VTERM_FLAG_AIO          (1UL << 7)      //  async i/o
 #define VTERM_FLAG_NOPTY        (1UL << 8)      /*
                                                     skip all the fd and pty
                                                     stuff.  just render input
@@ -211,6 +212,20 @@ int            vterm_get_history_size(vterm_t *vterm);
                     vterm_init(NULL, width, height, flags)
 
 /*
+    setup the vterm instance for asynchronous i/o (signal driven).
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+
+    @return:            libvterm aggregates and syncrhonizes all of the
+                        SIGIO events from async instances using the
+                        "self-pipe" trick.  the return value is the file
+                        descriptor which can be used with select() or
+                        poll() to detect the arrival of new data.
+*/
+int             vterm_set_async(vterm_t *vterm);
+
+/*
     it's impossible for vterm to have insight into the color map because it
     is setup by the caller outside of the library.  therefore, the default
     function does an expensive iteration through all of the color pairs
@@ -328,12 +343,18 @@ void            vterm_set_exec(vterm_t *vterm, char *path, char **argv);
 
     @params:
         vterm           a valid vterm object handle.
+        timeout         number of milliseconds the API should wait for new
+                        data on the read descriptor.  under the hood, this
+                        param is passed to poll() so a 0 or a negative
+                        value has the same effect that it would on poll().
+                        this parameter is irrelevant if the instance has
+                        been made asynchronous via the vterm_set_async() api.
 
     @return:            the amount of bytes read from running program output.
                         this is somewhat analogous to stdout.  returns -1
                         on error.
 */
-ssize_t         vterm_read_pipe(vterm_t *vterm);
+ssize_t         vterm_read_pipe(vterm_t *vterm, int timeout);
 
 /*
     write a keystroke to the terminal.

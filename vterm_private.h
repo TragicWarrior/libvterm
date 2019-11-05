@@ -174,6 +174,11 @@ struct _vterm_s
                                                     file descriptor for the pty
                                                     attached to this terminal.
                                                 */
+    int             sig_fd;                     /*
+                                                    the file descriptor which
+                                                    indicates a signal has
+                                                    arrived.
+                                                */ 
     pid_t           child_pid;                  //  pid of the child process
     uint32_t        flags;                      //  user options
     unsigned long   internal_state;             //  internal state control
