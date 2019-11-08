@@ -36,6 +36,7 @@
 #endif
 
 #include "ctimer.h"
+#include "protothread.h"
 #include "../vterm.h"
 #include "../stringv.h"
 #include "../macros.h"
@@ -67,6 +68,7 @@ static cchar_t *cc_syms;
 #define TERM_STATE_HISTORY      (1 << 4)
 #define TERM_STATE_EXECV        (1 << 6)
 #define TERM_STATE_DIRTY        (1 << 7)
+#define TERM_STATE_EXITING      (1 << 8)
 
 #define FLAG_PAINT_ALL          1
 
@@ -97,6 +99,16 @@ typedef struct _vshell_s        vshell_t;
 
 typedef struct _vpane_s         vpane_t;
 
+typedef struct _pt_ctx_s        pt_ctx_t;
+
+struct _pt_ctx_s
+{
+    pt_thread_t     pt_thread;
+    pt_func_t       pt_func;
+
+    void            *anything;
+};
+
 struct _vpane_s
 {
     int             cursor_pos;
@@ -119,6 +131,8 @@ struct _vpane_s
 
     void            (*render)       (vpane_t *, int);
     void            (*kinput)       (vshell_t *, int32_t);
+
+    pt_ctx_t        pt_ctx;         // protothread context
 };
 
 // global struct
@@ -131,6 +145,8 @@ struct _vshell_s
     char            **exec_argv;
 
     unsigned int    vshell_flags;
+
+    protothread_t   ptq;                // protothread queue
 
     WINDOW          *canvas;
     WINDOW          *help;
@@ -174,6 +190,10 @@ void        mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr);
 void        wchar_box(WINDOW *win, int colors, int x, int y,
                 int width, int height);
 
+// protothread that is associated with and drives each vpane
+pt_t        vpane_stream_reader(void * const env);
+
+
 volatile sig_atomic_t   sio_count = 0;
 
 int main(int argc, char **argv)
@@ -185,12 +205,12 @@ int main(int argc, char **argv)
     int32_t             keystroke;
     char                *locale;
     struct pollfd       fds[1];
-    int                 pty_fd;
+    //int                 pty_fd;
     int                 signum;
     int                 sig_fd;
     int                 retval;
     int                 fds_ready;
-
+    int                 i;
 
     vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
     cc_syms = (cchar_t *)calloc(ARRAY_SZ(wc_syms), sizeof(cchar_t));
@@ -223,16 +243,17 @@ int main(int argc, char **argv)
     */
     vshell->canvas = newwin(vshell->screen_h, vshell->screen_w, 0, 0);
     scrollok(vshell->canvas, FALSE);
-    // nodelay(vshell->canvas, TRUE);
     nodelay(vshell->canvas, FALSE);
     keypad(vshell->canvas, TRUE);
+
+    // init the protothread run queue
+    vshell->ptq = protothread_create();
 
     // create the first pane and vterm instance
     if(vshell->exec_path != NULL)
         vshell_create_pane(vshell, TERM_STATE_DIRTY | TERM_STATE_EXECV);
     else
         vshell_create_pane(vshell, TERM_STATE_DIRTY);
-
 
     vshell->active_pane = 1;
 
@@ -287,48 +308,17 @@ int main(int argc, char **argv)
                 }
             }
 
+            // run the next protothead on the queue
+            for(i = 0; i < vshell->pane_count; i++)
+            {
+                protothread_run(vshell->ptq);
+            }
+
             CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
             {
-                do
+                if(vpane->state & TERM_STATE_EXITING)
                 {
-                    retval = poll(fds, 1, 10);
-
-                    if(retval == -1 && errno == EINTR) continue;
-                    if(retval > 0) fds_ready += retval;
-
-                    for(;;)
-                    {
-                        retval = read(sig_fd, &signum, sizeof(signum));
-
-                        if(retval == -1)
-                        {
-                            if(errno == EINTR) continue;
-                            break;
-                        }
-
-                        if(retval > 0) continue;
-
-                        break;
-                    }
-
-                    vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
-                    vpane->bytes_buffered += vpane->bytes;
-                }
-                while(vpane->bytes > 0);
-
-                // if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
-                // {
-                //    if(vpane->bytes_buffered > 0)
-                //    {
-                        vpane->render(vpane, 0);
-                        vpane->bytes_buffered = 0;
-                //     }
-
-                //    ctimer_reset(vpane->fps_timer);
-                //}
-
-                if(vpane->bytes == -1)
-                {
+                    pt_kill(&vpane->pt_ctx.pt_thread);
                     vshell_destroy_pane(vshell, vshell->active_pane);
                     if(vshell->pane_count == 0) break;
 
@@ -495,6 +485,12 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
     // this illustrates how to install an event hook
     vterm_set_event_mask(vpane->vterm, VTERM_MASK_BUFFER_ACTIVATED);
     vterm_install_hook(vpane->vterm, vshell_hook);
+
+    vpane->pt_ctx.anything = (void *)vpane;
+    pt_create(vshell->ptq, &vpane->pt_ctx.pt_thread,
+        vpane_stream_reader, (&vpane->pt_ctx));
+
+    // pt_atexit((&vpane->pt_ctx.pt_thread), vpane_at_exit);
 
     return;
 }
@@ -1306,5 +1302,63 @@ wchar_box(WINDOW *win, int colors, int x, int y, int cols, int rows)
         &cc_syms[WCS_BRCORNER_NORMAL]);
 
     return;
+}
+
+pt_t
+vpane_stream_reader(void * const env)
+{
+    pt_ctx_t    *pt_ctx;
+    // vshell_t    *vshell;
+    vpane_t     *vpane;
+
+    pt_ctx = (pt_ctx_t *)env;
+    vpane = (vpane_t *)pt_ctx->anything;
+
+    pt_resume(pt_ctx);
+
+    for(;;)
+    {
+        if(vpane->state & TERM_STATE_EXITING) break;
+
+        // ensure a rendering at least once every 1/30 second (30 fps)
+        //if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
+        //{
+        //    if(vpane->bytes_buffered > 0)
+        //    {
+        //        vpane->render(vpane, 0);
+        //        vpane->bytes_buffered = 0;
+        //    }
+        //    ctimer_reset(vpane->fps_timer);
+        //}
+
+        vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
+
+        // tty exited
+        if(vpane->bytes == -1)
+        {
+            vpane->state |= TERM_STATE_EXITING;
+            break;
+        }
+
+        vpane->bytes_buffered += vpane->bytes;
+
+        if(vpane->bytes == 0)
+        {
+            pt_yield(pt_ctx);
+            continue;
+        }
+
+        //if(vpane->bytes > 512)
+        //{
+        //    pt_yield(pt_ctx);
+        //    continue;
+        //}
+
+        // render buffered changes
+        vpane->render(vpane, 0);
+        vpane->bytes_buffered = 0;
+    }
+
+    return PT_DONE;
 }
 
