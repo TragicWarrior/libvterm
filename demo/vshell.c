@@ -148,6 +148,11 @@ struct _vshell_s
 
     protothread_t   ptq;                // protothread queue
 
+    struct pollfd   fds[1];
+    int             signum;
+    int             sig_fd;
+    int             fds_ready;
+
     WINDOW          *canvas;
     WINDOW          *help;
     int             screen_w;
@@ -204,12 +209,7 @@ int main(int argc, char **argv)
     vpane_t             *tmp2;
     int32_t             keystroke;
     char                *locale;
-    struct pollfd       fds[1];
-    //int                 pty_fd;
-    int                 signum;
-    int                 sig_fd;
     int                 retval;
-    int                 fds_ready;
     int                 i;
 
     vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
@@ -263,9 +263,9 @@ int main(int argc, char **argv)
     vshell_update_canvas(vshell, FLAG_PAINT_ALL);
 
     vpane = vshell_get_pane(vshell, vshell->active_pane);
-    sig_fd = vterm_set_async(vpane->vterm);
-    fds[0].fd = sig_fd;
-    fds[0].events = POLLIN;
+    vshell->sig_fd = vterm_set_async(vpane->vterm);
+    vshell->fds[0].fd = vshell->sig_fd;
+    vshell->fds[0].events = POLLIN;
 
     /*
         keep reading keypresses from the user and passing them to
@@ -278,18 +278,19 @@ int main(int argc, char **argv)
         // all of the terminals have exited
         if(vshell->pane_count == 0) break;
 
-        fds_ready = poll(fds, 1, 10);
+        vshell->fds_ready = poll(vshell->fds, 1, 10);
 
-        if(fds_ready == -1 && errno == EINTR) continue;
+        if(vshell->fds_ready == -1 && errno == EINTR) continue;
 
-        while(fds_ready > 0)
+        while(vshell->fds_ready > 0)
         {
-            retval = poll(fds, 1, 10);
+            retval = poll(vshell->fds, 1, 10);
 
             if(retval == -1 && errno == EINTR) continue;
-            if(retval > 0) fds_ready += retval;
+            if(retval > 0) vshell->fds_ready += retval;
 
-            retval = read(sig_fd, &signum, sizeof(signum));
+            retval = read(vshell->sig_fd, &vshell->signum,
+                sizeof(vshell->signum));
 
             if(retval == -1)
             {
@@ -300,10 +301,10 @@ int main(int argc, char **argv)
             // no more signals in the pipe
             if(retval == 0)
             {
-                fds_ready--;
-                if(fds_ready < 0)
+                vshell->fds_ready--;
+                if(vshell->fds_ready < 0)
                 {
-                    fds_ready = 0;
+                    vshell->fds_ready = 0;
                     continue;
                 }
             }
@@ -316,6 +317,12 @@ int main(int argc, char **argv)
 
             CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
             {
+                if(vpane->bytes_buffered > 0)
+                {
+                    vpane->render(vpane, 0);
+                    vpane->bytes_buffered = 0;
+                }
+
                 if(vpane->state & TERM_STATE_EXITING)
                 {
                     pt_kill(&vpane->pt_ctx.pt_thread);
@@ -1355,8 +1362,6 @@ vpane_stream_reader(void * const env)
         //}
 
         // render buffered changes
-        vpane->render(vpane, 0);
-        vpane->bytes_buffered = 0;
     }
 
     return PT_DONE;
