@@ -149,7 +149,7 @@ struct _vshell_s
     protothread_t   ptq;                // protothread queue
 
     struct pollfd   fds[1];
-    int             signum;
+    uint8_t         signum;
     int             sig_fd;
     int             fds_ready;
 
