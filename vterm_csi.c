@@ -65,16 +65,12 @@ vterm_interpret_csi(vterm_t *vterm)
         a standardized escape sequence the [ and ? will only occur
         once so put them at the bottom.
     */
+    csiparam[param_count] = 0;
+    if(*p != verb) param_count = 1;
     for(;;)
     {
         if(isdigit(*p))
         {
-            if(param_count == 0)
-            {
-                csiparam[param_count] = 0;
-                param_count++;
-            }
-
             // increaase order of prev digit (10s column, 100s column, etc...)
             csiparam[param_count - 1] *= 10;
             csiparam[param_count - 1] += *p - '0';
