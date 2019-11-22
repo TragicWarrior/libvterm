@@ -46,6 +46,8 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 #define VCELL_SET_COLORS(_cell, _desc) \
                 { \
                     _cell.colors = _desc->colors; \
+                    _cell.fg = _desc->fg; \
+                    _cell.bg = _desc->bg; \
                     _cell.f_rgb[0] = _desc->f_rgb[0]; \
                     _cell.f_rgb[1] = _desc->f_rgb[1]; \
                     _cell.f_rgb[2] = _desc->f_rgb[2]; \
