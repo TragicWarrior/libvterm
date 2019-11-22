@@ -59,7 +59,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                             [0]             = &&csi_sgr_RESET,
                             [1]             = &&csi_sgr_BOLD_ON,
                             [2]             = &&csi_sgr_DIM_ON,
-                            [3]             = &&csi_sgr_UNDERLINE_ON,
+                            [4]             = &&csi_sgr_UNDERLINE_ON,
                             [5]             = &&csi_sgr_BLINK_ON,
                             [7]             = &&csi_sgr_REVERSE_ON,
                             [8]             = &&csi_sgr_INVISIBLE_ON,
@@ -145,7 +145,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             continue;
 
         csi_sgr_UNDERLINE_ON:
-            // code 3
+            // code 4
             v_desc->curattr |= A_UNDERLINE;
             continue;
 
