@@ -4,6 +4,10 @@
 
 #define _GNU_SOURCE
 
+#ifdef __FreeBSD__
+#define __XSI_VISIBLE 1
+#endif
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -53,7 +57,7 @@ vterm_set_async(vterm_t *vterm)
 
     fcntl(vterm->pty_fd, F_SETOWN, getpid());
     fcntl(vterm->pty_fd, F_SETFL, O_ASYNC);
-    fcntl(vterm->pty_fd, F_SETSIG, SIGIO);
+    // fcntl(vterm->pty_fd, F_SETSIG, SIGIO);
 
     return vterm_sig_fds[SIG_FDS_R];
 }
