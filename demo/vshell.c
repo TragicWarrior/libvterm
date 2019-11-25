@@ -208,6 +208,7 @@ int main(int argc, char **argv)
     vpane_t             *tmp1;
     vpane_t             *tmp2;
     int32_t             keystroke;
+    struct timespec     hibernate;
     char                *locale;
     int                 retval;
     int                 i;
@@ -220,6 +221,9 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL, locale);
 
+    // hibernate.tv_sec = ALLBITS(hibernate.tv_sec);
+    hibernate.tv_sec = 99999;
+
     initscr();
     noecho();
     raw();
@@ -227,6 +231,9 @@ int main(int argc, char **argv)
     keypad(stdscr, TRUE);
     scrollok(stdscr, FALSE);
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
+
+    fcntl(STDIN_FILENO, F_SETOWN, getpid());
+    fcntl(STDIN_FILENO, F_SETFL, O_ASYNC);
 
     vshell->argc = argc;
     vshell->argv = argv;
@@ -243,7 +250,7 @@ int main(int argc, char **argv)
     */
     vshell->canvas = newwin(vshell->screen_h, vshell->screen_w, 0, 0);
     scrollok(vshell->canvas, FALSE);
-    nodelay(vshell->canvas, FALSE);
+    nodelay(vshell->canvas, TRUE);
     keypad(vshell->canvas, TRUE);
 
     // init the protothread run queue
@@ -336,10 +343,13 @@ int main(int argc, char **argv)
 
         if(vshell->pane_count == 0) break;
 
+        retval = nanosleep(&hibernate, NULL);
+
         keystroke = vshell_get_key(vshell);
 
         // interrupted by a signal
-        if(keystroke == -1 && errno == EINTR)
+        // if(keystroke == -1 && errno == EINTR)
+        if(keystroke == -1)
         {
             continue;
         }
@@ -569,7 +579,7 @@ vshell_get_key(vshell_t *vshell)
 
     if(ch == 0x1b)
     {
-        nodelay(vshell->canvas, TRUE);
+        // nodelay(vshell->canvas, TRUE);
         for(;;)
         {
             ch = wgetch(vshell->canvas);
@@ -584,7 +594,7 @@ vshell_get_key(vshell_t *vshell)
             keystroke = keystroke << 8;
             keystroke |= ch;
         }
-        nodelay(vshell->canvas, FALSE);
+        // nodelay(vshell->canvas, FALSE);
     }
 
     return keystroke;
