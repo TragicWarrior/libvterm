@@ -229,6 +229,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
                     vshell
                     vterm-shared
                     vterm-static
+                    -lc
                     -lutil
                     -lm
                     -lncursesw)
@@ -237,6 +238,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
         target_link_libraries(
                     vterm-shared
                     vterm-static
+                    -lc
                     -lutil
                     -lm
                     -lncursesw)

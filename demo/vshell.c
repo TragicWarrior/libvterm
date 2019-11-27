@@ -224,6 +224,7 @@ int main(int argc, char **argv)
 
     // hibernate.tv_sec = ALLBITS(hibernate.tv_sec);
     hibernate.tv_sec = 99999;
+    hibernate.tv_nsec = 0;
 
     initscr();
     noecho();
