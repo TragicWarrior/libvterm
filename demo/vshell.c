@@ -6,6 +6,15 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__))
+#define ASYNC_NOT_OKAY  1
+#endif
+
+// for SIGIO
+#if defined(__APPLE__) && defined(__MACH__)
+#define _DARWIN_C_SOURCE 1
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
@@ -1223,11 +1232,13 @@ vshell_parse_cmdline(vshell_t *vshell)
                 continue;
             }
 
+#ifndef ASYNC_NOT_OKAY
             if (strncmp(vshell->argv[i], "--async", strlen("--async")) == 0)
             {
                 vshell->vshell_flags |= VSHELL_FLAG_ASYNC;
                 continue;
             }
+#endif
 
             if (strncmp(vshell->argv[i], "--exec", strlen("--exec")) == 0)
             {
@@ -1327,10 +1338,10 @@ vshell_print_help(void)
                 "Usage:  vshell  <args...>\n\r"
                 " \n\r"
                 "[Args]         [Description]\n\r"
-                "---------------------------------------------------------\n\r"
+                "----------------------------------------------------------\n\r"
                 "--help         Show usage information.\n\r"
                 "--version      Show version information.\n\r"
-                "--async        Use SIGIO driven protothreads.\n\r"
+                "--async        Use SIGIO driven protothreads (linux only).\n\r"
                 "--dump         Write escape sequences to a log file.\n\r"
                 "--vt100        Set emulation mode to vt100.\n\r"
                 "--rxvt         Set emulation mode to rxvt.\n\r"

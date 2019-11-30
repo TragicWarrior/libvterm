@@ -1,11 +1,14 @@
-// #ifndef _POSIX_C_SOURCE
-// #define _POSIX_C_SOURCE 200809L
-// #endif
 
 #define _GNU_SOURCE
 
+// for SIGIO
 #ifdef __FreeBSD__
 #define __XSI_VISIBLE 1
+#endif
+
+// for SIGIO
+#if defined(__APPLE__) && defined(__MACH__)
+#define _DARWIN_C_SOURCE 1
 #endif
 
 #include <unistd.h>
