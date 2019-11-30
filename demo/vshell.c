@@ -554,7 +554,6 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
         vpane->y + 1, vpane->x + 1);
     nodelay(vpane->term_wnd, TRUE);
     keypad(vpane->term_wnd, TRUE);
-    // cbreak();
 
     // set term window colors to black on white
     wattrset(vpane->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0));
@@ -663,7 +662,6 @@ vshell_get_key(vshell_t *vshell)
 
         if(ch == -1)
         {
-            // if(errno == EINTR) continue;
             sigprocmask(SIG_SETMASK, &old_mask, NULL);
             return -1;
         }
@@ -675,22 +673,18 @@ vshell_get_key(vshell_t *vshell)
 
     if(ch == 0x1b)
     {
-        // nodelay(vshell->canvas, TRUE);
         for(;;)
         {
             ch = wgetch(vshell->canvas);
-            // ch = getch();
+
             if(ch == -1)
             {
-                // if(errno == EINTR) continue;
-
                 break;
             }
 
             keystroke = keystroke << 8;
             keystroke |= ch;
         }
-        // nodelay(vshell->canvas, FALSE);
     }
 
     sigprocmask(SIG_SETMASK, &old_mask, NULL);
@@ -1336,6 +1330,7 @@ vshell_print_help(void)
                 "---------------------------------------------------------\n\r"
                 "--help         Show usage information.\n\r"
                 "--version      Show version information.\n\r"
+                "--async        Use SIGIO driven protothreads.\n\r"
                 "--dump         Write escape sequences to a log file.\n\r"
                 "--vt100        Set emulation mode to vt100.\n\r"
                 "--rxvt         Set emulation mode to rxvt.\n\r"
@@ -1357,7 +1352,7 @@ void
 mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr)
 {
     cchar_t         cch;
-    wchar_t         wch[CCHARW_MAX]; 
+    wchar_t         wch[CCHARW_MAX];
     attr_t          attrs;
     short           cell_colors;
     size_t          len;
@@ -1429,7 +1424,6 @@ pt_t
 vpane_stream_reader(void * const env)
 {
     pt_ctx_t    *pt_ctx;
-    // vshell_t    *vshell;
     vpane_t     *vpane;
 
     pt_ctx = (pt_ctx_t *)env;
@@ -1440,17 +1434,6 @@ vpane_stream_reader(void * const env)
     for(;;)
     {
         if(vpane->state & TERM_STATE_EXITING) break;
-
-        // ensure a rendering at least once every 1/30 second (30 fps)
-        //if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
-        //{
-        //    if(vpane->bytes_buffered > 0)
-        //    {
-        //        vpane->render(vpane, 0);
-        //        vpane->bytes_buffered = 0;
-        //    }
-        //    ctimer_reset(vpane->fps_timer);
-        //}
 
         vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
 
@@ -1468,14 +1451,6 @@ vpane_stream_reader(void * const env)
             pt_yield(pt_ctx);
             continue;
         }
-
-        //if(vpane->bytes > 512)
-        //{
-        //    pt_yield(pt_ctx);
-        //    continue;
-        //}
-
-        // render buffered changes
     }
 
     return PT_DONE;
