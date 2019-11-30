@@ -209,7 +209,7 @@ int main(int argc, char **argv)
     vpane_t             *tmp1;
     vpane_t             *tmp2;
     int32_t             keystroke;
-    struct timespec     hibernate;
+    struct timespec     hibernate = { .tv_sec = 99999, .tv_nsec = 0 };
     char                *locale;
     int                 retval;
     int                 i;
@@ -221,10 +221,6 @@ int main(int argc, char **argv)
     if(locale == NULL) locale = "en_US.UTF-8";
 
 	setlocale(LC_ALL, locale);
-
-    // hibernate.tv_sec = ALLBITS(hibernate.tv_sec);
-    hibernate.tv_sec = 99999;
-    hibernate.tv_nsec = 0;
 
     initscr();
     noecho();
@@ -287,7 +283,12 @@ int main(int argc, char **argv)
     while(TRUE)
     {
         // all of the terminals have exited
-        if(vshell->pane_count == 0) break;
+        if(vshell->pane_count == 0)
+        {
+            hibernate.tv_sec = 0;
+            hibernate.tv_nsec = 1;
+            break;
+        }
 
         while(vshell->fds_ready > 0)
         {
@@ -335,7 +336,12 @@ int main(int argc, char **argv)
                 }
             }
 
-            if(vshell->pane_count == 0) break;
+            if(vshell->pane_count == 0)
+            {
+                hibernate.tv_sec = 0;
+                hibernate.tv_nsec = 1;
+                break;
+            }
         }
 
         retval = nanosleep(&hibernate, NULL);
