@@ -73,6 +73,7 @@ static cchar_t *cc_syms;
 #define FLAG_PAINT_ALL          1
 
 #define VSHELL_FLAG_HELP        (1 << 0)
+#define VSHELL_FLAG_ASYNC       (1 << 1)
 
 #define HELP_WIDTH              40
 #define HELP_HEIGHT             21
@@ -166,6 +167,8 @@ struct _vshell_s
     uint32_t        vterm_flags;
 
     vpane_t         *vpane_list;
+
+    void            (*main_loop)        (vshell_t *);
 };
 
 // prototypes
@@ -182,6 +185,9 @@ void        vshell_update_canvas(vshell_t *vshell, int flags);
 int32_t     vshell_get_key(vshell_t *vshell);
 void        vshell_handle_key(vshell_t *vshell, int32_t keystroke);
 int         vshell_resize(vshell_t *vshell);
+
+void        vshell_main_async(vshell_t *vshell);
+void        vshell_main_polled(vshell_t *vshell);
 
 void        vshell_render_normal(vpane_t *vpane, int flags);
 void        vshell_render_history(vpane_t *vpane, int flags);
@@ -208,11 +214,7 @@ int main(int argc, char **argv)
     vpane_t             *vpane;
     vpane_t             *tmp1;
     vpane_t             *tmp2;
-    int32_t             keystroke;
-    struct timespec     hibernate = { .tv_sec = 99999, .tv_nsec = 0 };
     char                *locale;
-    int                 retval;
-    int                 i;
 
     vshell = (vshell_t *)calloc(1, sizeof(vshell_t));
     cc_syms = (cchar_t *)calloc(ARRAY_SZ(wc_syms), sizeof(cchar_t));
@@ -230,9 +232,6 @@ int main(int argc, char **argv)
     scrollok(stdscr, FALSE);
     getmaxyx(stdscr, vshell->screen_h, vshell->screen_w);
 
-    // this will cause a signal interrupt
-    fcntl(STDIN_FILENO, F_SETOWN, getpid());
-    fcntl(STDIN_FILENO, F_SETFL, O_ASYNC);
 
     vshell->argc = argc;
     vshell->argv = argv;
@@ -252,8 +251,17 @@ int main(int argc, char **argv)
     nodelay(vshell->canvas, TRUE);
     keypad(vshell->canvas, TRUE);
 
-    // init the protothread run queue
-    vshell->ptq = protothread_create();
+    if(vshell->vshell_flags & VSHELL_FLAG_ASYNC)
+    {
+        vshell->main_loop = vshell_main_async;
+
+        // init the protothread run queue
+        vshell->ptq = protothread_create();
+    }
+    else
+    {
+        vshell->main_loop = vshell_main_polled;
+    }
 
     // create the first pane and vterm instance
     if(vshell->exec_path != NULL)
@@ -268,27 +276,102 @@ int main(int argc, char **argv)
     // render frame
     vshell_update_canvas(vshell, FLAG_PAINT_ALL);
 
+    vshell->main_loop(vshell);
+
+    endwin();
+
+    CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
+    {
+        vshell_destroy_pane(vshell, 1);
+    }
+
+    // print some debug info
+    printf("%s\n\r", locale);
+    printf("ncurses = %d.%d (%d)\n\r", NCURSES_VERSION_MAJOR,
+        NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
+    fflush(NULL);
+
+    exit(0);
+}
+
+void
+vshell_main_polled(vshell_t *vshell)
+{
+    vpane_t     *vpane = NULL;
+    vpane_t     *tmp1;
+    vpane_t     *tmp2;
+    int32_t     keystroke = 0;
+
+    for(;;)
+    {
+        // all of the terminals have exited
+        if(vshell->pane_count == 0) return;
+
+        // read data from each term instance
+        CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
+        {
+            do
+            {
+                vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
+                vpane->bytes_buffered += vpane->bytes;
+            }
+            while(vpane->bytes > 512);
+
+            if(ctimer_compare(vpane->fps_timer, &vpane->fps_interval) > 0)
+            {
+                if(vpane->bytes_buffered > 0)
+                {
+                    vpane->render(vpane, 0);
+                    vpane->bytes_buffered = 0;
+                }
+
+                ctimer_reset(vpane->fps_timer);
+            }
+
+            if(vpane->bytes == -1)
+            {
+                vshell_destroy_pane(vshell, vshell->active_pane);
+                if(vshell->pane_count == 0) return;
+
+                vshell_resize(vshell);
+            }
+        }
+
+        keystroke = vshell_get_key(vshell);
+
+        if(keystroke != -1)
+        {
+            vshell_handle_key(vshell, keystroke);
+        }
+    }
+
+    return;
+}
+
+void
+vshell_main_async(vshell_t *vshell)
+{
+    vpane_t             *vpane = NULL;
+    vpane_t             *tmp1;
+    vpane_t             *tmp2;
+    int32_t             keystroke = 0;
+    struct timespec     hibernate = { .tv_sec = 1, .tv_nsec = 0 };
+    int                 retval = 0;
+    int                 i;
+
+    // this will cause a signal interrupt
+    fcntl(STDIN_FILENO, F_SETOWN, getpid());
+    fcntl(STDIN_FILENO, F_SETFL, O_ASYNC);
+
     vpane = vshell_get_pane(vshell, vshell->active_pane);
     vshell->sig_fd = vterm_set_async(vpane->vterm);
     vshell->fds[0].fd = vshell->sig_fd;
     vshell->fds[0].events = POLLIN;
 
-    /*
-        keep reading keypresses from the user and passing them to
-        the terminal;  also, redraw the terminal to the window at each
-        iteration
-    */
-    keystroke = '\0';
-    // vshell->fds_ready = 5;
-    while(TRUE)
+    for(;;)
     {
         // all of the terminals have exited
-        if(vshell->pane_count == 0)
-        {
-            hibernate.tv_sec = 0;
-            hibernate.tv_nsec = 1;
-            break;
-        }
+        if(vshell->pane_count == 0) return;
 
         while(vshell->fds_ready > 0)
         {
@@ -308,9 +391,16 @@ int main(int argc, char **argv)
             }
 
             if(retval > 0)
+            {
+                hibernate.tv_sec = 1;
                 vshell->fds_ready += 2;
+            }
             else
-                vshell->fds_ready--;
+            {
+                if(vshell->fds_ready > 0) vshell->fds_ready--;
+
+                hibernate.tv_sec += 1;
+            }
 
             // run the next protothead on the queue
             for(i = 0; i < vshell->pane_count; i++)
@@ -324,45 +414,31 @@ int main(int argc, char **argv)
                 {
                     vpane->render(vpane, 0);
                     vpane->bytes_buffered = 0;
+                    hibernate.tv_sec += 1;
                 }
 
                 if(vpane->state & TERM_STATE_EXITING)
                 {
                     pt_kill(&vpane->pt_ctx.pt_thread);
                     vshell_destroy_pane(vshell, vshell->active_pane);
-                    if(vshell->pane_count == 0) break;
+                    if(vshell->pane_count == 0) return;
 
                     vshell_resize(vshell);
                 }
             }
 
-            if(vshell->pane_count == 0)
-            {
-                hibernate.tv_sec = 0;
-                hibernate.tv_nsec = 1;
-                break;
-            }
+            if(vshell->pane_count == 0) return;
         }
 
+        if(vshell->pane_count == 0) return;
+
+        // nanosleep() will either time out or get interrupted by a signal
         retval = nanosleep(&hibernate, NULL);
 
-        if(retval == -1 && errno == EINTR) vshell->fds_ready += 2;
+        vshell->fds_ready = vshell->pane_count;
     }
 
-    endwin();
-
-    CDL_FOREACH_SAFE(vshell->vpane_list, vpane, tmp1, tmp2)
-    {
-        vshell_destroy_pane(vshell, 1);
-    }
-
-    // print some debug info
-    printf("%s\n\r", locale);
-    printf("ncurses = %d.%d (%d)\n\r", NCURSES_VERSION_MAJOR,
-        NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
-    fflush(NULL);
-
-    exit(0);
+    return;
 }
 
 void
@@ -409,8 +485,12 @@ vshell_handle_key(vshell_t *vshell, int32_t keystroke)
     {
         vshell_create_pane(vshell, 0);
         vshell->active_pane = vshell->pane_count;
-        vpane = vshell_get_pane(vshell, vshell->active_pane);
-        vterm_set_async(vpane->vterm);
+
+        if(vshell->vshell_flags & VSHELL_FLAG_ASYNC)
+        {
+            vpane = vshell_get_pane(vshell, vshell->active_pane);
+            vterm_set_async(vpane->vterm);
+        }
         vshell_resize(vshell);
 
         return;
@@ -504,11 +584,12 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
     vterm_set_event_mask(vpane->vterm, VTERM_MASK_BUFFER_ACTIVATED);
     vterm_install_hook(vpane->vterm, vshell_hook);
 
-    vpane->pt_ctx.anything = (void *)vpane;
-    pt_create(vshell->ptq, &vpane->pt_ctx.pt_thread,
-        vpane_stream_reader, (&vpane->pt_ctx));
-
-    // pt_atexit((&vpane->pt_ctx.pt_thread), vpane_at_exit);
+    if(vshell->vshell_flags & VSHELL_FLAG_ASYNC)
+    {
+        vpane->pt_ctx.anything = (void *)vpane;
+        pt_create(vshell->ptq, &vpane->pt_ctx.pt_thread,
+            vpane_stream_reader, (&vpane->pt_ctx));
+    }
 
     return;
 }
@@ -1145,6 +1226,12 @@ vshell_parse_cmdline(vshell_t *vshell)
             if (strncmp(vshell->argv[i], "--c16", strlen("--c16")) == 0)
             {
                 vshell->vterm_flags |= VTERM_FLAG_C16;
+                continue;
+            }
+
+            if (strncmp(vshell->argv[i], "--async", strlen("--async")) == 0)
+            {
+                vshell->vshell_flags |= VSHELL_FLAG_ASYNC;
                 continue;
             }
 
