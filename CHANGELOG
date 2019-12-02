@@ -1,3 +1,9 @@
+8.0
+
+* [Bryan Christ] Added an asynchronous IO interface so that libvterm can
+  be driven by SIGIO.  Signals are serialized using the self-pipe trick on
+  a global file descriptor.
+
 7.7
 
 * [Bryan Christ] Assume that whatever fg/bg colors were set before a
