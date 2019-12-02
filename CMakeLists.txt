@@ -63,6 +63,7 @@ add_library(vterm-static STATIC
     mouse_driver_X10.c
     mouse_driver_SGR.c
     vterm.c
+    vterm_aio.c
     vterm_ctrl_char.c
     vterm_csi.c
     vterm_exec.c
@@ -123,6 +124,7 @@ add_library(vterm.o OBJECT
     mouse_driver_X10.c
     mouse_driver_SGR.c
     vterm.c
+    vterm_aio.c
     vterm_buffer.c
     vterm_ctrl_char.c
     vterm_csi.c
@@ -200,6 +202,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
                     vterm-static
                     -lutil
                     -lm
+                    -lrt
                     ${CURSES_LIBRARIES})
     else()
         target_link_libraries(
@@ -207,6 +210,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
                     vterm-static
                     -lutil
                     -lm
+                    -lrt
                     ${CURSES_LIBRARIES})
     endif()
 endif()
@@ -225,6 +229,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
                     vshell
                     vterm-shared
                     vterm-static
+                    -lc
                     -lutil
                     -lm
                     -lncursesw)
@@ -233,6 +238,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
         target_link_libraries(
                     vterm-shared
                     vterm-static
+                    -lc
                     -lutil
                     -lm
                     -lncursesw)
