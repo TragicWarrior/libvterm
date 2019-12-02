@@ -1,3 +1,9 @@
+8.1
+
+* [Leon Winter] Sequences like CSI ; 8 m were counted incorrectly.
+  Regression with underline SGR fixed.  Make vterm_buffer_copy include
+  all color fields.
+
 8.0
 
 * [Bryan Christ] Added an asynchronous IO interface so that libvterm can
