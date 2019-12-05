@@ -46,11 +46,9 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
     extern short    rRGB[], gRGB[], bRGB[];
     vterm_desc_t    *v_desc = NULL;
-    int             nested_params[MAX_CSI_ES_PARAMS];
     int             i;
     int             colors;
     short           mapped_color;
-    static int      depth = 0;
     int             idx;
     short           fg, bg;
     int             retval;
@@ -81,58 +79,20 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                             [127]           = &&csi_sgr_DEFAULT,
                         };
 
-    // this depth counter prevents a recursion bomb.  depth limit is arbitary.
-    if (depth > 6) return;
-
     // set vterm_desc buffer selector
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
     if(pcount == 0)
     {
-        // reset attributes
-        v_desc->curattr = A_NORMAL;
-
-        _vterm_set_color_pair_safe(v_desc, v_desc->default_colors,
-            v_desc->fg, v_desc->bg);
-
-        // attribute reset is an implicit color reset too so we'll
-        // do a nested call to handle it.
-        nested_params[0] = 39;
-        nested_params[1] = 49;
-
-        depth++;
-
-        interpret_csi_SGR(vterm, nested_params, 2);
-        depth--;
-
-        return;
+        pcount = 1;
+        param[0] = 0;
     }
 
     for(i = 0; i < pcount; i++)
     {
         // jump table
         SWITCH(sgr_table, (unsigned int)param[i], 127);
-
-        csi_sgr_RESET:
-            // SGR 0
-            // reset attributes
-            v_desc->curattr = A_NORMAL;
-
-            _vterm_set_color_pair_safe(v_desc, v_desc->default_colors,
-                v_desc->fg, v_desc->bg);
-
-            // attribute reset is an implicit color reset too so we'll
-            // do a nested call to handle it.
-            nested_params[0] = 39;
-            nested_params[1] = 49;
-
-            depth++;
-
-            interpret_csi_SGR(vterm, nested_params, 2);
-            depth--;
-
-            continue;
 
         csi_sgr_BOLD_ON:
             // code 1
@@ -246,6 +206,17 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             i += 2;
             continue;
 
+        csi_sgr_RESET:
+            // SGR 0
+            // reset attributes
+            v_desc->curattr = A_NORMAL;
+
+            _vterm_set_color_pair_safe(v_desc, v_desc->default_colors,
+                v_desc->fg, v_desc->bg);
+
+            // attribute reset is an implicit color reset too so we'll
+            // fall-through to reset_fg and reset_bg
+
         csi_sgr_RESET_FG:
             // code 39
             // reset fg color
@@ -266,6 +237,30 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(colors == -1) colors = 0;
 
             _vterm_set_color_pair_safe(v_desc, colors, v_desc->fg, v_desc->bg);
+
+            if(param[i] != 0) continue;
+
+        csi_sgr_RESET_BG:
+            // code 49
+            // reset bg color
+            retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
+
+            if(retval != -1)
+            {
+                v_desc->bg = bg;
+
+                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
+            }
+            else
+            {
+                colors = 0;
+            }
+
+            // one addtl safeguard
+            if(colors == -1) colors = 0;
+
+            _vterm_set_color_pair_safe(v_desc, colors,
+                v_desc->fg, v_desc->bg);
 
             continue;
 
@@ -312,30 +307,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             }
 
             i += 2;
-
-            continue;
-
-        csi_sgr_RESET_BG:
-            // code 49
-            // reset bg color
-            retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
-
-            if(retval != -1)
-            {
-                v_desc->bg = bg;
-
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-            }
-            else
-            {
-                colors = 0;
-            }
-
-            // one addtl safeguard
-            if(colors == -1) colors = 0;
-
-            _vterm_set_color_pair_safe(v_desc, colors,
-                v_desc->fg, v_desc->bg);
 
             continue;
 
