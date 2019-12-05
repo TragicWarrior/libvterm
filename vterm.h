@@ -680,6 +680,17 @@ void                vterm_resize_full(vterm_t *vterm,
 void                vterm_render(vterm_t *vterm, char *data, int len);
 
 /*
+    fetches the column and row of the current cursor position.
+
+    @params:
+        vterm           handle to a vterm object
+        column          a pointer to an integer where the column will be stored
+        row             a pointer to an integer where the row will be stored
+*/
+void                vterm_get_cursor_position (vterm_t *vterm,
+                        int *column, int *row);
+
+/*
     fetches the width and height of the current terminal dimentions.
 
     @params:

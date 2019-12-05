@@ -164,3 +164,19 @@ vterm_cursor_restore(vterm_t *vterm)
 
     return;
 }
+
+void
+vterm_get_cursor_position(vterm_t *vterm, int *column, int *row)
+{
+    vterm_desc_t    *v_desc = NULL;
+    int             idx;
+
+    // set the vterm description buffer selector
+    idx = vterm_buffer_get_active(vterm);
+    v_desc = &vterm->vterm_desc[idx];
+
+    *column = v_desc->ccol;
+    *row = v_desc->crow;
+
+    return;
+}
