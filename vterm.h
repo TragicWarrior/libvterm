@@ -43,12 +43,16 @@
                                                     args byte stream to a
                                                     buffer.
                                                 */
-
 #define VTERM_FLAG_NOCURSES     (1UL << 9)      /*
                                                     skip the curses WINDOW
                                                     stuff.  return the char
                                                     cell array if required.
                                                 */
+#define VTERM_FLAG_NOUTF8       (1UL << 10)     /*  disable the detection
+                                                    and handling for UTF-8
+                                                    completely
+                                                */
+
 
 #define VTERM_FLAG_C8           (1UL << 14)     /*
                                                     never try to used extended

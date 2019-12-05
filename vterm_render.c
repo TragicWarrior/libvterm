@@ -59,44 +59,48 @@ vterm_render(vterm_t *vterm, char *data, int len)
             }
         }
 
-        // UTF-8 encoding is indicated by a bit at 0x80
-        if((unsigned char)*data > 0x7F && !IS_MODE_UTF8(vterm) && !IS_C1((unsigned char)*data))
+        if(!(vterm->flags & VTERM_FLAG_NOUTF8))
         {
-            vterm_utf8_start(vterm);
-        }
-
-        if(IS_MODE_UTF8(vterm))
-        {
-            if(vterm->utf8_buf_len >= UTF8_BUF_SIZE)
+            // UTF-8 encoding is indicated by a bit at 0x80
+            if((unsigned int)*data > 0x7F && !IS_MODE_UTF8(vterm)
+                && !IS_C1((unsigned char)*data))
             {
-                vterm_utf8_cancel(vterm);
-                continue;
+                vterm_utf8_start(vterm);
             }
 
-            // append byte to utf-8 buffer
-            vterm->utf8_buf[vterm->utf8_buf_len] = *data;
-
-            // increment the buffer length and push out the NULL terminator
-            vterm->utf8_buf_len++;
-            vterm->utf8_buf[vterm->utf8_buf_len] = 0;
-
-            // we're in UTF-8 mode... do this
-            // memset(wch, 0, sizeof(wch));
-            wch[0] = '\0';
-            bytes = vterm_utf8_decode(vterm, &utf8_char, wch);
-
-            // we're done
-            if(bytes > 0)
+            if(IS_MODE_UTF8(vterm))
             {
-                vterm_utf8_cancel(vterm);
-                if(bytes == 2 && IS_C1(wch[0])) vterm_escape_start(vterm);
-                else
+                if(vterm->utf8_buf_len >= UTF8_BUF_SIZE)
                 {
-                    vterm_put_char(vterm, *data, wch);
+                    vterm_utf8_cancel(vterm);
                     continue;
                 }
+
+                // append byte to utf-8 buffer
+                vterm->utf8_buf[vterm->utf8_buf_len] = *data;
+
+                // increment the buffer length and push out the NULL terminator
+                vterm->utf8_buf_len++;
+                vterm->utf8_buf[vterm->utf8_buf_len] = 0;
+
+                // we're in UTF-8 mode... do this
+                // memset(wch, 0, sizeof(wch));
+                wch[0] = '\0';
+                bytes = vterm_utf8_decode(vterm, &utf8_char, wch);
+
+                // we're done
+                if(bytes > 0)
+                {
+                    vterm_utf8_cancel(vterm);
+                    if(bytes == 2 && IS_C1(wch[0])) vterm_escape_start(vterm);
+                    else
+                    {
+                        vterm_put_char(vterm, *data, wch);
+                        continue;
+                    }
+                }
+                else continue;
             }
-            else continue;
         }
 
         if(IS_MODE_ESCAPED(vterm))
