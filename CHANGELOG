@@ -1,3 +1,7 @@
+8.2
+
+* [Leon Winter] Remove redundant lookups for active buffer (Pull 153).
+
 8.1
 
 * [Leon Winter] Sequences like CSI ; 8 m were counted incorrectly.
