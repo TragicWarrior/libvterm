@@ -1,3 +1,4 @@
+#ifndef NOUTF8
 #ifndef _VTERM_UTF8_H_
 #define _VTERM_UTF8_H_
 
@@ -21,4 +22,5 @@ void    vterm_utf8_cancel(vterm_t *vterm);
 
 int     vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch);
 
+#endif
 #endif

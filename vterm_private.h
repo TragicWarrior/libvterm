@@ -158,11 +158,13 @@ struct _vterm_s
                                                     always kept:
                                                     esbuf[esbuf_len] == '\0'
                                                 */
+#ifndef NOUTF8
     int             utf8_buf_len;               //  number of utf8 bytes
     char            utf8_buf[UTF8_BUF_SIZE];    /*
                                                     0-terminated string that
                                                     is the UTF-8 coding.
                                                 */
+#endif
 
     ssize_t         reply_buf_sz;               //  size of reply
     char            reply_buf[32];              /*
