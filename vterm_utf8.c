@@ -1,4 +1,4 @@
-
+#ifndef NOUTF8
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -259,3 +259,4 @@ utf8_str_to_wchar(wchar_t *wch, const char *str, int max)
 
     return;
 }
+#endif

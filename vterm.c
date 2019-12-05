@@ -77,6 +77,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 #ifdef NOCURSES
     flags = flags | VTERM_FLAG_NOCURSES;
 #endif
+#ifdef NOUTF8
+    flags = flags | VTERM_FLAG_NOUTF8;
+#endif
 
     if(height <= 0 || width <= 0) return NULL;
 

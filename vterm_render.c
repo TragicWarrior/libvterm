@@ -32,9 +32,11 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch);
 void
 vterm_render(vterm_t *vterm, char *data, int len)
 {
+#ifndef NOUTF8
     chtype          utf8_char;
     wchar_t         wch[CCHARW_MAX];
     int             bytes = -1;
+#endif
     int             i;
 
     for(i = 0; i < len; i++, data++)
@@ -59,6 +61,7 @@ vterm_render(vterm_t *vterm, char *data, int len)
             }
         }
 
+#ifndef NOUTF8
         if(!(vterm->flags & VTERM_FLAG_NOUTF8))
         {
             // UTF-8 encoding is indicated by a bit at 0x80
@@ -102,6 +105,7 @@ vterm_render(vterm_t *vterm, char *data, int len)
                 else continue;
             }
         }
+#endif
 
         if(IS_MODE_ESCAPED(vterm))
         {
