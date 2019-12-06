@@ -1,3 +1,7 @@
+8.4
+
+* [Leon Winter] Optimize SGR reset and avoid recursion (Pull 154).
+
 8.3
 
 * [Leon Winter] Add new API call to query cursor position (Pull 156).
