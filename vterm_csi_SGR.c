@@ -35,7 +35,8 @@
 #include "color_cache.h"
 
 void
-_vterm_set_color_pair_safe(vterm_desc_t *v_desc, short colors, int fg, int bg);
+_vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
+    int fg, int bg, bool create);
 
 long
 interpret_custom_color(vterm_t *vterm, int param[], int pcount);
@@ -47,7 +48,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     extern short    rRGB[], gRGB[], bRGB[];
     vterm_desc_t    *v_desc = NULL;
     int             i;
-    int             colors;
     short           mapped_color;
     int             idx;
     short           fg, bg;
@@ -165,17 +165,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // set fg color (case # - 30 = fg color)
             v_desc->fg = param[i] - 30;
 
-            // find the required pair in the cache
-            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-            if(colors == -1)
-            {
-                colors = color_cache_add_pair(vterm,
-                    v_desc->fg, v_desc->bg);
-            }
-
-            _vterm_set_color_pair_safe(v_desc, colors,
-                v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
+                v_desc->bg, true);
 
             continue;
 
@@ -190,17 +181,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(fg != -1)
             {
                 v_desc->fg = fg;
-
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                if(colors == -1)
-                {
-                    colors = color_cache_add_pair(vterm, 
-                        v_desc->fg, v_desc->bg);
-                }
-
-                _vterm_set_color_pair_safe(v_desc, colors,
-                    v_desc->fg, v_desc->bg);
+                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
+                    v_desc->bg, true);
             }
 
             i += 2;
@@ -211,8 +193,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset attributes
             v_desc->curattr = A_NORMAL;
 
-            _vterm_set_color_pair_safe(v_desc, v_desc->default_colors,
-                v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, v_desc->default_colors,
+                v_desc->fg, v_desc->bg, false);
 
             // attribute reset is an implicit color reset too so we'll
             // fall-through to reset_fg and reset_bg
@@ -222,21 +204,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset fg color
             retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
 
-            if(retval != -1)
-            {
-                v_desc->fg = fg;
+            if(retval != -1) v_desc->fg = fg;
 
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-            }
-            else
-            {
-                colors = 0;
-            }
-
-            // one addtl safeguard
-            if(colors == -1) colors = 0;
-
-            _vterm_set_color_pair_safe(v_desc, colors, v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
+                v_desc->fg, v_desc->bg, false);
 
             if(param[i] != 0) continue;
 
@@ -245,22 +216,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset bg color
             retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
 
-            if(retval != -1)
-            {
-                v_desc->bg = bg;
+            if(retval != -1) v_desc->bg = bg;
 
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-            }
-            else
-            {
-                colors = 0;
-            }
-
-            // one addtl safeguard
-            if(colors == -1) colors = 0;
-
-            _vterm_set_color_pair_safe(v_desc, colors,
-                v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
+                v_desc->fg, v_desc->bg, false);
 
             continue;
 
@@ -268,16 +227,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // set bg color (case # - 40 = fg color)
             v_desc->bg = param[i] - 40;
 
-            // find the required pair in the cache
-            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-            // no color pair found so we'll try and add it
-            if(colors == -1)
-            {
-                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
-            }
-
-            _vterm_set_color_pair_safe(v_desc, colors, v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
+                v_desc->bg, true);
 
             continue;
 
@@ -292,17 +243,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(bg != -1)
             {
                 v_desc->bg = bg;
-
-                colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-                if(colors == -1)
-                {
-                    colors = color_cache_add_pair(vterm,
-                            v_desc->fg, v_desc->bg);
-                }
-
-                _vterm_set_color_pair_safe(v_desc, colors,
-                    v_desc->fg, v_desc->bg);
+                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
+                    v_desc->bg, true);
 
             }
 
@@ -328,15 +270,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 }
             }
 
-            // find the required pair in the cache
-            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-            if(colors == -1)
-            {
-                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
-            }
-
-            _vterm_set_color_pair_safe(v_desc, colors, v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
+                v_desc->bg, true);
 
             continue;
 
@@ -355,17 +290,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg += 8;
             }
 
-            // find the required pair in the cache
-            colors = color_cache_find_pair(v_desc->fg, v_desc->bg);
-
-            // no color pair found so we'll try and add it
-            if(colors == -1)
-            {
-                colors = color_cache_add_pair(vterm, v_desc->fg, v_desc->bg);
-            }
-
-            _vterm_set_color_pair_safe(v_desc, colors,
-                 v_desc->fg, v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
+                v_desc->bg, true);
 
             continue;
 
@@ -375,8 +301,16 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 }
 
 inline void
-_vterm_set_color_pair_safe(vterm_desc_t *v_desc, short colors, int fg, int bg)
+_vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
+    int fg, int bg, bool create)
 {
+    // find the required pair in the cache
+    if(colors == -1) colors = color_cache_find_pair(fg, bg);
+    // no color pair found so we'll try and add it (if requested)
+    if(colors == -1 && create) colors = color_cache_add_pair(vterm, fg, bg);
+
+    // one addtl safeguard
+    if(colors == -1) colors = 0;
     v_desc->colors = colors;
 
     color_content(fg, &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
