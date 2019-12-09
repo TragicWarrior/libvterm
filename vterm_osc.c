@@ -198,7 +198,7 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
 
     if(params == NULL) return;
 
-    if(strncasecmp(params[1], "rgb", sizeof("rgb")) != 0)
+    if(strncasecmp(params[1], "rgb", sizeof("rgb") - 1) != 0)
     {
         strfreev(params);
         return;
