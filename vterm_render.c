@@ -45,22 +45,24 @@ vterm_render(vterm_t *vterm, char *data, int len)
         // special processing looking for reset sequence
         if(vterm->rs1_reset != NULL) vterm->rs1_reset(vterm, (char *)data);
 
+
         if(!IS_MODE_ESCAPED(vterm))
         {
-            if(IS_CTRL_CHAR(*data))
+            if(IS_C0(*data))
             {
                 vterm_interpret_ctrl_char(vterm, data);
                 continue;
             }
+            else if(IS_C1((unsigned char)*data))
+            {
+                vterm_escape_start(vterm);
+            }
         }
 
         // UTF-8 encoding is indicated by a bit at 0x80
-        if((unsigned int)*data > 0x7F)
+        if((unsigned char)*data > 0x7F && !IS_MODE_UTF8(vterm) && !IS_C1((unsigned char)*data))
         {
-            if(!IS_MODE_UTF8(vterm))
-            {
-                vterm_utf8_start(vterm);
-            }
+            vterm_utf8_start(vterm);
         }
 
         if(IS_MODE_UTF8(vterm))
