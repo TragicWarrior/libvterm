@@ -67,7 +67,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     char                firstchar;
     char                *lastchar;
 
-    static void         *interim_table[128] =
+    static void         *interim_table[160] =
                             {
                                 [0] = &&interim_char_none,
                                 [']'] = &&interim_OSC,
@@ -76,6 +76,10 @@ vterm_interpret_escapes(vterm_t *vterm)
                                 ['('] = &&interim_lparth,
                                 ['P'] = &&interim_char_P,
                                 ['#'] = &&interim_pound,
+                                // C1 Control Characters
+                                [0x90] = &&interim_char_P,
+                                [0x9b] = &&interim_CSI,
+                                [0x9d] = &&interim_OSC,
                             };
 
     int                 retval = 0;
@@ -105,7 +109,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     retval = vterm_interpret_escapes_simple(vterm, firstchar);
     if(retval > 0) return;
 
-    SWITCH(interim_table, (unsigned int)firstchar, 0);
+    SWITCH(interim_table, (unsigned char)firstchar, 0);
 
     // looks like an complete xterm Operating System Command
     interim_OSC:

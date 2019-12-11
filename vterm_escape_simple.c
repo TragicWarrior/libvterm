@@ -8,7 +8,7 @@
 int
 vterm_interpret_escapes_simple(vterm_t *vterm, char verb)
 {
-    static void     *simple_table[128] =
+    static void     *simple_table[160] =
                         {
                             [0] = &&simple_char_default,
                             ['E'] = &&esc_NEL,
@@ -20,10 +20,14 @@ vterm_interpret_escapes_simple(vterm_t *vterm, char verb)
                             ['7'] = &&simple_char_vii,
                             ['8'] = &&simple_char_viii,
                             ['c'] = &&simple_char_c,
+                            // C1 Control Characters
+                            [0x84] = &&simple_IND,
+                            [0x85] = &&esc_NEL,
+                            [0x8d] = &&esc_RI,
                         };
 
 
-    SWITCH(simple_table, (unsigned int)verb, 0);
+    SWITCH(simple_table, (unsigned char)verb, 0);
 
     // interpert ESC-H a line-feed (NEL)
     esc_NEL:
