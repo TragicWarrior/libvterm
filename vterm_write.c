@@ -207,6 +207,9 @@ static char *keymap_vt100_str[] = {
 #undef KEYMAP
 
 
+typedef union _key_alignment_u  key_alignment_t;
+
+
 int
 _vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes);
 
@@ -348,9 +351,26 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         return retval;
     }
 
-    // if bytes == 0 then no special handling, just pass the key through
-    bytes = sizeof(char);
-    memcpy(buf, &keycode, bytes);
+    // there's probably a more elegant way to do this but
+    if(keycode > 0xFFFF)
+    {
+        buf[0] = (keycode & 0x00FF0000) >> 16;
+        buf[1] = (keycode & 0x0000FF00) >> 8;
+        buf[2] = (keycode & 0x000000FF);
+        bytes = 3;
+    }
+    else if(keycode > 0xFF)
+    {
+        buf[0] = (keycode & 0x0000FF00) >> 8;
+        buf[1] = (keycode & 0x000000FF);
+        bytes = 2;
+    }
+    else
+    {
+        buf[0] = (keycode & 0x000000FF);
+        bytes = 1;
+    }
+
     retval = _vterm_write_pty(vterm, buf, bytes);
 
     return retval;
