@@ -1,3 +1,7 @@
+8.6
+
+* [Leon Winter] Refactored lookup / creation of color pairs (Pull 158).
+
 8.5
 
 * [Leon Winter] Fix wrong length comparison in function

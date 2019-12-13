@@ -306,6 +306,7 @@ _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
 {
     // find the required pair in the cache
     if(colors == -1) colors = color_cache_find_pair(fg, bg);
+
     // no color pair found so we'll try and add it (if requested)
     if(colors == -1 && create) colors = color_cache_add_pair(vterm, fg, bg);
 
