@@ -1,3 +1,8 @@
+8.5
+
+* [Leon Winter] Fix wrong length comparison in function
+  vterm_osc_parse_xcolor (Pull 157).
+
 8.4
 
 * [Leon Winter] Optimize SGR reset and avoid recursion (Pull 154).
