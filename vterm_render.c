@@ -53,7 +53,7 @@ vterm_render(vterm_t *vterm, char *data, int len)
                 vterm_interpret_ctrl_char(vterm, data);
                 continue;
             }
-            else if(IS_C1((unsigned char)*data))
+            else if(!IS_MODE_UTF8(vterm) && IS_C1((unsigned char)*data))
             {
                 vterm_escape_start(vterm);
             }
@@ -87,12 +87,15 @@ vterm_render(vterm_t *vterm, char *data, int len)
 
             // we're done
             if(bytes > 0)
-            {
-                vterm_put_char(vterm, *data, wch);
-                vterm_utf8_cancel(vterm);
+            {   vterm_utf8_cancel(vterm);
+                if(bytes == 2 && IS_C1(wch[0])) vterm_escape_start(vterm);
+                else
+                {
+                    vterm_put_char(vterm, *data, wch);
+                    continue;
+                }
             }
-
-            continue;
+            else continue;
         }
 
         if(IS_MODE_ESCAPED(vterm))
