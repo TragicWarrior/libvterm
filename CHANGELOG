@@ -1,3 +1,8 @@
+8.7
+
+* [Bryan Christ] Fixed long standing issue with modified keystrokes
+  (Issue 150).
+
 8.6
 
 * [Leon Winter] Refactored lookup / creation of color pairs (Pull 158).
