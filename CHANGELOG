@@ -1,3 +1,8 @@
+8.8
+
+* [Leon Winter] Handle distinction of C0 and C1 control characters
+  (Pull 159).
+
 8.7
 
 * [Bryan Christ] Fixed long standing issue with modified keystrokes
