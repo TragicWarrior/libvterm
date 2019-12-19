@@ -87,7 +87,8 @@ vterm_render(vterm_t *vterm, char *data, int len)
 
             // we're done
             if(bytes > 0)
-            {   vterm_utf8_cancel(vterm);
+            {
+                vterm_utf8_cancel(vterm);
                 if(bytes == 2 && IS_C1(wch[0])) vterm_escape_start(vterm);
                 else
                 {
