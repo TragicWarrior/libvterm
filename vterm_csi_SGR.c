@@ -204,7 +204,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(retval != -1) v_desc->fg = fg;
 
             _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
-                v_desc->fg, v_desc->bg, false);
+                v_desc->fg, v_desc->bg, true);
 
             if(param[i] != 0) continue;
 
@@ -216,7 +216,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(retval != -1) v_desc->bg = bg;
 
             _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
-                v_desc->fg, v_desc->bg, false);
+                v_desc->fg, v_desc->bg, true);
 
             continue;
 
