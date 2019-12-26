@@ -77,13 +77,25 @@
     However, the only portable way to access that is via getcchar()
     and setcchar() which are a bit clumsy in their operation.
 */
+struct _vterm_color_s
+{   short           index;
+};
+
+typedef struct _vterm_color_s   vterm_color_t;
+
+#define VTERM_COLOR_INDEXED(n) \
+            (vterm_color_t) \
+            { \
+                .index = n, \
+            }
+
 struct _vterm_cell_s
 {
     wchar_t         wch[2];
     attr_t          attr;
     int             colors;
-    short           fg;
-    short           bg;
+    vterm_color_t   fg;
+    vterm_color_t   bg;
     short           f_rgb[3];
     short           b_rgb[3];
 };

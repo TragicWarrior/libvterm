@@ -117,8 +117,8 @@ struct _vterm_desc_s
 
     int             saved_x, saved_y;           // saved cursor coords
 
-    int             fg;                         // current fg color
-    int             bg;                         // current bg color
+    vterm_color_t   fg;                         // current fg color
+    vterm_color_t   bg;                         // current bg color
     short           f_rgb[3];                   // current fg RGB values
     short           b_rgb[3];                   // current bg RGB values
 };

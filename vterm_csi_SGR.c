@@ -163,10 +163,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         csi_sgr_FG:
             // set fg color (case # - 30 = fg color)
-            v_desc->fg = param[i] - 30;
+            v_desc->fg = VTERM_COLOR_INDEXED(param[i] - 30);
 
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg.index,
+                v_desc->bg.index);
 
             continue;
 
@@ -180,9 +180,9 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(fg != -1)
             {
-                v_desc->fg = fg;
-                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                    v_desc->bg);
+                v_desc->fg = VTERM_COLOR_INDEXED(fg);
+                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg.index,
+                    v_desc->bg.index);
             }
 
             i += 2;
@@ -201,10 +201,10 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset fg color
             retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
 
-            if(retval != -1) v_desc->fg = fg;
+            if(retval != -1) v_desc->fg = VTERM_COLOR_INDEXED(fg);
 
             _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
-                v_desc->fg, v_desc->bg);
+                v_desc->fg.index, v_desc->bg.index);
 
             if(param[i] != 0) continue;
 
@@ -213,19 +213,19 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset bg color
             retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
 
-            if(retval != -1) v_desc->bg = bg;
+            if(retval != -1) v_desc->bg = VTERM_COLOR_INDEXED(bg);
 
             _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
-                v_desc->fg, v_desc->bg);
+                v_desc->fg.index, v_desc->bg.index);
 
             continue;
 
         csi_sgr_BG:
             // set bg color (case # - 40 = fg color)
-            v_desc->bg = param[i] - 40;
+            v_desc->bg = VTERM_COLOR_INDEXED(param[i] - 40);
 
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg.index,
+                v_desc->bg.index);
 
             continue;
 
@@ -239,9 +239,9 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(bg != -1)
             {
-                v_desc->bg = bg;
-                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                    v_desc->bg);
+                v_desc->bg = VTERM_COLOR_INDEXED(bg);
+                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg.index,
+                    v_desc->bg.index);
 
             }
 
@@ -255,20 +255,19 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(vterm->flags & VTERM_FLAG_C16)
             {
                 fg = param[i] - 90;
-                v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
-                    rRGB[fg], gRGB[fg], bRGB[fg]);
+                v_desc->fg = VTERM_COLOR_INDEXED(vterm_add_mapped_color(vterm,
+                    fg + 90, rRGB[fg], gRGB[fg], bRGB[fg]));
             }
             else
             {
-                if(vterm->flags & VTERM_FLAG_C8) v_desc->fg = param[i] - 90;
+                if(vterm->flags & VTERM_FLAG_C8)
+                    v_desc->fg = VTERM_COLOR_INDEXED(param[i] - 90);
                 else
-                {
-                    v_desc->fg = (param[i] - 90) + 8;
-                }
+                    v_desc->fg = VTERM_COLOR_INDEXED((param[i] - 90) + 8);
             }
 
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg.index,
+                v_desc->bg.index);
 
             continue;
 
@@ -278,17 +277,17 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             if(vterm->flags & VTERM_FLAG_C16)
             {
                 bg = param[i] - 100;
-                v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
-                    rRGB[bg], gRGB[bg], bRGB[bg]);
+                v_desc->bg = VTERM_COLOR_INDEXED(vterm_add_mapped_color(vterm,
+                    bg + 100, rRGB[bg], gRGB[bg], bRGB[bg]));
             }
             else
             {
-                v_desc->bg = param[i] - 100;
-                if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg += 8;
+                v_desc->bg = VTERM_COLOR_INDEXED(param[i] - 100);
+                if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg.index += 8;
             }
 
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg.index,
+                v_desc->bg.index);
 
             continue;
 
