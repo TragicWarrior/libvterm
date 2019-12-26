@@ -1240,6 +1240,13 @@ vshell_parse_cmdline(vshell_t *vshell)
             }
 #endif
 
+#ifndef NOUTF8
+            if (strncmp(vshell->argv[i], "--no-utf8", strlen("--no-utf8")) == 0)
+            {
+                vshell->vterm_flags |= VTERM_FLAG_NOUTF8;
+                continue;
+            }
+#endif
             if (strncmp(vshell->argv[i], "--exec", strlen("--exec")) == 0)
             {
                 // must have at least exec path
@@ -1342,6 +1349,7 @@ vshell_print_help(void)
                 "--help         Show usage information.\n\r"
                 "--version      Show version information.\n\r"
                 "--async        Use SIGIO driven protothreads (linux only).\n\r"
+                "--no-utf8      Disable detection and decoding of UTF-8.\n\r"
                 "--dump         Write escape sequences to a log file.\n\r"
                 "--vt100        Set emulation mode to vt100.\n\r"
                 "--rxvt         Set emulation mode to rxvt.\n\r"
