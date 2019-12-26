@@ -1,3 +1,7 @@
+8.9
+
+* [Leon Winter] Improve logic in SGR code (Pull 161).
+
 8.8
 
 * [Leon Winter] Handle distinction of C0 and C1 control characters
