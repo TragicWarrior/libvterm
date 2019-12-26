@@ -1,3 +1,8 @@
+8.10
+
+* [Bryan Christ] Added --no-utf8 flag to vshell to support turning off the
+  UTF-8 decoder at runtime.
+
 8.9
 
 * [Leon Winter] Improve logic in SGR code (Pull 161).
