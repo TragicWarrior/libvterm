@@ -105,6 +105,8 @@ struct _vterm_desc_s
     int             colors;                     // current color pair
 
     int             default_colors;             // default fg/bg color pair
+    int             default_fg;                 // default foreground color
+    int             default_bg;                 // default background color
 
     int             ccol;                       // current cursor col
     int             crow;                       // current cursor row

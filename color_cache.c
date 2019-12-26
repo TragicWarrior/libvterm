@@ -448,6 +448,8 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     if(colors == -1) colors = 0;
 
     v_desc->default_colors = (short)colors;
+    v_desc->default_fg = fg;
+    v_desc->default_bg = bg;
 
     return 0;
 }

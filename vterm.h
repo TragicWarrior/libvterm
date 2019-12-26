@@ -78,14 +78,27 @@
     and setcchar() which are a bit clumsy in their operation.
 */
 struct _vterm_color_s
-{   short           index;
+{
+    enum
+    {
+        VTERM_COLOR_TYPE_DEFAULT,
+        VTERM_COLOR_TYPE_INDEXED,
+    }
+                    type;
+    short           index;
 };
 
 typedef struct _vterm_color_s   vterm_color_t;
 
+#define VTERM_COLOR_DEFAULT \
+            (vterm_color_t) \
+            { \
+                .type = VTERM_COLOR_TYPE_DEFAULT, \
+            }
 #define VTERM_COLOR_INDEXED(n) \
             (vterm_color_t) \
             { \
+                .type = VTERM_COLOR_TYPE_INDEXED, \
                 .index = n, \
             }
 

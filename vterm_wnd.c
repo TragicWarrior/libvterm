@@ -13,6 +13,10 @@
 #include "color_cache.h"
 
 #ifndef NOCURSES
+short
+_vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
+    int fg, int bg);
+
 void
 vterm_wnd_set(vterm_t *vterm,WINDOW *window)
 {
@@ -50,6 +54,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
     int             r, c;
     attr_t          attrs;
     short           colors;
+    vterm_color_t   fg, bg;
     cchar_t         uch;
 
     if(vterm == NULL) return -1;
@@ -75,7 +80,10 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
 
         for(c = 0; c < v_desc->cols; c++)
         {
-            VCELL_GET_COLORS((*vcell), &colors);
+            VCELL_GET_COLORS((*vcell), &fg, &bg);
+            colors = _vterm_set_color_pair_safe(v_desc, vterm, -1,
+                fg.type == VTERM_COLOR_TYPE_DEFAULT? v_desc->default_fg: fg.index,
+                bg.type == VTERM_COLOR_TYPE_DEFAULT? v_desc->default_bg: bg.index);
             VCELL_GET_ATTR((*vcell), &attrs);
 
             /*
@@ -105,6 +113,26 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
     }
 
     return -1;
+}
+
+inline short
+_vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
+    int fg, int bg)
+{
+    // find the required pair in the cache
+    if(colors == -1) colors = color_cache_find_pair(fg, bg);
+
+    // no color pair found so we'll try and add it (if requested)
+    if(colors == -1) colors = color_cache_add_pair(vterm, fg, bg);
+
+    // one addtl safeguard
+    if(colors == -1) colors = 0;
+    v_desc->colors = colors;
+
+    color_content(fg, &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
+    color_content(bg, &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
+
+    return colors;
 }
 
 #endif
