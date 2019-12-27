@@ -1,0 +1,11 @@
+*.rpm
+*.deb
+*.so
+*.pc
+*.a
+install_manifest.txt
+CMakeCache.txt
+Makefile
+*.cmake
+CMakeFiles/*
+_CPack_Packages/*
