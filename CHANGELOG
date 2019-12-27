@@ -1,3 +1,7 @@
+8.11
+
+* [Bryan Christ] Create a basic framework for error handling.
+
 8.10
 
 * [Bryan Christ] Added --no-utf8 flag to vshell to support turning off the
