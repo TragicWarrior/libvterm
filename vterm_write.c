@@ -8,6 +8,7 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_write.h"
+#include "vterm_error.h"
 #include "strings.h"
 #include "stringv.h"
 #include "macros.h"
@@ -387,8 +388,7 @@ _vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes)
     bytes_written = write(vterm->pty_fd, buf, bytes);
     if(bytes_written != bytes)
     {
-        fprintf(stderr, "WARNING: Failed to write buffer to pty\n");
-        retval = -1;
+        vterm_error(vterm, VTERM_ECODE_PTY_WRITE_ERR, NULL);
     }
 
     return retval;

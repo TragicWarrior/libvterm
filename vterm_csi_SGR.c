@@ -381,21 +381,5 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
         return -1;
     }
 
-/*
-SGR_DEBUG:
-
-    endwin();
-
-    printf("params %d\n\r", pcount);
-    int i;
-    for(i = 0; i < pcount; i++)
-    {
-        printf("%d ", param[i]);
-    }
-    printf("\n\r");
-
-    exit(0);
-*/
-
     return -1;
 }
