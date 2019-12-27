@@ -28,11 +28,13 @@ vterm_error(vterm_t *vterm, VtermError ecode, void *anything)
         case VTERM_ECODE_UTF8_MARKER_ERR:
             /*
                 malformed UTF8 sequence?
+
                 U+FFFD is the Unicode designated replacement character
                 "used to indicate problems when a system is unable to render
                 a stream of data to a correct symbol"
 
-                TODO:  Check the UTF8 error handling mode
+                TODO:  Check the UTF8 error handling mode (strict, lazy,
+                none, etc...) and respond accordingly.
             */
             *((wchar_t *)anything) = 0xFFFD;
             return 0;
