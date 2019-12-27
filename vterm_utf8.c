@@ -107,12 +107,7 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
         }
         else
         {
-            /*
-                malformed UTF8 sequence?
-                U+FFFD is the Unicode designated replacement character
-                "used to indicate problems when a system is unable to render
-                a stream of data to a correct symbol"
-            */
+            // malformed UTF8 sequence? punt to error handler
             vterm_error(vterm, VTERM_ECODE_UTF8_MARKER_ERR, (void *)wch);
             return byte_count;
         }
