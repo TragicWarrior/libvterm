@@ -68,8 +68,8 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
 {
     uint32_t            utf8_code = 0;
     int                 byte_count;
-    int                 i = 0;
     bit_pack_t          bit_pack;
+    int                 i = 0;
 
     /*
         pack in the first byte of the sequence.  it tells us how many
@@ -78,7 +78,7 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
     bit_pack.byte = (uint8_t)vterm->utf8_buf[0];
 
     // count the high-order bits
-    byte_count = bit_pack.bits.b8 + bit_pack.bits.b7+
+    byte_count = bit_pack.bits.b8 + bit_pack.bits.b7 +
         bit_pack.bits.b6 + bit_pack.bits.b5;
 
     // too early to decode.  return back for more reading.
@@ -235,17 +235,6 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
     }
 
     utf8_str_to_wchar(wch, vterm->utf8_buf, CCHARW_MAX);
-
-/*
-    {
-        FILE *f;
-        f = fopen("value.dump", "a");
-        fprintf(f, "first byte: %02x, byte count: 0%d\n",
-            first_byte, byte_count);
-        fprintf(f, "utf-8 char: %08x\n", utf8_code);
-        fclose(f);
-    }
-*/
 
     return byte_count;
 }
