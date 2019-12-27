@@ -93,16 +93,17 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
         // make room for the next byte
         utf8_code = utf8_code << 8;
 
-        // OR it in
+        // pack in the next byte for validation
         bit_pack.byte = (uint8_t)vterm->utf8_buf[i];
 
         /*
-            each byte in a UTF8 sequence should have a continuation marker.
+            each continuation byte in a UTF8 sequence should have a marker.
             effectively bit 8 should be 1 and bit 7 should be 0 so we'll
             check for that.
         */
         if(bit_pack.bits.b8 == 1 && bit_pack.bits.b7 == 0)
         {
+            // looks valid, so OR it in
             utf8_code |= (uint8_t)vterm->utf8_buf[i];
         }
         else
