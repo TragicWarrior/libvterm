@@ -7,6 +7,7 @@
 #include "vterm_ctrl_char.h"
 #include "vterm_cursor.h"
 #include "vterm_escape.h"
+#include "vterm_error.h"
 
 void
 vterm_interpret_ctrl_char(vterm_t *vterm, char *data)
@@ -95,12 +96,10 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char *data)
         return;
 
     ctrl_char_DEFAULT:
-        return;
-
 #ifdef DEBUG
-      default:
-         fprintf(stderr, "Unrecognized control char: %d (^%c)\n", c, c + '@');
-         return;
+        vterm_error(vterm, VTERM_ECODE_UNHANDLED_CTRL_CHAR, (void *)&c)
 #endif
+
+    return;
 }
 

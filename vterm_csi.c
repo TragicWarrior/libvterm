@@ -210,15 +210,14 @@ vterm_interpret_csi(vterm_t *vterm)
         return 0;
 
     csi_char_unknown:
-
-    // endwin(); exit(0);
-
 #ifdef _DEBUG
-    default:
+        vterm_error(vterm, VTERM_ECODE_UNHANDLED_CSI, (void *)vterm->esbuf); 
+#endif
+
+
     {
         fprintf(stderr, "Unrecogized CSI: <%s>\n", vterm->esbuf);
     }
-#endif
 
     return 0;
 }
