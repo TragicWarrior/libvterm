@@ -11,22 +11,30 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
+#include "vterm_error.h"
 
 // this is necessary for FreeBSD in some compilation scenarios
 #ifndef CCHARW_MAX
 #define CCHARW_MAX  5
 #endif
 
-/*
-    the way UTF-8 is encoded, we can just test the highest bit, pop it
-    off, and count, in order to know how many bytes are in the code
-    sequence.
-*/
-#define UTF8_2BYTES         0xC0        // binary 11000000
-#define UTF8_3BYTES         0xE0        // binary 11100000
-#define UTF8_4BYTES         0xF0        // binary 11110000
-#define UTF8_MASK           0xF0        // binary 11110000
-
+typedef union
+{
+    struct
+    {
+        uint8_t     b1 : 1;
+        uint8_t     b2 : 1;
+        uint8_t     b3 : 1;
+        uint8_t     b4 : 1;
+        uint8_t     b5 : 1;
+        uint8_t     b6 : 1;
+        uint8_t     b7 : 1;
+        uint8_t     b8 : 1;
+    }
+                    bits;
+    uint8_t         byte;
+}
+bit_pack_t;
 
 void utf8_str_to_wchar(wchar_t *wch, const char *str, int max);
 
@@ -59,28 +67,25 @@ int
 vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
 {
     uint32_t            utf8_code = 0;
-    uint8_t             first_byte = 0;
-    int                 byte_count = 0;
+    int                 byte_count;
     int                 i = 0;
-
-    first_byte = (uint8_t)vterm->utf8_buf[0];
+    bit_pack_t          bit_pack;
 
     /*
-        in UTF8, the high order bits in the first byte
-        are actually the total number of bytes to expect.
+        pack in the first byte of the sequence.  it tells us how many
+        bytes are encoded.
     */
-    switch(first_byte & UTF8_MASK)
-    {
-        case UTF8_2BYTES:       byte_count = 2;     break;
-        case UTF8_3BYTES:       byte_count = 3;     break;
-        case UTF8_4BYTES:       byte_count = 4;     break;
-    }
+    bit_pack.byte = (uint8_t)vterm->utf8_buf[0];
+
+    // count the high-order bits
+    byte_count = bit_pack.bits.b8 + bit_pack.bits.b7+
+        bit_pack.bits.b6 + bit_pack.bits.b5;
 
     // too early to decode.  return back for more reading.
     if (vterm->utf8_buf_len < byte_count) return -1;
 
     // store first byte in the sequence
-    utf8_code = (uint32_t)first_byte;
+    utf8_code = (uint32_t)bit_pack.byte;
 
     // push in the rest of the bytes
     for (i = 1; i < byte_count; i++)
@@ -89,7 +94,28 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
         utf8_code = utf8_code << 8;
 
         // OR it in
-        utf8_code |= (uint8_t)vterm->utf8_buf[i];
+        bit_pack.byte = (uint8_t)vterm->utf8_buf[i];
+
+        /*
+            each byte in a UTF8 sequence should have a continuation marker.
+            effectively bit 8 should be 1 and bit 7 should be 0 so we'll
+            check for that.
+        */
+        if(bit_pack.bits.b8 == 1 && bit_pack.bits.b7 == 0)
+        {
+            utf8_code |= (uint8_t)vterm->utf8_buf[i];
+        }
+        else
+        {
+            /*
+                malformed UTF8 sequence?
+                U+FFFD is the Unicode designated replacement character
+                "used to indicate problems when a system is unable to render
+                a stream of data to a correct symbol"
+            */
+            vterm_error(vterm, VTERM_ECODE_UTF8_MARKER_ERR, (void *)wch);
+            return byte_count;
+        }
     }
 
     /*
