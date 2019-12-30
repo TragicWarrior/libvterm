@@ -41,7 +41,6 @@ interpret_csi_REP(vterm_t *vterm, int param[], int pcount)
 
     for(c = v_desc->ccol; c < max_col; c++)
     {
-        // memcpy(vcell, &v_desc->last_cell, sizeof(vterm_cell_t));
         memcpy(vcell, vcell_prev, sizeof(vterm_cell_t));
 
         vcell++;
