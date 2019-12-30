@@ -26,7 +26,7 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
     int             bottom_row;
     int             top_row;
     int             stride;
-    int             i;
+    int             c;
 
     // set selector for buffer description
     idx = vterm_buffer_get_active(vterm);
@@ -57,7 +57,7 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
     {
         vcell = &v_desc->cells[r][0];
 
-        for(i = 0; i < v_desc->cols; i++)
+        for(c = 0; c < v_desc->cols; c++)
         {
 
             VCELL_SET_CHAR((*vcell), ' ');

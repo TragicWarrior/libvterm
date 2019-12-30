@@ -15,7 +15,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     int             stride;
     int             idx;
     int             n = 1;
-    int             i;
+    int             c;
 
     if(pcount && param[0] > 0) n = param[0];
 
@@ -36,7 +36,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
         only copies the character from its neighbor and not the attributes
         or colors.  IMO that's bizarre but reality.
     */
-    for(i = 0; i < stride; i++)
+    for(c = 0; c < stride; c++)
     {
         memcpy(&vcell_dst->wch, &vcell_src->wch, sizeof(vcell_dst->wch));
 
@@ -49,7 +49,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     vcell_dst += stride;
 
     // same logic as above change the character of the cell only
-    for(i = 0; i < n; i++)
+    for(c = 0; c < n; c++)
     {
         VCELL_SET_CHAR((*vcell_dst), ' ');
         // VCELL_SET_ATTR((*vcell_dst), A_NORMAL);
