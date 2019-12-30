@@ -43,8 +43,8 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     int             start_x = 0;
     int             max_cols_old;
     int             new_width;
-    uint16_t        i;
-    uint16_t        j;
+    uint16_t        r;
+    uint16_t        c;
 
     if(vterm == NULL) return;
 
@@ -71,33 +71,33 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
         sizeof(vterm_cell_t*) * height);
 
-    for(i = 0; i < height; i++)
+    for(r = 0; r < height; r++)
     {
         // when adding new rows, we can just calloc() them.
-        if((delta_y > 0) && (i > (v_desc->rows - 1)))
+        if((delta_y > 0) && (r > (v_desc->rows - 1)))
         {
-            v_desc->cells[i] =
+            v_desc->cells[r] =
                 (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * new_width));
 
             // fill new row with blanks
-            for(j = 0; j < new_width; j++)
+            for(c = 0; c < new_width; c++)
             {
-                VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
+                VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
             }
 
             continue;
         }
 
         // this handles existing rows
-        v_desc->cells[i] = (vterm_cell_t*)realloc(v_desc->cells[i],
+        v_desc->cells[r] = (vterm_cell_t*)realloc(v_desc->cells[r],
             sizeof(vterm_cell_t) * new_width);
 
         // fill new cols with blanks
         start_x = max_cols_old - 1;
-        for(j = start_x; j < new_width; j++)
+        for(c = start_x; c < new_width; c++)
         {
-            VCELL_ZERO_ALL(v_desc->cells[i][j]);
-            VCELL_SET_CHAR(v_desc->cells[i][j], ' ');
+            VCELL_ZERO_ALL(v_desc->cells[r][c]);
+            VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
         }
     }
 
@@ -114,7 +114,7 @@ void
 vterm_buffer_dealloc(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc;
-    int             i;
+    int             r;
 
     if(vterm == NULL) return;
 
@@ -123,10 +123,10 @@ vterm_buffer_dealloc(vterm_t *vterm, int idx)
     // prevent a double-free
     if(v_desc->cells == NULL) return;
 
-    for(i = 0; i < v_desc->rows; i++)
+    for(r = 0; r < v_desc->rows; r++)
     {
-        free(v_desc->cells[i]);
-        v_desc->cells[i] = NULL;
+        free(v_desc->cells[r]);
+        v_desc->cells[r] = NULL;
     }
 
     free(v_desc->cells);
@@ -278,7 +278,7 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
     int             curr_row;
     int             region;
     int             col_mem;
-    int             i;
+    int             r;
 
     // set vterm desc buffer selector
     v_desc = &vterm->vterm_desc[idx];
@@ -297,7 +297,7 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
 
     col_mem = sizeof(vterm_cell_t) * v_desc->cols;
 
-    for(i = 0; i < region; i++)
+    for(r = 0; r < region; r++)
     {
         if(curr_row > bottom_row) break;
 
@@ -320,7 +320,7 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     vterm_cell_t    **vcell_dst;
     int             region;
     int             col_mem;
-    int             i;
+    int             r;
 
     // set vterm desc buffer selector
     v_desc = &vterm->vterm_desc[idx];
@@ -337,7 +337,7 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
 
     col_mem = sizeof(vterm_cell_t) * v_desc->cols;
 
-    for(i = 0; i < region; i++)
+    for(r = 0; r < region; r++)
     {
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
@@ -358,7 +358,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     vterm_cell_t    **vcell_dst;
     int             col_mem;
     int             stride;
-    int             i;
+    int             r;
 
     if(vterm == NULL) return -1;
 
@@ -372,7 +372,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
     col_mem = sizeof(vterm_cell_t) * stride;
 
-    for(i = 0; i < rows; i++)
+    for(r = 0; r < rows; r++)
     {
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
