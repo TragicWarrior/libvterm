@@ -54,7 +54,6 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     for(c = 0; c < n; c++)
     {
         VCELL_SET_CHAR((*vcell_dst), ' ');
-        // VCELL_SET_ATTR((*vcell_dst), A_NORMAL);
         VCELL_SET_COLORS((*vcell_dst), v_desc);
 
         vcell_dst++;
