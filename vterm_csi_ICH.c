@@ -45,12 +45,8 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
 
     for(c = scr_end; c >= max_col; c--)
     {
-        /*
-            this is a shallow struct copy.  if a vterm_cell_t ever becomes
-            packed with heap data referenced by pointer, it could
-            be problematic.
-        */
-        *vcell_new = *vcell_old;
+        memcpy(vcell_new, vcell_old, sizeof(vterm_cell_t));
+        VCELL_ROW_SET_DIRTY(vcell_new, 1);
 
         vcell_new--;
         vcell_old--;
