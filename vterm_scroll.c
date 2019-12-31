@@ -101,6 +101,9 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
     // clear first row of the scrolling region
     vterm_erase_row(vterm, v_desc->scroll_min, reset_colors, 0);
 
+    // a scroll makes all rows dirty
+    VCELL_ALL_SET_DIRTY(v_desc);
+
     if(vterm->event_mask & VTERM_MASK_TERM_SCROLLED)
     {
         if(vterm->event_hook != NULL)

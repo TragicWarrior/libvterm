@@ -305,11 +305,19 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
 
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
-        VCELL_ROW_SET_DIRTY(*vcell_dst, v_desc->cols);
-
         curr_row++;
         vcell_src++;
         vcell_dst++;
+    }
+
+    /*
+        scrolling the buffer always invalidates all rows.  skip the
+        operation for the history buffer because we don't maintain the
+        dirty flags on that one.
+    */
+    if(idx != VTERM_BUF_HISTORY)
+    {
+        VCELL_ALL_SET_DIRTY(v_desc);
     }
 
     return 0;
@@ -345,10 +353,18 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     {
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
-        VCELL_ROW_SET_DIRTY(*vcell_dst, v_desc->cols);
-
         vcell_src--;
         vcell_dst--;
+    }
+
+    /*
+        scrolling the buffer always invalidates all rows.  skip the
+        operation for the history buffer because we don't maintain the
+        dirty flags on that one.
+    */
+    if(idx != VTERM_BUF_HISTORY)
+    {
+        VCELL_ALL_SET_DIRTY(v_desc);
     }
 
     return 0;
@@ -417,7 +433,7 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
         memcpy(&buffer[r][0], &v_desc->cells[r][0],
             v_desc->cols * sizeof(vterm_cell_t));
 
-        VCELL_ROW_SET_DIRTY(&buffer[r][0], v_desc->cols);
+        VCELL_ROW_SET_DIRTY(buffer[r], v_desc->cols);
     }
 
     return buffer;

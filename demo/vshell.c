@@ -139,7 +139,7 @@ struct _vpane_s
     vpane_t         *next;
     vpane_t         *prev;
 
-    void            (*render)       (vpane_t *, int);
+    void            (*render)       (vpane_t *, uint8_t);
     void            (*kinput)       (vshell_t *, int32_t);
 
     pt_ctx_t        pt_ctx;         // protothread context
@@ -198,8 +198,8 @@ int         vshell_resize(vshell_t *vshell);
 void        vshell_main_async(vshell_t *vshell);
 void        vshell_main_polled(vshell_t *vshell);
 
-void        vshell_render_normal(vpane_t *vpane, int flags);
-void        vshell_render_history(vpane_t *vpane, int flags);
+void        vshell_render_normal(vpane_t *vpane, uint8_t flags);
+void        vshell_render_history(vpane_t *vpane, uint8_t flags);
 void        vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
 void        vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
 
@@ -1022,7 +1022,7 @@ vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
         vpane->render = vshell_render_history;
         vpane->kinput = vshell_kinput_history;
 
-        vpane->render(vpane, 1);
+        vpane->render(vpane, 0);
 
         return;
     }
@@ -1037,15 +1037,13 @@ vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
 
 
 void
-vshell_render_normal(vpane_t *vpane, int flags)
+vshell_render_normal(vpane_t *vpane, uint8_t flags)
 {
     vshell_t    *vshell;
 
-    VAR_UNUSED(flags);
-
     vshell = (vshell_t *)vterm_get_userptr(vpane->vterm);
 
-    vterm_wnd_update(vpane->vterm, -1, 0);
+    vterm_wnd_update(vpane->vterm, -1, 0, flags);
     vpane->state |= TERM_STATE_DIRTY;
 
     vshell_update_canvas(vshell, 0);
@@ -1063,7 +1061,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
 
     vpane = vshell_get_pane(vshell, vshell->active_pane);
 
-    // alt-z
+    // alt-z (leaving history mode)
     if(keystroke == 0x1b7a)
     {
         vpane->state &= ~TERM_STATE_HISTORY;
@@ -1071,7 +1069,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         vpane->render = vshell_render_normal;
         vpane->kinput = vshell_kinput_normal;
 
-        vpane->render(vpane, 1);
+        vpane->render(vpane, VTERM_WND_RENDER_ALL);
 
         return;
     }
@@ -1083,7 +1081,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         history_sz--;
         vterm_set_history_size(vpane->vterm, history_sz);
 
-        vpane->render(vpane, 1);
+        vpane->render(vpane, 0);
 
         return;
     }
@@ -1094,7 +1092,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         history_sz++;
         vterm_set_history_size(vpane->vterm, history_sz);
 
-        vpane->render(vpane, 1);
+        vpane->render(vpane, 0);
 
         return;
     }
@@ -1104,7 +1102,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == KEY_PPAGE)
     {
         vpane->scroll_amount = height;
-        vpane->render(vpane, 1);
+        vpane->render(vpane, VTERM_WND_RENDER_ALL);
 
         return;
     }
@@ -1113,7 +1111,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     {
         height = 0 - height;
         vpane->scroll_amount = height;
-        vpane->render(vpane, 1);
+        vpane->render(vpane, VTERM_WND_RENDER_ALL);
 
         return;
     }
@@ -1121,7 +1119,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == KEY_UP)
     {
         vpane->scroll_amount = 1;
-        vpane->render(vpane, 1);
+        vpane->render(vpane, VTERM_WND_RENDER_ALL);
 
         return;
     }
@@ -1129,21 +1127,19 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == KEY_DOWN)
     {
         vpane->scroll_amount = -1;
-        vpane->render(vpane, 1);
+        vpane->render(vpane, VTERM_WND_RENDER_ALL);
 
         return;
     }
 }
 
 void
-vshell_render_history(vpane_t *vpane, int flags)
+vshell_render_history(vpane_t *vpane, uint8_t flags)
 {
     vshell_t    *vshell;
     int         history_sz;
     int         height, width;
     int         offset;
-
-    VAR_UNUSED(flags);
 
     vshell = (vshell_t *)vterm_get_userptr(vpane->vterm);
 
@@ -1165,7 +1161,7 @@ vshell_render_history(vpane_t *vpane, int flags)
     vpane->cursor_pos += vpane->scroll_amount;
     offset = history_sz - height - vpane->cursor_pos;
 
-    vterm_wnd_update(vpane->vterm, VTERM_BUF_HISTORY, offset);
+    vterm_wnd_update(vpane->vterm, VTERM_BUF_HISTORY, offset, flags);
     vpane->state |= TERM_STATE_DIRTY;
 
     vshell_update_canvas(vshell, 0);
