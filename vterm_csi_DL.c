@@ -30,6 +30,8 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
         {
             memcpy(v_desc->cells[r], v_desc->cells[r + n],
                 sizeof(vterm_cell_t) * v_desc->cols);
+
+            VCELL_ROW_SET_DIRTY(v_desc->cells[r], v_desc->cols);
         }
         else
         {

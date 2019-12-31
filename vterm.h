@@ -86,6 +86,7 @@ struct _vterm_cell_s
     short           bg;
     short           f_rgb[3];
     short           b_rgb[3];
+    uint8_t         dirty;
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;

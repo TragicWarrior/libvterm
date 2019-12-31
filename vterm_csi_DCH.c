@@ -40,6 +40,8 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     {
         memcpy(&vcell_dst->wch, &vcell_src->wch, sizeof(vcell_dst->wch));
 
+        VCELL_ROW_SET_DIRTY(vcell_dst, 1);
+
         vcell_src++;
         vcell_dst++;
     }

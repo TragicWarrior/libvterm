@@ -75,6 +75,12 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
 
         for(c = 0; c < v_desc->cols; c++)
         {
+            if(vcell->dirty == 0)
+            {
+                vcell++;
+                continue;
+            }
+
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
 
@@ -91,6 +97,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
             wattr_set(vterm->window, attrs, colors, NULL);
             mvwadd_wch(vterm->window, r, c, &uch);
 
+            VCELL_ROW_SET_CLEAN(vcell, 1);
             vcell++;
         }
     }
@@ -101,6 +108,8 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset)
         {
             mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
                 v_desc->default_colors, NULL);
+
+            VCELL_ROW_SET_DIRTY(&v_desc->cells[v_desc->crow][v_desc->ccol], 1);
         }
     }
 
