@@ -150,10 +150,13 @@ enum
 
 enum
 {
-    VTERM_BUF_STANDARD    =   0x00,     // nomral / standard buffer
+    VTERM_BUF_STANDARD    =   0x00,     // normal / standard buffer
     VTERM_BUF_ALTERNATE,                // typically used for lineart progs
     VTERM_BUF_HISTORY                   // the history buffer
 };
+
+#define VTERM_WND_LEAVE_DIRTY           (1 << 0)    // don't clear dirty flags
+#define VTERM_WND_RENDER_ALL            (1 << 1)    // render all cells
 
 /*
     alloc a raw terminal object.
@@ -464,11 +467,15 @@ void            vterm_wnd_size(vterm_t *vterm, int *width, int *height);
                         of -1 will automatically select the active buffer
                         which will either be VTERM_BUF_STANDARD or
                         VTERM_BUF_ALTERNATE.
+        flags           currently only VTERM_BUF_LEAVE_DIRTY.  when this
+                        flag is set, the dirty flag is not removed from
+                        the terminal cells.
 
     @return:            returns 0 or success or -1 on error if an invalid
                         buffer index was specfied.
 */
-int             vterm_wnd_update(vterm_t *vterm, int idx, int offset);
+int             vterm_wnd_update(vterm_t *vterm, int idx, int offset,
+                        uint8_t flags);
 #endif
 
 /*
