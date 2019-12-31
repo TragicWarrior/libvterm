@@ -29,16 +29,59 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
 
 #define VCELL_ZERO_ALL(_cell) \
-            { memset(&_cell, 0, sizeof(_cell)); }
+            { \
+                memset(&_cell, 0, sizeof(_cell)); \
+                _cell.dirty = 1; \
+            }
+
+#define VCELL_ROW_SET_DIRTY(_cell, _stride) \
+            { \
+                __typeof__ (_cell) _ctmp = (_cell); \
+                __typeof__ (_stride) _stmp= (_stride); \
+                do \
+                { \
+                    _ctmp->dirty = 1; \
+                    _ctmp++; \
+                    _stmp--; \
+                } \
+                while(_stmp > 0); \
+            }
+
+
+#define VCELL_ROW_SET_CLEAN(_cell, _stride) \
+            { \
+                __typeof__ (_cell) _ctmp = (_cell); \
+                __typeof__ (_stride) _stmp = (_stride); \
+                do \
+                { \
+                    _ctmp->dirty = 0; \
+                    _ctmp++; \
+                    _stmp--; \
+                } \
+                while(_stmp > 0); \
+            }
+
+#define VCELL_ALL_SET_DIRTY(_vdesc) \
+            { \
+                __typeof__ (_vdesc) _vtmp = (_vdesc); \
+                for(int _r = 0; _r < _vtmp->rows; _r++) \
+                { \
+                    VCELL_ROW_SET_DIRTY(_vtmp->cells[_r], _vtmp->cols); \
+                } \
+            }
 
 #define VCELL_SET_CHAR(_cell, _ch) \
             { \
                 _cell.wch[0] = _ch; \
-                _cell.wch[1] = '\0';    \
+                _cell.wch[1] = '\0'; \
+                _cell.dirty = 1; \
             }
 
 #define VCELL_SET_ATTR(_cell, _attr) \
-                { _cell.attr = _attr; }
+                { \
+                    _cell.attr = _attr; \
+                    _cell.dirty = 1 ; \
+                }
 
 #define VCELL_GET_ATTR(_cell, _attr_ptr) \
                 { *_attr_ptr = _cell.attr; }
@@ -54,10 +97,14 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
                     _cell.b_rgb[0] = _desc->b_rgb[0]; \
                     _cell.b_rgb[1] = _desc->b_rgb[1]; \
                     _cell.b_rgb[2] = _desc->b_rgb[2]; \
+                    _cell.dirty = 1; \
                 }
 
 #define VCELL_SET_DEFAULT_COLORS(_cell, _desc) \
-                { _cell.colors = _desc->default_colors; }
+                { \
+                    _cell.colors = _desc->default_colors; \
+                    _cell.dirty = 1; \
+                }
 
 #define VCELL_GET_COLORS(_cell, _colors_ptr) \
                 { *_colors_ptr = _cell.colors; }

@@ -48,6 +48,8 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     for(r = top_row; r < bottom_row; r++)
     {
         memcpy(v_desc->cells[r], v_desc->cells[r + n], stride);
+
+        VCELL_ROW_SET_DIRTY(v_desc->cells[r], v_desc->cols);
     }
 
     top_row = v_desc->scroll_max - (n - 1);
@@ -60,10 +62,8 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
         for(i = 0; i < v_desc->cols; i++)
         {
             VCELL_SET_CHAR((*vcell), ' ');
-            // VCELL_SET_CHAR((*vcell), 48 + n);
             VCELL_SET_ATTR((*vcell), v_desc->curattr);
             VCELL_SET_COLORS((*vcell), v_desc);
-            //VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
 
             vcell++;
         }
