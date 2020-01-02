@@ -14,7 +14,7 @@ vterm_interpret_csi(vterm_t *vterm)
     int             param_count = 0;
     const char      *p;
     char            verb;
-    bool            dec_private = FALSE;
+    bool            dec_sequence = FALSE;
 
     static void     *csi_table[] =
                     {
@@ -52,6 +52,8 @@ vterm_interpret_csi(vterm_t *vterm)
                         ['t'] = &&csi_EWMH,
                         ['Z'] = &&csi_char_Z,
                         ['S'] = &&csi_SU,
+                        ['p'] = &&csi_char_p,
+
                     };
 
     p = vterm->esbuf + 1;
@@ -97,7 +99,14 @@ vterm_interpret_csi(vterm_t *vterm)
 
         if(*p == '?')
         {
-            dec_private = TRUE;
+            dec_sequence = TRUE;
+            p++;
+            continue;
+        }
+
+        if(*p == '!')
+        {
+            dec_sequence = TRUE;
             p++;
             continue;
         }
@@ -122,7 +131,7 @@ vterm_interpret_csi(vterm_t *vterm)
         return 0;
 
     csi_char_l:
-        if(dec_private == TRUE)
+        if(dec_sequence == TRUE)
             interpret_dec_RM(vterm, csiparam, param_count);
         else
             interpret_csi_IRM(vterm, TRUE);
@@ -130,7 +139,7 @@ vterm_interpret_csi(vterm_t *vterm)
         return 0;
 
     csi_char_h:
-        if(dec_private == TRUE)
+        if(dec_sequence == TRUE)
             interpret_dec_SM(vterm, csiparam, param_count);
         else
             interpret_csi_IRM(vterm, FALSE);
@@ -189,6 +198,14 @@ vterm_interpret_csi(vterm_t *vterm)
     csi_char_u:
         interpret_csi_RESTORECUR(vterm, csiparam, param_count);
         return 0;
+
+    csi_char_p:
+        // if we catch a DECSTR then push RS1 into the system
+        if(dec_sequence == TRUE)
+        {
+            vterm_render(vterm, RXVT_RS1, sizeof(RXVT_RS1) - 1);
+            return 0;
+        }
 
     csi_char_Z:
         interpret_csi_CBT(vterm, csiparam, param_count);
