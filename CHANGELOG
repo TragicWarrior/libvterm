@@ -1,3 +1,9 @@
+9.0
+
+* [Bryan Christ] Mark cells that change with a dirty flag and only render
+  those by default when vterm_wnd_update() is called.
+* [Bryan Christ] Properly handle DECSTR CSI for vt220 soft-reset.
+
 8.12
 
 * [Bryan Christ] Refactor the UTF8 decoder for performance, validation,

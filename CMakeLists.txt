@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.10.2)
 #set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
 
 project(libvterm C)
-set(MAJOR_VERSION 8)
-set(MINOR_VERSION 12)
+set(MAJOR_VERSION 9)
+set(MINOR_VERSION 0)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
