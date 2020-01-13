@@ -25,10 +25,12 @@
     48  Custom background color
 */
 
+#include <stdlib.h>
 #include <wchar.h>
 
 #include "macros.h"
 #include "vterm.h"
+#include "color_map.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
@@ -39,7 +41,7 @@ _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
     int fg, int bg);
 
 long
-interpret_custom_color(vterm_t *vterm, int param[], int pcount);
+interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed);
 
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
 void
@@ -49,6 +51,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             i;
     short           mapped_color;
+    int             processed = 0;
     int             idx;
     short           fg, bg;
     int             retval;
@@ -173,10 +176,16 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_XCOLOR_FG:
             // code 38
             // set custom foreground color
-            fg = interpret_custom_color(vterm, param, pcount);
-            mapped_color = vterm_get_mapped_color(vterm, fg, 0, 0, 0);
+            fg = interpret_custom_color(vterm, &param[i], pcount, &processed);
+            if(fg == -1)
+            {
+                i += (pcount - 1);
+                continue;
+            }
 
-            if(mapped_color > 0) fg = mapped_color;
+            mapped_color = vterm_get_mapped_color(vterm, fg);
+
+            if(mapped_color != -1) fg = mapped_color;
 
             if(fg != -1)
             {
@@ -185,7 +194,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                     v_desc->bg);
             }
 
-            i += 2;
+            i += processed;
             continue;
 
         csi_sgr_RESET:
@@ -203,7 +212,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(retval != -1) v_desc->fg = fg;
 
-            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
+            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1 ? -1 : 0,
                 v_desc->fg, v_desc->bg);
 
             if(param[i] != 0) continue;
@@ -215,7 +224,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
             if(retval != -1) v_desc->bg = bg;
 
-            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1? -1: 0,
+            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1 ? -1 : 0,
                 v_desc->fg, v_desc->bg);
 
             continue;
@@ -232,26 +241,31 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_XCOLOR_BG:
             // code 48
             // set custom background color
-            bg = interpret_custom_color(vterm, param, pcount);
-            mapped_color = vterm_get_mapped_color(vterm, bg, 0, 0, 0);
+            bg = interpret_custom_color(vterm, &param[i], pcount, &processed);
+            if(bg == -1)
+            {
+                i += (pcount - 1);
+                continue;
+            }
 
-            if(mapped_color > 0) bg = mapped_color;
+
+            mapped_color = vterm_get_mapped_color(vterm, bg);
+
+            if(mapped_color != -1) bg = mapped_color;
 
             if(bg != -1)
             {
                 v_desc->bg = bg;
                 _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
                     v_desc->bg);
-
             }
 
-            i += 2;
-
+            i += processed;
             continue;
 
         csi_sgr_AIX_FG:
             // codes 90 - 97
-            // set 16 color fg (aixterm) 
+            // set 16 color fg (aixterm)
             if(vterm->flags & VTERM_FLAG_C16)
             {
                 fg = param[i] - 90;
@@ -338,20 +352,32 @@ _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
     b = blue value
     n = a defined color
 */
-inline long
-interpret_custom_color(vterm_t *vterm, int param[], int pcount)
+long
+interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed)
 {
-    int     method = 0;
-    // short   red;
-    // short   green;
-    // short   blue;
+    int         method = 0;
+    short       new_color = -1;
+
+    *processed = 0;
 
     if(vterm == NULL) return -1;
-    if(pcount < 2) return -1;
+    if(pcount < 2)
+    {
+        *processed = pcount;
+        return -1;
+    }
 
+    // a valid ISO-8613-6 color control must begin with 38 or 48
+    if(param[0] != 38 && param[0] != 48)
+    {
+        *processed = pcount;
+        return -1;
+    }
+
+    // paramter two must be either a 2 or 5 to indicate operation method
     method = param[1];
 
-    // set to color pair
+    // set to color pair (which should have been programmed by OSC 4)
     if(method == 5)
     {
         /*
@@ -360,26 +386,40 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount)
             xterm OSC ^]4 transmits color number and RGB values which
             we interpret and set.
         */
-        if(pcount < 3) return -1;
+        if(pcount < 3)
+        {
+            *processed = pcount;
+            return -1;
+        }
 
+        *processed = 2;
         return (unsigned short)param[2];
     }
 
     // set to nearest rgb value
     if(method == 2)
     {
-        if(pcount < 6) return -1;
+        if((pcount % 5) == 0)
+        {
+            new_color = vterm_add_mapped_color(vterm, -1,
+                (float)param[2], (float)param[3], (float)param[4]);
 
-        // red = param[3];
-        // green = param[4];
-        // blue = param[5];
+            *processed = 4;
 
-        // endwin();
-        // printf("r: %d, g: %d, b: %d\n\r", red, green, blue);
-        // exit(0);
+            if(new_color >= 0) return new_color;
+        }
 
-        return -1;
+        if((pcount % 6) == 0)
+        {
+            new_color = vterm_add_mapped_color(vterm, -1,
+                (float)param[3], (float)param[4], (float)param[5]);
+
+            *processed = 5;
+
+            if(new_color >= 0) return new_color;
+        }
     }
 
+    *processed = pcount;
     return -1;
 }

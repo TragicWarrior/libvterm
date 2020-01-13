@@ -22,7 +22,7 @@ vterm_interpret_csi(vterm_t *vterm)
                         [0] = &&csi_char_unknown,
                         ['c'] = &&csi_DA,
                         ['b'] = &&csi_char_b,
-                        ['m'] = &&csi_char_m,
+                        ['m'] = &&csi_SGR,
                         ['l'] = &&csi_char_l,
                         ['h'] = &&csi_char_h,
                         ['H'] = &&csi_char_H,
@@ -81,7 +81,7 @@ vterm_interpret_csi(vterm_t *vterm)
             continue;
         }
 
-        if(*p == ';')
+        if(*p == ';' || *p == ':')
         {
             if(param_count >= MAX_CSI_ES_PARAMS) return -1;    // too long!
 
@@ -96,7 +96,6 @@ vterm_interpret_csi(vterm_t *vterm)
             p++;
             continue;
         }
-
 
         if(*p == '?')
         {
@@ -127,7 +126,7 @@ vterm_interpret_csi(vterm_t *vterm)
         interpret_csi_REP(vterm, csiparam, param_count);
         return 0;
 
-    csi_char_m:
+    csi_SGR:
         interpret_csi_SGR(vterm, csiparam, param_count);
         return 0;
 

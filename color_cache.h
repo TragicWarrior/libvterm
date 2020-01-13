@@ -75,8 +75,6 @@ struct _color_pair_s
                                                 loaded from the host
                                                 palette.
                                             */
-    //struct _color_pair_s    *next;
-    //struct _color_pair_s    *prev;
     color_pair_t            *next;
     color_pair_t            *prev;
 };

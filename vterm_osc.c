@@ -208,20 +208,18 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
 
     /*
         XParseColor RGB values are specifed in base-16 and range from
-        0x00 to 0xFF.  However, ncurses RGB values run from 0 - 1000
-        so we need to scale accordingly.
+        0x00 to 0xFF.
     */
     r = (short)(strtol(params[2], NULL, 16));
     g = (short)(strtol(params[3], NULL, 16));
     b = (short)(strtol(params[4], NULL, 16));
 
-    // r = (r / 255.0) * 1000.0;
-    // g = (g / 255.0) * 1000.0;
-    // b = (b / 255.0) * 1000.0;
-
     strfreev(params);
 
-    // init_color(new_color, r, g, b);
+    /*
+        The ncurses RGB values run from 0 - 1000.  We need to scale
+        accordingly and vterm_add_mapped_color() does that on its own.
+    */
     vterm_add_mapped_color(vterm, new_color, (float)r, (float)g, (float)b);
 
     return;
