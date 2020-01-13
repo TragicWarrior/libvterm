@@ -16,6 +16,7 @@
 #endif
 
 #include "mouse_driver.h"
+#include "color_map.h"
 #include "color_cache.h"
 
 #define ESEQ_BUF_SIZE           128             // escape buffer max
@@ -68,31 +69,6 @@
 */
 #define MAX_PIPE_READ           (PIPE_BUF * 8)
 
-typedef struct _vterm_cmap_s   vterm_cmap_t;
-
-struct _vterm_cmap_s
-{
-    short           private_color;              /*
-                                                    the color that the guest
-                                                    application is expecting
-                                                    to use.
-                                                */
-
-    short           global_color;               /*
-                                                    the internal color number
-                                                    we have mapped the
-                                                    private_color to.
-                                                */
-
-    float           red;                        //  RGB values of the color
-    float           green;
-    float           blue;
-
-    vterm_cmap_t    *next;                      //  next entry in the map
-    vterm_cmap_t    *prev;                      //  prev entry in the map
-};
-
-
 struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
@@ -132,7 +108,7 @@ struct _vterm_s
 
     WINDOW          *window;                    // curses window
 
-    vterm_cmap_t    *cmap_head;
+    color_map_t     *color_map_head;
 
     char            ttyname[96];                // populated with ttyname_r()
 

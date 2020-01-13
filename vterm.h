@@ -509,7 +509,9 @@ long            vterm_get_colors(vterm_t *vterm);
 
     @params:
         vterm           a valid vterm object handle
-        color           the color number according to the guest application
+        color           the color number according to the guest application.
+                        a value of -1 indicates an anonymous color is to
+                        be used.
         red             red RGB value ranging from 0 - 255
         green           green RGB value ranging from 0 - 255
         blue            blue RGB value ranging from 0 - 255
@@ -530,6 +532,19 @@ short           vterm_add_mapped_color(vterm_t *vterm, short color,
         color           the color number according to the guest application.
                         when this is a positive value, arguments red, green,
                         and blue are ignored.
+
+    @return:            returns the number of the color mapping in the
+                        global color space.
+
+*/
+short               vterm_get_mapped_color(vterm_t *vterm, short color);
+
+/*
+    queries the vterm instance for specific RGB color
+    to determine if an actual color exits in the global color table.
+
+    @params:
+        vterm           a valid vterm object handle
         red             red RGB value ranging from 0 - 255
         green           green RGB value ranging from 0 - 255
         blue            blue RGB value ranging from 0 - 255
@@ -538,7 +553,7 @@ short           vterm_add_mapped_color(vterm_t *vterm, short color,
                         global color space.
 
 */
-short               vterm_get_mapped_color(vterm_t *vterm, short color,
+short               vterm_get_mapped_rgb(vterm_t *vterm,
                         float red, float green, float blue);
 
 /*
