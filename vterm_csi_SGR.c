@@ -89,7 +89,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     if(pcount == 0)
     {
         pcount = 1;
-        param[0] = 0;
+        param = (int[]) { 0 };
     }
 
     for(i = 0; i < pcount; i++)
@@ -215,6 +215,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             _vterm_set_color_pair_safe(v_desc, vterm, retval != -1 ? -1 : 0,
                 v_desc->fg, v_desc->bg);
 
+            // if param[i] == 0 then we fall through to resetting BG as well
             if(param[i] != 0) continue;
 
         csi_sgr_RESET_BG:
@@ -247,7 +248,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 i += (pcount - 1);
                 continue;
             }
-
 
             mapped_color = vterm_get_mapped_color(vterm, bg);
 
@@ -311,6 +311,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     }
 }
 
+// inline void
 inline void
 _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
     int fg, int bg)
