@@ -23,7 +23,7 @@
                 if(idx >= ARRAY_SZ(jtable))     \
                     goto *jtable[catchall];     \
                                                 \
-                if(idx <= 0)                    \
+                if(jtable[idx] == 0)            \
                     goto *jtable[catchall];     \
                                                 \
                 goto *jtable[idx];              \
