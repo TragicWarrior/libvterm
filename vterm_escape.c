@@ -67,7 +67,7 @@ vterm_interpret_escapes(vterm_t *vterm)
     char                firstchar;
     char                *lastchar;
 
-    static void         *interim_table[160] =
+    static void         *interim_table[] =
                             {
                                 [0] = &&interim_char_none,
                                 [']'] = &&interim_OSC,

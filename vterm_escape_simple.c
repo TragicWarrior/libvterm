@@ -8,7 +8,7 @@
 int
 vterm_interpret_escapes_simple(vterm_t *vterm, char verb)
 {
-    static void     *simple_table[160] =
+    static void     *simple_table[] =
                         {
                             [0] = &&simple_char_default,
                             ['E'] = &&esc_NEL,
