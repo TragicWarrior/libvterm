@@ -1,3 +1,7 @@
+9.1
+
+* [Bryan Christ] Fix a nasty segfault.
+
 9.0
 
 * [Bryan Christ] Mark cells that change with a dirty flag and only render
