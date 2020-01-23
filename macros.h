@@ -20,10 +20,13 @@
 #define SWITCH(jtable, idx, catchall)           \
             do                                  \
             {                                   \
-                if(jtable[idx] == 0)            \
+                if(idx >= ARRAY_SZ(jtable))     \
                     goto *jtable[catchall];     \
-                else                            \
-                    goto *jtable[idx];          \
+                                                \
+                if(idx <= 0)                    \
+                    goto *jtable[catchall];     \
+                                                \
+                goto *jtable[idx];              \
             }                                   \
             while(0)
 
