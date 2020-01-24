@@ -79,9 +79,16 @@ vterm_cursor_move_tab(vterm_t *vterm)
     // a tab on the last column push to the beginning of the next row
     if(v_desc->ccol == v_desc->cols - 1)
     {
-        v_desc->crow++;
-        v_desc->ccol = 0;
+        if(v_desc->crow < v_desc->scroll_max)
+        {
+            v_desc->crow++;
+        }
+        else
+        {
+            vterm_scroll_up(vterm, FALSE);
+        }
 
+        v_desc->ccol = 0;
         return;
     }
 
