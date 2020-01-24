@@ -1,3 +1,8 @@
+9.2
+
+* [Bryan Christ] Fixed a scalar out-of-bounds reference in the tab advance
+  cursor code which caused a rare segfault.
+
 9.1
 
 * [Bryan Christ] Fix a nasty segfault.
