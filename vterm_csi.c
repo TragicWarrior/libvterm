@@ -3,6 +3,7 @@
 
 #include "macros.h"
 #include "vterm.h"
+#include "vterm_error.h"
 #include "vterm_private.h"
 #include "vterm_csi.h"
 #include "vterm_osc_DA.h"
@@ -227,14 +228,7 @@ vterm_interpret_csi(vterm_t *vterm)
         return 0;
 
     csi_char_unknown:
-#ifdef _DEBUG
         vterm_error(vterm, VTERM_ECODE_UNHANDLED_CSI, (void *)vterm->esbuf); 
-#endif
-
-
-    {
-        fprintf(stderr, "Unrecogized CSI: <%s>\n", vterm->esbuf);
-    }
 
     return 0;
 }

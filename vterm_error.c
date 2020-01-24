@@ -12,7 +12,9 @@ vterm_error(vterm_t *vterm, VtermError ecode, void *anything)
     switch(ecode)
     {
         case VTERM_ECODE_UNHANDLED_CSI:
+#ifdef DEBUG
             fprintf(stderr, "Unrecogized CSI: <%s>\n", (char *)anything);
+#endif
             return 0;
 
         case VTERM_ECODE_PTY_WRITE_ERR:

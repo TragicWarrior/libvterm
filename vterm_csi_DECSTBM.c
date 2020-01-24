@@ -58,5 +58,5 @@ interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
     if((v_desc->scroll_min == 0) && (v_desc->scroll_max == v_desc->rows - 1))
         v_desc->buffer_state &= ~STATE_SCROLL_SHORT;
 
-   return;
+    return;
 }
