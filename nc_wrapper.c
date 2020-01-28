@@ -37,6 +37,7 @@ ncw_get_handle(void)
     static nc_wrapper_t     *ncw = NULL;
     char                    *lib_path[] =
                                 {
+                                    "libncursesw.so.6.1",
                                     "libncursesw.so.6",
                                     "libncursesw.so.5",
                                 };
