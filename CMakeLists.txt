@@ -64,6 +64,7 @@ add_library(vterm-static STATIC
     mouse_driver.c
     mouse_driver_X10.c
     mouse_driver_SGR.c
+    nc_wrapper.c
     vterm.c
     vterm_aio.c
     vterm_ctrl_char.c
@@ -126,6 +127,7 @@ add_library(vterm.o OBJECT
     mouse_driver.c
     mouse_driver_X10.c
     mouse_driver_SGR.c
+    nc_wrapper.c
     vterm.c
     vterm_aio.c
     vterm_buffer.c
@@ -206,6 +208,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
                     -lutil
                     -lm
                     -lrt
+                    -ldl
                     ${CURSES_LIBRARIES})
     else()
         target_link_libraries(
@@ -214,6 +217,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
                     -lutil
                     -lm
                     -lrt
+                    -ldl
                     ${CURSES_LIBRARIES})
     endif()
 endif()

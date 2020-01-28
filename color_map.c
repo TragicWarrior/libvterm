@@ -2,6 +2,7 @@
 
 #include "vterm.h"
 #include "vterm_private.h"
+#include "nc_wrapper.h"
 #include "color_map.h"
 #include "utlist.h"
 
@@ -11,7 +12,8 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
 {
     color_map_t     *mapped_color;
     short           global_color;
-    short           r, g, b;
+    // short           r, g, b;
+    int             r, g, b;
     int             retval;
 
     /*
@@ -53,12 +55,14 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     for(;;)
     {
         // explode color
-        retval = color_content(global_color, &r, &g, &b);
+        retval = ncw_color_content(global_color, &r, &g, &b);
+
         if(retval == ERR)
         {
             // TODO:  handle color exhausion
-            // endwin();
-            // exit(0);
+            endwin();
+            fprintf(stderr, "gc %d\n\r", global_color);
+            exit(0);
             return -1;
         }
 

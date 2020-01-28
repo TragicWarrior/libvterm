@@ -57,8 +57,8 @@ typedef struct _color_pair_s    color_pair_t;
 struct _color_pair_s
 {
     int                     num;
-    short                   fg;
-    short                   bg;
+    int                     fg;
+    int                     bg;
 
     rgb_values_t            rgb_values[2];
     hsl_values_t            hsl_values[2];

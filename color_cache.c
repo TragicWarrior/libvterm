@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "macros.h"
+#include "nc_wrapper.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
@@ -168,7 +169,7 @@ color_cache_load_palette(int cache_id)
 
             CDL_PREPEND(color_cache->head[cache_id], tmp1);
 
-            init_pair(pair->num, pair->fg, pair->bg);
+            ncw_init_pair(pair->num, pair->fg, pair->bg);
         }
     }
 
@@ -214,7 +215,7 @@ color_cache_find_unused_pair()
     {
         memset(&pair, 0, sizeof(color_pair_t));
 
-        retval = pair_content(i, (short *)&pair.fg, (short *)&pair.bg);
+        retval = ncw_pair_content(i, &pair.fg, &pair.bg);
 
         // if we can't explode the pair, keep searching
         if(retval == -1)
@@ -310,7 +311,7 @@ color_cache_add_pair(vterm_t *origin, short fg, short bg)
         pair->custom = TRUE;
         pair->num = i;
 
-        init_pair(pair->num, fg, bg);
+        ncw_init_pair(pair->num, fg, bg);
         _color_cache_profile_pair(pair);
 
         CDL_PREPEND(color_cache->head[PALETTE_ACTIVE], pair);
@@ -482,8 +483,6 @@ color_cache_find_exact_color(short r, short g, short b)
     bool                    fg_found = FALSE;
     bool                    bg_found = FALSE;
 
-    // color_content(color, &r, &g, &b);
-
     CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
     {
         /*
@@ -604,15 +603,15 @@ color_cache_split_pair(int pair_num, short *fg, short *bg)
 void
 _color_cache_profile_pair(color_pair_t *pair)
 {
-    short           r, g, b;
+    int     r, g, b;
 
     if(pair == NULL) return;
 
     // explode pair
-    pair_content(pair->num, &pair->fg, &pair->bg);
+    ncw_pair_content(pair->num, &pair->fg, &pair->bg);
 
     // extract foreground RGB
-    color_content(pair->fg, &r, &g, &b);
+    ncw_color_content(pair->fg, &r, &g, &b);
 
     pair->rgb_values[0].r = r;
     pair->rgb_values[0].g = g;
@@ -630,7 +629,7 @@ _color_cache_profile_pair(color_pair_t *pair)
     //    &pair->cie_values[0].b);
 
     // extract background RGB
-    color_content(pair->bg, &r, &g, &b);
+    ncw_color_content(pair->bg, &r, &g, &b);
 
     pair->rgb_values[1].r = r;
     pair->rgb_values[1].g = g;
@@ -663,7 +662,7 @@ _color_cache_reset_pair(color_pair_t *pair)
     memset(pair->rgb_values, 0, sizeof(pair->rgb_values));
     memset(pair->hsl_values, 0, sizeof(pair->hsl_values));
 
-    init_pair(pair->num, 0, 0);
+    ncw_init_pair(pair->num, 0, 0);
 
     return;
 }
