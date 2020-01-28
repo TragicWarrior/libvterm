@@ -1,5 +1,13 @@
 This is a running list of things to fix / add to the library
 
-Hicolor palette mapping mode
+* Hicolor palette mapping mode
 
+* Replace parts of color_map.c code with ncurses equivlents:
+  * alloc_pair()
+  * find_pair()
+  * free_pair()
+
+* Utilize NCURSES_NO_UTF8_ACS instead of similar in vterm_utf8.c
+
+* Use ncurses extensions for more colors and pairs when avaialble
 

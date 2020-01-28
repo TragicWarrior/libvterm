@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 
 #ifdef __linux__                                // forkpty() in linux
 #include <pty.h>
@@ -37,6 +38,7 @@
 #include "color_cache.h"
 #include "mouse_driver.h"
 
+#include "macros.h"
 #include "utlist.h"
 
 /*
@@ -51,6 +53,7 @@ _vterm_set_guest_env(vterm_t *vterm);
 
 void
 _vterm_set_host_env(vterm_t *vterm);
+
 
 vterm_t*
 vterm_alloc(void)
@@ -367,3 +370,4 @@ _vterm_set_guest_env(vterm_t *vterm)
 
     return;
 }
+
