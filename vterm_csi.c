@@ -80,7 +80,7 @@ vterm_interpret_csi(vterm_t *vterm)
             continue;
         }
 
-        if(*p == ';')
+        if(*p == ';' || *p == ':')
         {
             if(param_count >= MAX_CSI_ES_PARAMS) return -1;    // too long!
 
