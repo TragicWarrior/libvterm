@@ -23,20 +23,18 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     */
     if(color >= COLOR_BLACK && color <= COLOR_WHITE) return color;
 
-    if(red < 0) red = 0;
-    if(green < 0) green = 0;
-    if(blue < 0) blue = 0;
+    if(red < 0.0) red = 0.0;
+    if(green < 0.0) green = 0.0;
+    if(blue < 0.0) blue = 0.0;
 
-    if((red + green + blue) == 0)
+    if((red + green + blue) == 0.0)
     {
-        // endwin();
-        // exit(0);
         return COLOR_BLACK;
     }
 
-    if(red > 255) red = 255;
-    if(green > 255) green = 255;
-    if(blue > 255) blue = 255;
+    if(red > 255.0) red = 255.0;
+    if(green > 255.0) green = 255.0;
+    if(blue > 255.0) blue = 255.0;
 
     // excluding anonymous colors, check to see if the color is already mapped
     if(color != -1)
@@ -57,16 +55,20 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
         // explode color
         retval = ncw_color_content(global_color, &r, &g, &b);
 
+        // endwin();
+        // fprintf(stderr, "r: %d g: %d b: %d\n\r", r, g, b);
+
         if(retval == ERR)
         {
             // TODO:  handle color exhausion
-            endwin();
-            fprintf(stderr, "gc %d\n\r", global_color);
-            exit(0);
+            // endwin();
+            // fprintf(stderr, "gc %d\n\r", global_color);
+            // exit(0);
             return -1;
         }
 
         if((r + g + b) == 0) break;
+        // if((r + g + b) == 0) { count++; }
 
         // no free color numbers in the global color table
         if(global_color == 0x7FFF) return -1;
@@ -87,7 +89,13 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     green = (green / 255.0) * 1000.0;
     blue = (blue / 255.0) * 1000.0;
 
-    retval = init_color(global_color, (short)red, (short)green, (short)blue);
+    // if(green == 1000.0) { endwin(); exit(0); }
+
+    // endwin();
+    // fprintf(stderr, "%d %d %d\n\r", (int)red, (int)green, (int)blue);
+    // exit(0);
+
+    retval = ncw_init_color(global_color, (int)red, (int)green, (int)blue);
 
     CDL_APPEND(vterm->color_map_head, mapped_color);
 
@@ -99,11 +107,20 @@ vterm_get_mapped_rgb(vterm_t *vterm, float red, float green, float blue)
 {
     color_map_t     *mapped_color;
 
+    // endwin();
+    //fprintf(stderr, "%d %d %d\n\r", (int)red, (int)green, (int)blue);
+    // exit(0);
+
     CDL_FOREACH(vterm->color_map_head, mapped_color)
     {
-        if( mapped_color->red == red &&
-            mapped_color->green == green &&
-            mapped_color->blue == blue)
+        //fprintf(stderr, "%f %f %f\n\r",
+        //    mapped_color->red,
+        //    mapped_color->green,
+        //    mapped_color->blue);
+
+        if( (int)mapped_color->red == (int)red &&
+            (int)mapped_color->green == (int)green &&
+            (int)mapped_color->blue == (int)blue)
         {
             return mapped_color->global_color;
         }
