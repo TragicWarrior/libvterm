@@ -148,11 +148,13 @@ ncw_color_content(int color, int *r, int *g, int *b)
     {
         retval = color_content((short)color,
             (short *)r, (short *)g, (short *)b);
+
         return retval;
     }
 
-
     retval = ncw->color_content(color, r, g, b);
+
+    // if(retval == ERR) { endwin(); fprintf(stderr, "gc %d\n\r", color); exit(0); }
 
     return retval;
 }

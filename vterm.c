@@ -350,7 +350,8 @@ _vterm_set_guest_env(vterm_t *vterm)
             setenv("TERM", "xterm-16color", 1);
 
         if(term_colors > 16)
-            setenv("TERM", "xterm-256color", 1);
+            setenv("TERM", "xterm-direct", 1);
+            // setenv("TERM", "xterm-256color", 1);
 #endif
 
         setenv("COLORTERM", "xterm", 1);
