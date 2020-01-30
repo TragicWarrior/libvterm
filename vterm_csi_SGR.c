@@ -89,7 +89,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     if(pcount == 0)
     {
         pcount = 1;
-        param = (int[]) { 0 };
+        param[0] = 0;
     }
 
     for(i = 0; i < pcount; i++)
