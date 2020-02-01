@@ -140,21 +140,25 @@ int
 ncw_color_content(int color, int *r, int *g, int *b)
 {
     nc_wrapper_t    *ncw;
+    short           sred;
+    short           sgreen;
+    short           sblue;
     int             retval;
 
     ncw = ncw_get_handle();
 
     if(ncw->color_content == NULL)
     {
-        retval = color_content((short)color,
-            (short *)r, (short *)g, (short *)b);
+        retval = color_content((short)color, &sred, &sgreen, &sblue);
+
+        *r = sred;
+        *g = sgreen;
+        *b = sblue;
 
         return retval;
     }
 
     retval = ncw->color_content(color, r, g, b);
-
-    // if(retval == ERR) { endwin(); fprintf(stderr, "gc %d\n\r", color); exit(0); }
 
     return retval;
 }
