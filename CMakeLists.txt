@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(libvterm C)
 set(MAJOR_VERSION 9)
-set(MINOR_VERSION 2)
+set(MINOR_VERSION 3)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 

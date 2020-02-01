@@ -45,7 +45,7 @@ Centos 7.8
 5 - iptraf-ng
 5 - aaxine
 2 - cacaxine
-4 - ponysay
+5 - ponysay
 5 - cacafire
 5 - cacademo
 5 - pspg
@@ -74,13 +74,13 @@ Mojave 10.14.6
 4 - homebrew
 5 - mdcat
 5 - midnight commander
-4 - ponysay
+5 - ponysay
 5 - ninvaders
 5 - emojify
 5 - lynx
 4 - links
 5 - mutt
-3 - myman
+4 - myman
 5 - ranger
 5 - cmatrix
 5 - nano

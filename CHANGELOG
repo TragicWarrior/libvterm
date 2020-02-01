@@ -1,3 +1,13 @@
+9.3
+
+* [Bryan Christ] Added support for anonymous colors which are used by
+  custom color escape codes.
+* [Bryan Christ] Fixes to hi-color rendering
+* [Bryan Christ] Support both modes of ISO-8613-6 color specification
+  (pair number and rgb definitions)
+* [Bryan Christ] Suppprot both colon and semicolon delimters
+  for ISO-8613-6 color.
+
 9.2
 
 * [Bryan Christ] Fixed a scalar out-of-bounds reference in the tab advance
