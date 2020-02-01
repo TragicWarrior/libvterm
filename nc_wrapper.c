@@ -124,7 +124,9 @@ ncw_pair_content(int pair, int *f, int *b)
 
     ncw = ncw_get_handle();
 
+#ifndef __FreeBSD__
     if(ncw->pair_content == NULL)
+#endif
     {
         retval = pair_content((short)pair, (short *)f, (short *)b);
 
@@ -147,7 +149,9 @@ ncw_color_content(int color, int *r, int *g, int *b)
 
     ncw = ncw_get_handle();
 
+#ifndef __FreeBSD__
     if(ncw->color_content == NULL)
+#endif
     {
         retval = color_content((short)color, &sred, &sgreen, &sblue);
 
