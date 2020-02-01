@@ -104,8 +104,6 @@ vterm_interpret_escapes(vterm_t *vterm)
         }
     }
 
-    // if(firstchar == 'M') { endwin(); exit(0); }
-
     retval = vterm_interpret_escapes_simple(vterm, firstchar);
     if(retval > 0) return;
 

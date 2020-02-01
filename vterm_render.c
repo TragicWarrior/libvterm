@@ -169,10 +169,6 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-    // if(v_desc->crow > v_desc->scroll_max)
-    //     { endwin(); fprintf(stderr, "%d\n\r", v_desc->crow); exit(0); }
-
-
     if(v_desc->ccol >= v_desc->cols)
     {
         v_desc->ccol = 0;
