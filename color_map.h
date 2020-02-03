@@ -17,9 +17,9 @@ struct _color_map_s
                                                     to use.
                                                 */
 
-    float           red;                        //  RGB values of the color
-    float           green;
-    float           blue;
+    int             red;                        //  RGB values of the color
+    int             green;
+    int             blue;
 
     color_map_t     *next;                      //  next entry in the map
     color_map_t     *prev;                      //  prev entry in the map

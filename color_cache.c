@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "macros.h"
 #include "nc_wrapper.h"

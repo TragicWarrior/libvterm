@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <dlfcn.h>
+#include <math.h>
 
 #ifdef __linux__                                // forkpty() in linux
 #include <pty.h>
@@ -317,6 +318,14 @@ _vterm_set_host_env(vterm_t *vterm)
             vterm->flags |= VTERM_FLAG_C8;
             vterm->flags &= ~VTERM_FLAG_C16;
         }
+    }
+
+    // carve the remaining colors into bands
+    if(term_colors > 16)
+    {
+        vterm->rgb_bands = cbrtf((float)(term_colors - 16)) - 2;
+        vterm->rgb_step = (int)((float)(term_colors - 16) / vterm->rgb_bands);
+        vterm->rgb_half_step = vterm->rgb_step >> 1;
     }
 
     return;

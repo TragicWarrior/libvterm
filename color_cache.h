@@ -16,8 +16,8 @@ enum {
     ncurses RGB values range from 0 to 1000 while the rest of the world
     pretty much uses 0 - 255 so we need to scale.
 */
-#define NCURSES_TO_RGB(x)       (((float)x / 1000.0) * 255.0)
-#define RGB_TO_NCURSES(x)       (((float)x / 255.0) * 1000.0)
+#define NCURSES_TO_RGB(x)       ((int)(((float)x / 1000.0) * 255.0))
+#define RGB_TO_NCURSES(x)       ((int)(((float)x / 255.0) * 1000.0))
 
 
 enum

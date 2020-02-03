@@ -110,6 +110,10 @@ struct _vterm_s
 
     color_map_t     *color_map_head;
 
+    float           rgb_bands;
+    int             rgb_step;
+    int             rgb_half_step;
+
     char            ttyname[96];                // populated with ttyname_r()
 
     char            title[128];                 /*

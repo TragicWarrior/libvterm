@@ -520,7 +520,7 @@ long            vterm_get_colors(vterm_t *vterm);
                         global color space.
 */
 short           vterm_add_mapped_color(vterm_t *vterm, short color,
-                    float red, float green, float blue);
+                    int red, int green, int blue);
 
 /*
     queries the vterm instance regarding specific non-standard color
@@ -554,7 +554,7 @@ short               vterm_get_mapped_color(vterm_t *vterm, short color);
 
 */
 short               vterm_get_mapped_rgb(vterm_t *vterm,
-                        float red, float green, float blue);
+                        int red, int green, int blue);
 
 /*
     releases the color mapping table and frees the related entries in the
