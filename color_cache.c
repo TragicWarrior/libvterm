@@ -71,10 +71,12 @@ color_cache_init(void)
     // clamp max pairs at 0x7FFF
 #ifdef NCURSES_EXT_COLORS
     if(color_cache->term_pairs > 0x7FFF)
-        color_cache->term_pairs = 0x7FFF;
+        // color_cache->term_pairs = 0x7FFF;
+        color_cache->term_pairs = 0x3FFF;
 #else
     if(color_cache->term_pairs > 0xFF)
         color_cache->term_pairs = 0xFF;
+        // color_cache->term_pairs = 0x3FFF;
 #endif
 
     // take a snapshot of the current palette
