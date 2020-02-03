@@ -81,9 +81,9 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     mapped_color->blue = blue;
 
     // convert traditional RGB values (0 - 255) to ncurses range of 0 - 1000
-    red = (red / 255.0) * 1000.0;
-    green = (green / 255.0) * 1000.0;
-    blue = (blue / 255.0) * 1000.0;
+    red = RGB_TO_NCURSES(red);
+    green = RGB_TO_NCURSES(green);
+    blue = RGB_TO_NCURSES(blue);
 
     retval = ncw_init_color(global_color, (int)red, (int)green, (int)blue);
 
