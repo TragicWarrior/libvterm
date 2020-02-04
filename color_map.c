@@ -7,13 +7,15 @@
 #include "color_map.h"
 #include "utlist.h"
 
+void
+_vterm_align_color_band(vterm_t *vterm, int *r, int *g, int *b);
+
 short
 vterm_add_mapped_color(vterm_t *vterm, short color,
     int red, int green, int blue)
 {
     color_map_t     *mapped_color;
     short           global_color;
-    int             remainder;
     int             r, g, b;
     int             retval;
 
@@ -28,10 +30,7 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     if(green < 0) green = 0;
     if(blue < 0) blue = 0;
 
-    if((red + green + blue) == 0)
-    {
-        return COLOR_BLACK;
-    }
+    if((red + green + blue) == 0) return COLOR_BLACK;
 
     if(red > 255) red = 255;
     if(green > 255) green = 255;
@@ -56,6 +55,10 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     // look for a free color number in the global color table
     for(;;)
     {
+        // no free color numbers in the global color table
+        // if(global_color == 0x7FFF) return -1;
+        if(global_color == 0x3FFF) return -1;
+
         // explode color
         retval = ncw_color_content(global_color, &r, &g, &b);
 
@@ -68,38 +71,12 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
         // a black value indicates an unused color
         if((r + g + b) == 0) break;
 
-        // no free color numbers in the global color table
-        if(global_color == 0x7FFF) return -1;
-
         global_color++;
     }
 
+    _vterm_align_color_band(vterm, &red, &green, &blue);
 
-    remainder = red % vterm->rgb_step;
-    if(remainder < vterm->rgb_half_step)
-        red = red - remainder;
-    else
-        red = red + (vterm->rgb_step - remainder);
-
-    remainder = green % vterm->rgb_step;
-    if(remainder < vterm->rgb_half_step)
-        green = green - remainder;
-    else
-        green = green + (vterm->rgb_step - remainder);
-
-    remainder = blue % vterm->rgb_step;
-    if(remainder < vterm->rgb_half_step)
-        blue = blue - remainder;
-    else
-        blue = blue + (vterm->rgb_step - remainder);
-
-    if(red > 255) red = 255;
-    if(green > 255) green = 255;
-    if(blue > 255) blue = 255;
-
-    if(red < 0) red = 0;
-    if(green < 0) green = 0;
-    if(blue < 0) blue = 0;
+    if((red + green + blue) == COLOR_BLACK) return COLOR_BLACK;
 
     mapped_color = (color_map_t *)calloc(1, sizeof(color_map_t));
 
@@ -125,40 +102,14 @@ short
 vterm_get_mapped_rgb(vterm_t *vterm, int red, int green, int blue)
 {
     color_map_t     *mapped_color;
-    int             remainder;
-    int             r, g, b;
 
-    remainder = red % vterm->rgb_step;
-    if(remainder < vterm->rgb_half_step)
-        r = red - remainder;
-    else
-        r = red + (vterm->rgb_step - remainder);
-
-    remainder = green % vterm->rgb_step;
-    if(remainder < vterm->rgb_half_step)
-        g = green - remainder;
-    else
-        g = green + (vterm->rgb_step - remainder);
-
-    remainder = blue % vterm->rgb_step;
-    if(remainder < vterm->rgb_half_step)
-        b = blue - remainder;
-    else
-        b = blue + vterm->rgb_step - remainder;
-
-    if(red > 255) red = 255;
-    if(green > 255) green = 255;
-    if(blue > 255) blue = 255;
-
-    if(red < 0) red = 0;
-    if(green < 0) green = 0;
-    if(blue < 0) blue = 0;
+    _vterm_align_color_band(vterm, &red, &green, &blue);
 
     CDL_FOREACH(vterm->color_map_head, mapped_color)
     {
-        if( mapped_color->red == r &&
-            mapped_color->green == g &&
-            mapped_color->blue == b)
+        if( mapped_color->red == red &&
+            mapped_color->green == green &&
+            mapped_color->blue == blue)
         {
             return mapped_color->global_color;
         }
@@ -214,3 +165,40 @@ vterm_free_mapped_colors(vterm_t *vterm)
 
     return;
 }
+
+void
+_vterm_align_color_band(vterm_t *vterm, int *r, int *g, int *b)
+{
+    int     remainder;
+
+    if(vterm == NULL) return;
+
+    if(*r < 0) *r = 0;
+    if(*g < 0) *g = 0;
+    if(*b < 0) *b = 0;
+
+    if(*r > 255) *r = 255;
+    if(*g > 255) *g = 255;
+    if(*b > 255) *b = 255;
+
+    remainder = *r % vterm->rgb_step;
+    if(remainder < vterm->rgb_half_step)
+        *r -= remainder;
+    else
+        *r += (vterm->rgb_step - remainder);
+
+    remainder = *g % vterm->rgb_step;
+    if(remainder < vterm->rgb_half_step)
+        *g -= remainder;
+    else
+        *g += (vterm->rgb_step - remainder);
+
+    remainder = *b % vterm->rgb_step;
+    if(remainder < vterm->rgb_half_step)
+        *b -= remainder;
+    else
+        *b += vterm->rgb_step - remainder;
+
+    return;
+}
+
