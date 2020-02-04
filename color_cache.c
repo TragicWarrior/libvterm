@@ -606,12 +606,20 @@ color_cache_split_pair(int pair_num, short *fg, short *bg)
 void
 _color_cache_profile_pair(color_pair_t *pair)
 {
+    int     retval;
     int     r, g, b;
 
     if(pair == NULL) return;
 
     // explode pair
-    ncw_pair_content(pair->num, &pair->fg, &pair->bg);
+    retval = ncw_pair_content(pair->num, &pair->fg, &pair->bg);
+
+    if(retval == -1)
+    {
+        endwin();
+        fprintf(stderr, "%d\n\r", pair->num);
+        exit(0);
+    } 
 
     // extract foreground RGB
     ncw_color_content(pair->fg, &r, &g, &b);
