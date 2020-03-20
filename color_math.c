@@ -68,9 +68,10 @@ float   hue2rgb(float v1, float v2, float vh);
     R, G and, B (Standard RGB) input range = 0 - 255
 */
 void
-rgb2lab(rgb_t rgb, float *l, float *a, float *b)
+rgb2lab(int r, int g, int b, float *L, float *A, float *B)
 {
     float           xyz[] = { 0, 0, 0 };
+    float           rgb[] = { (float)r, (float)g, (float)b };
     unsigned int    i;
 
     /*
@@ -78,9 +79,9 @@ rgb2lab(rgb_t rgb, float *l, float *a, float *b)
 
         it converts the RGB values to CIEXYZ values.
     */
-    for(i = 0; i < 3; i++)
+    for(i = 0; i < ARRAY_SZ(xyz); i++)
     {
-        rgb[i] /= 255;
+        rgb[i] /= 255.0;
 
         if(rgb[i] > 0.04045)
         {
@@ -91,21 +92,21 @@ rgb2lab(rgb_t rgb, float *l, float *a, float *b)
             rgb[i] /= 12.92;
         }
 
-        rgb[i] *= 100;
+        rgb[i] *= 100.0;
     }
 
     // final conversion of RBG to CIEXYZ
     xyz[0] = RGB_R(rgb) * 0.412453 +
-                RGB_G(rgb) * 0.357580 +
-                RGB_B(rgb) * 0.180423;
+             RGB_G(rgb) * 0.357580 +
+             RGB_B(rgb) * 0.180423;
 
     xyz[1] = RGB_R(rgb) * 0.212671 +
-                RGB_G(rgb) * 0.715160 +
-                RGB_B(rgb) * 0.072169;
+             RGB_G(rgb) * 0.715160 +
+             RGB_B(rgb) * 0.072169;
 
     xyz[2] = RGB_R(rgb) * 0.019334 +
-                RGB_G(rgb) * 0.119193 +
-                RGB_B(rgb) * 0.950227;
+             RGB_G(rgb) * 0.119193 +
+             RGB_B(rgb) * 0.950227;
 
     // XYZ Refernce Values (Daylight, sRGB, Adobe-RGB)
     xyz[0] /= 95.047;
@@ -125,9 +126,9 @@ rgb2lab(rgb_t rgb, float *l, float *a, float *b)
         }
     }
 
-    *l = (xyz[1] * 116) - 16;
-    *a = (xyz[0] - xyz[1]) * 500;
-    *b = (xyz[1] - xyz[2]) * 200;
+    *L = (xyz[1] * 116.0) - 16.0;
+    *A = (xyz[0] - xyz[1]) * 500.0;
+    *B = (xyz[1] - xyz[2]) * 200.0;
 
     return;
 }
@@ -136,102 +137,126 @@ rgb2lab(rgb_t rgb, float *l, float *a, float *b)
     convert RGB to HSL system
 
     R, G and B input range = 0 - 255
-    H, S and L output range = 0 - 1.0
+    H, S and L output range = 0 - 360 (degrees on color wheel)
+
+    Code is a conflation of a function written by
+    Daniel Weaver <danw@znyx.com> and the psuedo-code found
+    at EasyRGB.com with their permission
 
     http://http://www.easyrgb.com/en/math.php
 */
 void
-rgb2hsl(rgb_t rgb, float *h, float *s, float *l)
+rgb2hsl(int r, int g, int b, float *h, float *s, float *l)
 {
-    float   min;
-    float   max;
-    float   delta_max;
-    float   delta_red;
-    float   delta_green;
-    float   delta_blue;
+    int     min;
+    int     max;
+    int     delta_max;
+    float   t;
 
-    RGB_R(rgb) /= 255;
-    RGB_G(rgb) /= 255;
-    RGB_B(rgb) /= 255;
+    // fiddle some bits and clamp rgb between 0 and 255
+    r = ABSINT(r);
+    g = ABSINT(g);
+    b = ABSINT(b);
+    r = r & 0x00FF;
+    g = g & 0x00FF;
+    b = b & 0x00FF;
+
+    /*
+        if all values set to 255 then the color is white.  any
+        color on the color wheel with lightness turned all
+        the way up is white.
+    */
+    if((r + g + b) == 765)
+    {
+        *h = 0.0;
+        *s = 50.0;
+        *l = 100.0;
+        return;
+    }
+
+    /*
+        if all values are set to zero then the color is black.  any
+        color on the color wheel with lightness turned all the way
+        down is black.
+    */
+    if((r + g + b) == 0)
+    {
+        *h = 0.0;
+        *s = 50.0;
+        *l = 0.0;
+        return;
+    }
 
     // which color has the smallest value
-    min = MIN_VAL(RGB_G(rgb), RGB_R(rgb));
-    if(min > RGB_B(rgb)) min = RGB_B(rgb);
+    min = MIN_VAL(g, r);
+    if(min > b) min = b;
 
     // which color has the largest value
-    max = MAX_VAL(RGB_G(rgb), RGB_R(rgb));
-    if(max < RGB_B(rgb)) max = RGB_B(rgb);
+    max = MAX_VAL(g, r);
+    if(max < b) max = b;
 
+    // compute the delta only once.  we'll need it later.
     delta_max = max - min;
 
     // calculate lightness
-    *l = (min + max) / 2.0;
+    *l = (float)((min + max) / 20.0);
 
     // this is shade of gray
-    if(delta_max == 0)
+    if(delta_max == 0.0)
     {
-        *h = 0;
-        *s = 0;
+        *h = 0.0;
+        *s = 0.0;
         return;
     }
 
     // calculate saturation
-    if (*l < 0.5)
-        *s = delta_max / (max + min);
+    if (*l < 50.0)
+        *s = (float)(delta_max * 100) / (float)(max + min);
     else
-        *s = delta_max / (2.0 - max - min);
+        *s = (float)(delta_max * 100) / (float)(2000 - max - min);
 
     // calculate hue
-    delta_red = (((max - RGB_R(rgb)) / 6.0) + (delta_max / 2.0)) / delta_max;
-    delta_green = (((max - RGB_G(rgb)) / 6.0) + (delta_max / 2.0)) / delta_max;
-    delta_blue = (((max - RGB_B(rgb)) / 6.0) + (delta_max / 2.0)) / delta_max;
+    if(r == max)
+        t = (float)(120 + ((g - b) * 60) / (float)delta_max);
+    else if(g == max)
+        t = (float)(240 + ((b - r) * 60) / (float)delta_max);
+    else
+        t = (float)(360 + ((r - g) * 60) / (float)delta_max);
 
-    if(max == RGB_R(rgb))
-    {
-        *h = delta_blue - delta_green;
-    }
-
-    if(max == RGB_G(rgb))
-    {
-        *h = (1.0 / 3.0) + delta_red - delta_blue;
-    }
-
-    if(max == RGB_B(rgb))
-    {
-        *h = (2.0 / 3.0) + delta_green - delta_red;
-    }
-
-    if(*h < 0) *h += 1;
-    if(*h > 1) *h -= 1;
+    *h = fmodf(t, 360.0);
 
     return;
 }
 
 void
-hsl2rgb(float h, float s, float l, float *r, float *g, float *b)
+hsl2rgb(float h, float s, float l, int *r, int *g, int *b)
 {
     float   v1;
     float   v2;
 
-    if(s == 0)
+    h = h / 360.0;
+    s = s / 100.0;
+    l = l / 100.0;
+
+    if(s == 0.0)
     {
-        *r = l * 255;
-        *g = l * 255;
-        *b = l * 255;
+        *r = l * 255.0;
+        *g = l * 255.0;
+        *b = l * 255.0;
 
         return;
     }
 
     if(l < 0.5)
-        v2 = l * (1 + s);
+        v2 = l * (1.0 + s);
     else
         v2 = (l + s) - (s * l);
 
-    v1 = (2 * l) - v2;
+    v1 = (2.0 * l) - v2;
 
-    *r = 255 * hue2rgb(v1, v2, h + 0.3333333);
-    *g = 255 * hue2rgb(v1, v2, h);
-    *b = 255 * hue2rgb(v1, v2, h - 0.3333333);
+    *r = (int)(255 * hue2rgb(v1, v2, h + 0.3333333));
+    *g = (int)(255 * hue2rgb(v1, v2, h));
+    *b = (int)(255 * hue2rgb(v1, v2, h - 0.3333333));
 
     return;
 }
@@ -249,7 +274,7 @@ cie76_delta(float l1, float a1, float b1, float l2, float a2, float b2)
 {
     float   delta_e;
 
-    delta_e = sqrt(powf(l1 - l2, 2) + powf(a1 - a2, 2) + powf(b1 - b2, 2));
+    delta_e = sqrt(POW2(l1 - l2) + POW2(a1 - a2) + POW2(b1 - b2));
 
     return delta_e;
 }
@@ -329,18 +354,18 @@ cielab2hue(float a, float b)
 float
 hue2rgb(float v1, float v2, float vh)
 {
-    if(vh < 0) vh += 1;
+    if(vh < 0.0) vh += 1.0;
 
-    if(vh > 1) vh -= 1;
+    if(vh > 1.0) vh -= 1.0;
 
-    if(( 6 * vh ) < 1)
-        return (v1 + (v2 - v1) * 6 * vh);
+    if((6.0 * vh ) < 1.0)
+        return (v1 + (v2 - v1) * 6.0 * vh);
 
-    if((2 * vh) < 1)
+    if((2.0 * vh) < 1.0)
         return v2;
 
-    if((3 * vh) < 2)
-        return (v1 + (v2 - v1) * ((2 / 3) - vh) * 6);
+    if((3.0 * vh) < 2.0)
+        return (v1 + (v2 - v1) * ((2.0 / 3.0) - vh) * 6.0);
 
     return v1;
 }

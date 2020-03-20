@@ -15,6 +15,22 @@
 #define _DARWIN_C_SOURCE 1
 #endif
 
+#ifndef RGB_TO_NCURSES
+#define RGB_TO_NCURSES(x)       ((int)(((float)x / 255.0) * 1000.0))
+#endif
+
+#define X_COLORS(series, name, rgbval)   series,
+static int xcolors_series[] = {
+#include "colors.def"
+};
+#undef X_COLORS
+
+#define X_COLORS(serices, name, rgbval) rgbval,
+static unsigned long xcolor_rgbval[] = {
+#include "colors.def"
+};
+#undef X_COLORS
+
 #include <stdio.h>
 #include <signal.h>
 #include <locale.h>
@@ -28,6 +44,7 @@
 #include <errno.h>
 #include <time.h>
 #include <poll.h>
+#include <math.h>
 
 // #include <sys/ioctl.h>
 
@@ -50,6 +67,7 @@
 #include "../stringv.h"
 #include "../macros.h"
 #include "../utlist.h"
+#include "../color_math.h"
 
 // this is necessary for FreeBSD in some compilation scenarios
 #ifndef CCHARW_MAX
@@ -127,7 +145,8 @@ struct _vpane_s
     int             x;              // x coordinate of top left
     int             y;              // y coordinate of top left
     int             width;          // width of pane
-    int             height;         // height of pane
+    int             height;
+    // height of pane
     unsigned int    state;
     int             scroll_amount;  // tmp value indicating lines to scroll
 
@@ -213,7 +232,6 @@ void        wchar_box(WINDOW *win, int colors, int x, int y,
 
 // protothread that is associated with and drives each vpane
 pt_t        vpane_stream_reader(void * const env);
-
 
 volatile sig_atomic_t   sio_count = 0;
 
@@ -585,7 +603,7 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
         vshell->vterm_flags);
     vterm_set_userptr(vpane->vterm, (void *)vshell);
 
-    vterm_set_colors(vpane->vterm, COLOR_WHITE, COLOR_BLACK);
+    vterm_set_default_colors(vpane->vterm, COLOR_WHITE, COLOR_BLACK);
     vterm_wnd_set(vpane->vterm, vpane->term_wnd);
 
     // this illustrates how to install an event hook
@@ -935,9 +953,101 @@ vshell_color_init(vshell_t *vshell)
     extern short        color_table[];
     extern int          color_count;
     short               fg, bg;
-    int                 i;
+    int                 i, j;
+    int                 term_colors = 0;
     int                 max_colors;
     int                 hard_pair = -1;
+    int                 array_sz;
+    short               r, g, b;
+
+    start_color();
+    /*
+        calculate the size of the matrix.  this is necessary because
+        some terminals support 256 colors and we don't want to deal
+        with that.
+    */
+    max_colors = color_count * color_count;
+
+    vshell->color_mtx  = (color_mtx_t *)calloc(1,
+        max_colors * sizeof(color_mtx_t));
+
+    // enumerate the standard colors
+    for(i = 0;i < max_colors; i++)
+    {
+        fg = i / color_count;
+        bg = color_count - (i % color_count) - 1;
+
+        vshell->color_mtx[i].bg = fg;
+        vshell->color_mtx[i].fg = bg;
+
+        /*
+            according to ncurses documentation, color pair 0 is assumed to
+            be WHITE foreground on BLACK background.  when we discover this
+            pair, we need to make sure it gets swapped into index 0 and
+            whatever is in index 0 gets put into this location.
+        */
+        if( vshell->color_mtx[i].fg == COLOR_WHITE &&
+            vshell->color_mtx[i].bg == COLOR_BLACK )
+        {
+            hard_pair = i;
+        }
+    }
+    /*
+        if hard_pair is no longer -1 then we found the "hard pair"
+        during our enumeration process and we need to do the swap.
+    */
+    if(hard_pair != -1)
+    {
+        fg = vshell->color_mtx[0].fg;
+        bg = vshell->color_mtx[0].bg;
+        vshell->color_mtx[hard_pair].fg = fg;
+        vshell->color_mtx[hard_pair].bg = bg;
+    }
+
+    for(i = 1; i < max_colors; i++)
+    {
+        init_pair(i, vshell->color_mtx[i].fg, vshell->color_mtx[i].bg);
+    }
+
+    term_colors = tigetnum("colors");
+    if(term_colors < 88) return;
+
+    array_sz = ARRAY_SZ(xcolors_series);
+
+    j = 0;
+    for(i = 0; i < array_sz; i++)
+    {
+        if((term_colors <= 88) && (xcolors_series[i] > 88)) continue;
+
+        r = (xcolor_rgbval[i] & 0xFF0000) >> 24;
+        g = (xcolor_rgbval[i] & 0x00FF00) >> 16;
+        b = (xcolor_rgbval[i] & 0x0000FF);
+
+        // init_color(j + 17, r, g, b);
+        // vterm_add_mapped_color(j, r, g, b, 0.0);
+        j++;
+    }
+
+    return;
+}
+
+void
+vshell_color_init_new(vshell_t *vshell)
+{
+    extern short        color_table[];
+    extern int          color_count;
+    short               fg, bg;
+    int                 i;
+    int                 total_colors;
+    int                 hard_pair = -1;
+    int                 term_colors = 0;
+    int                 max_colors = 0;
+    float               hue = 0.0;
+    int                 r, g, b;
+    float               hue_step;
+    int                 hue_bands;
+    float               lightness[] = { 25.0, 50.0, 75.0 };
+    int                 j;
 
     start_color();
 
@@ -987,6 +1097,41 @@ vshell_color_init(vshell_t *vshell)
     for(i = 1; i < max_colors; i++)
     {
         init_pair(i, vshell->color_mtx[i].fg, vshell->color_mtx[i].bg);
+    }
+
+    term_colors = tigetnum("colors");
+    if(term_colors < 88) return;
+
+    // reserve the 8 hard-wired colors + 8 aixterm variants
+    total_colors = term_colors - 16;
+    total_colors -= 24;                   // reserve addlt colors
+    hue_bands = 3;
+
+    /*
+        0, 0, 0 and 255, 255, 255 are always going to be bands so
+        so those need to be subtracted out.
+    */
+    hue_step = 360.0 / (float)(total_colors);
+    i = COLOR_WHITE + 9;
+
+    for(j = 0; j < hue_bands; j++)
+    {
+        hue = 0.0;
+
+        for(;;)
+        {
+            if(hue > 360.0) break;
+
+            hsl2rgb(hue, 100.0, lightness[j], &r, &g, &b);
+
+            init_color(i,
+                RGB_TO_NCURSES(r),
+                RGB_TO_NCURSES(g),
+                RGB_TO_NCURSES(b));
+
+            hue += (hue_step * hue_bands);
+            i++;
+        }
     }
 
     return;

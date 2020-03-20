@@ -37,6 +37,8 @@
 #include "vterm_buffer.h"
 #include "vterm_csi.h"
 #include "color_cache.h"
+#include "color_map.h"
+#include "color_list.h"
 #include "mouse_driver.h"
 
 #include "macros.h"
@@ -48,6 +50,7 @@
     shared resources.
 */
 color_cache_t   *color_cache = NULL;
+color_list_t    *color_list = NULL;
 
 void
 _vterm_set_guest_env(vterm_t *vterm);
@@ -100,6 +103,10 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     */
     vterm_buffer_alloc(vterm, VTERM_BUF_HISTORY, width, height * 4);
     vterm_erase(vterm, VTERM_BUF_HISTORY, '-');
+
+    // init the color map and default colors
+    vterm_color_map_init(vterm);
+    vterm_set_default_colors(vterm, COLOR_WHITE, COLOR_BLACK);
 
     // initializes the color cache or updates the ref count
     color_cache_init();
@@ -297,14 +304,13 @@ vterm_get_ttyname(vterm_t *vterm)
 void
 _vterm_set_host_env(vterm_t *vterm)
 {
-    int     term_colors = 0;
     int     broken_bits = 0;
 
-    term_colors = tigetnum("colors");
+    vterm->term_colors = tigetnum("colors");
     broken_bits = tigetnum("ncv");
 
     // bad value passed.  fallback to normal xterm mode
-    if(term_colors < 16)
+    if(vterm->term_colors < 16)
     {
         vterm->flags &= ~VTERM_FLAG_XTERM_256;
         vterm->flags |= VTERM_FLAG_XTERM;
@@ -313,7 +319,7 @@ _vterm_set_host_env(vterm_t *vterm)
     // probably not safe to use 16-colors
     if(broken_bits > 0)
     {
-        if((term_colors < 16) && (broken_bits & 0x10))
+        if((vterm->term_colors < 16) && (broken_bits & 0x10))
         {
             vterm->flags |= VTERM_FLAG_C8;
             vterm->flags &= ~VTERM_FLAG_C16;
@@ -321,11 +327,13 @@ _vterm_set_host_env(vterm_t *vterm)
     }
 
     // carve the remaining colors into bands
-    if(term_colors > 16)
+    if(vterm->term_colors > 16)
     {
-        vterm->rgb_bands = cbrtf((float)(term_colors - 16)) - 2;
-        vterm->rgb_step = (int)((float)(term_colors - 16) / vterm->rgb_bands);
-        vterm->rgb_half_step = vterm->rgb_step >> 1;
+        // reserve the 8 basic colors
+        // vterm->term_colors -= 8;
+        // vterm->hue_step = 360.0 / (float)(vterm->term_colors);
+
+        color_list_init(vterm->term_colors);
     }
 
     return;

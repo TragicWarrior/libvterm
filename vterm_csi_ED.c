@@ -55,7 +55,8 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
             end_row = v_desc->rows - 1;
             end_col = v_desc->cols - 1;
 
-            v_desc->default_colors = v_desc->colors;
+            v_desc->default_fg = v_desc->fg;
+            v_desc->default_bg = v_desc->bg;
 
             break;
 

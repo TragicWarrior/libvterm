@@ -13,8 +13,8 @@ message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 option(DEFINE_CURSES "Build with curses" ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC -fno-plt")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99 -Wall -fPIC -fno-plt")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC -fno-plt")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99 -Wall -fPIC -fno-plt")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fno-omit-frame-pointer -fPIC -fno-plt")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fsanitize=address -fPIC -fno-plt")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -std=c99 -Wall -fstack-protector-strong -fPIC -fno-plt")
@@ -59,8 +59,9 @@ find_package(Curses)
 
 add_library(vterm-static STATIC
     color_cache.c
-    color_math.c
+    color_list.c
     color_map.c
+    color_math.c
     mouse_driver.c
     mouse_driver_X10.c
     mouse_driver_SGR.c
@@ -122,8 +123,9 @@ add_library(vterm-static STATIC
 
 add_library(vterm.o OBJECT
     color_cache.c
-    color_math.c
+    color_list.c
     color_map.c
+    color_math.c
     mouse_driver.c
     mouse_driver_X10.c
     mouse_driver_SGR.c
@@ -195,6 +197,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
             add_executable(vshell
                 demo/vshell.c
                 demo/ctimer.c
+                color_math.c
                 )
         endif(DEFINE_CURSES)
     endif()
@@ -228,6 +231,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
         add_executable(vshell
             demo/vshell.c
             demo/ctimer.c
+            color_math.c
             )
     endif(DEFINE_CURSES)
 
@@ -258,6 +262,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
         add_executable(vshell
             demo/vshell.c
             demo/ctimer.c
+            color_math.c
             )
     endif(DEFINE_CURSES)
 

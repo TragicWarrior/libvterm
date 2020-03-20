@@ -69,18 +69,19 @@
 */
 #define MAX_PIPE_READ           (PIPE_BUF * 8)
 
+#define COLOR_PROXIMITY         1.8
+
 struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
     vterm_cell_t    **cells;
-    // vterm_cell_t    last_cell;               // contents of last cell write
 
     unsigned long   buffer_state;               // internal state control
 
     attr_t          curattr;                    // current attribute set
-    int             colors;                     // current color pair
 
-    int             default_colors;             // default fg/bg color pair
+    int             default_fg;                 // default fg color
+    int             default_bg;                 // default bg color
 
     int             ccol;                       // current cursor col
     int             crow;                       // current cursor row
@@ -95,8 +96,8 @@ struct _vterm_desc_s
 
     int             fg;                         // current fg color
     int             bg;                         // current bg color
-    short           f_rgb[3];                   // current fg RGB values
-    short           b_rgb[3];                   // current bg RGB values
+    int             f_rgb[3];                   // current fg RGB values
+    int             b_rgb[3];                   // current bg RGB values
 };
 
 typedef struct _vterm_desc_s    vterm_desc_t;
@@ -109,10 +110,8 @@ struct _vterm_s
     WINDOW          *window;                    // curses window
 
     color_map_t     *color_map_head;
-
-    float           rgb_bands;
-    int             rgb_step;
-    int             rgb_half_step;
+    int             term_colors;
+    // int             hue_step;
 
     char            ttyname[96];                // populated with ttyname_r()
 

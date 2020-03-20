@@ -29,6 +29,9 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
     v_desc->cols = width;
     v_desc->max_cols = width;
 
+    v_desc->fg = -1;
+    v_desc->bg = -1;
+
     v_desc->scroll_min = 0;
     v_desc->scroll_max = height - 1;
 
@@ -237,8 +240,10 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
         v_desc = &vterm->vterm_desc[idx];
 
         // copy some defaults from standard buffer
-        v_desc->default_colors =
-            vterm->vterm_desc[VTERM_BUF_STANDARD].default_colors;
+        v_desc->default_fg =
+            vterm->vterm_desc[VTERM_BUF_STANDARD].default_fg;
+        v_desc->default_bg =
+            vterm->vterm_desc[VTERM_BUF_STANDARD].default_bg;
 
         // erase the newly created buffer
         vterm_erase(vterm, idx, 0);
@@ -390,7 +395,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     vcell_src = &v_desc_src->cells[src_offset];
     vcell_dst = &v_desc_dst->cells[dst_offset];
 
-    stride = USE_MIN(v_desc_src->max_cols, v_desc_dst->max_cols);
+    stride = MIN_VAL(v_desc_src->max_cols, v_desc_dst->max_cols);
 
     col_mem = sizeof(vterm_cell_t) * stride;
 

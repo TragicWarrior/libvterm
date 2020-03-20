@@ -23,24 +23,6 @@
 #define PAIR_BG_G(_pair_ptr)    (_pair_ptr->rgb_values[1].g)
 #define PAIR_BG_B(_pair_ptr)    (_pair_ptr->rgb_values[1].b)
 
-#define C16(a, b, c, d) b,
-short rRGB[] = {
-#include "c16_color.def"
-};
-#undef C16
-
-#define C16(a, b, c, d) c,
-short gRGB[] = {
-#include "c16_color.def"
-};
-#undef C16
-
-#define C16(a, b, c, d) d,
-short bRGB[] = {
-#include "c16_color.def"
-};
-#undef C16
-
 void
 _color_cache_reset_pair(color_pair_t *pair);
 
@@ -62,7 +44,7 @@ color_cache_init(void)
         return;
     }
 
-    color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
+    color_cache = CALLOC_PTR(color_cache);
     color_cache->ref_count = 1;
 
     color_cache->term_colors = tigetnum("colors");
@@ -71,12 +53,10 @@ color_cache_init(void)
     // clamp max pairs at 0x7FFF
 #ifdef NCURSES_EXT_COLORS
     if(color_cache->term_pairs > 0x7FFF)
-        // color_cache->term_pairs = 0x7FFF;
         color_cache->term_pairs = 0x3FFF;
 #else
     if(color_cache->term_pairs > 0xFF)
         color_cache->term_pairs = 0xFF;
-        // color_cache->term_pairs = 0x3FFF;
 #endif
 
     // take a snapshot of the current palette
@@ -238,7 +218,12 @@ color_cache_find_unused_pair()
             FG and BG of zero would be a truly odd pair and almost certianly
             indicates an unused pair.
         */
-        if(pair.fg == 0 && pair.bg == 0) break;
+        if(pair.fg == 0 && pair.bg == 0)
+        {
+            // endwin();
+            // fprintf(stderr, "%d\n\r", i);
+            break;
+        }
 
         i--;
     }
@@ -282,6 +267,9 @@ color_cache_find_lru_pair()
         // make sure the pair is not part of the system palette
         if(pair->custom == TRUE) break;
     }
+
+    // endwin();
+    // fprintf(stderr, "pair hit %d\n\r", pair->num);
 
     return pair->num;
 }
@@ -432,10 +420,9 @@ vterm_get_pair_splitter(vterm_t *vterm)
 }
 
 int
-vterm_set_colors(vterm_t *vterm, short fg, short bg)
+vterm_set_default_colors(vterm_t *vterm, int fg, int bg)
 {
     vterm_desc_t    *v_desc = NULL;
-    long            colors;
     int             idx;
 
     if(vterm == NULL) return -1;
@@ -444,20 +431,17 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-#ifdef NOCURSES
-    if(has_colors() == FALSE) return -1;
-#endif
+    v_desc->default_fg = fg;
+    v_desc->default_bg = bg;
 
-    colors = color_cache_find_pair(fg, bg);
-    if(colors == -1) colors = 0;
-
-    v_desc->default_colors = (short)colors;
+    if(v_desc->fg == -1) v_desc->fg = fg;
+    if(v_desc->bg == -1) v_desc->bg = bg;
 
     return 0;
 }
 
-long
-vterm_get_colors(vterm_t *vterm)
+int
+vterm_get_default_colors(vterm_t *vterm, int *fg, int *bg)
 {
     vterm_desc_t    *v_desc = NULL;
     int             idx;
@@ -468,79 +452,14 @@ vterm_get_colors(vterm_t *vterm)
     idx = vterm_buffer_get_active(vterm);
     v_desc = &vterm->vterm_desc[idx];
 
-#ifndef NOCURSES
-        if(has_colors() == FALSE) return -1;
-#endif
+    *fg = v_desc->default_fg;
+    *bg = v_desc->default_bg;
 
-    return v_desc->default_colors;
-}
-
-
-int
-color_cache_find_exact_color(short r, short g, short b)
-{
-    extern color_cache_t    *color_cache;
-    color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
-    bool                    fg_found = FALSE;
-    bool                    bg_found = FALSE;
-
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
-    {
-        /*
-            we're searching for a color that contains a specific RGB
-            composition.  it doesn't matter whether that color is part
-            of the foreground or background color of the pair.  the
-            color number is the same no matter what.
-        */
-
-        // check the foreground color for a match
-        if(pair->rgb_values[0].r == r &&
-            pair->rgb_values[0].g == g &&
-            pair->rgb_values[0].b == b)
-        {
-            fg_found = TRUE;
-        }
-        else
-        {
-            fg_found = FALSE;
-            continue;
-        }
-
-        // check the background color for a match
-        if(pair->rgb_values[1].r == r &&
-            pair->rgb_values[1].g == g &&
-            pair->rgb_values[1].b == b)
-        {
-            bg_found = TRUE;
-        }
-        else
-        {
-            bg_found = FALSE;
-            continue;
-        }
-
-        if(fg_found == TRUE && bg_found == TRUE)
-        {
-            CDL_DELETE(color_cache->head[PALETTE_ACTIVE], pair);
-            break;
-        }
-    }
-
-    if(fg_found == FALSE || bg_found == FALSE) return -1;
-
-    /*
-        push the pair to the front of the list to make subseqent look-ups
-        faster.
-    */
-    CDL_PREPEND(color_cache->head[PALETTE_ACTIVE], pair);
-
-    return pair->num;
+    return 0;
 }
 
 int
-color_cache_find_pair(short fg, short bg)
+color_cache_find_pair(int fg, int bg)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
@@ -614,12 +533,7 @@ _color_cache_profile_pair(color_pair_t *pair)
     // explode pair
     retval = ncw_pair_content(pair->num, &pair->fg, &pair->bg);
 
-    if(retval == -1)
-    {
-        endwin();
-        fprintf(stderr, "%d\n\r", pair->num);
-        exit(0);
-    } 
+    if(retval == -1) return;
 
     // extract foreground RGB
     ncw_color_content(pair->fg, &r, &g, &b);

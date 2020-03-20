@@ -171,8 +171,8 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
 {
     char    **params = NULL;
     char    *pos;
-    short   new_color;
-    short   r, g, b;
+    int     new_color;
+    int     r, g, b;
 
     VAR_UNUSED(vterm);    // make compiler happy
 
@@ -204,15 +204,15 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
         return;
     }
 
-    new_color = (short)atoi(params[0]);
+    new_color = atoi(params[0]);
 
     /*
         XParseColor RGB values are specifed in base-16 and range from
         0x00 to 0xFF.
     */
-    r = (short)(strtol(params[2], NULL, 16));
-    g = (short)(strtol(params[3], NULL, 16));
-    b = (short)(strtol(params[4], NULL, 16));
+    r = (int)(strtol(params[2], NULL, 16));
+    g = (int)(strtol(params[3], NULL, 16));
+    b = (int)(strtol(params[4], NULL, 16));
 
     strfreev(params);
 
@@ -220,7 +220,12 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
         The ncurses RGB values run from 0 - 1000.  We need to scale
         accordingly and vterm_add_mapped_color() does that on its own.
     */
-    vterm_add_mapped_color(vterm, new_color, (float)r, (float)g, (float)b);
+    // endwin(); fprintf(stderr, "%d - %d %d %d\r\n", new_color, r, g, b);
+
+    vterm_add_mapped_color(vterm, new_color, r, g, b, COLOR_PROXIMITY);
+    // vterm_add_mapped_color(vterm, new_color, r, g, b, 3.0);
+
+    // endwin(); exit(0);
 
     return;
 }

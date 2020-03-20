@@ -88,7 +88,6 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
 #define VCELL_SET_COLORS(_cell, _desc) \
                 { \
-                    _cell.colors = _desc->colors; \
                     _cell.fg = _desc->fg; \
                     _cell.bg = _desc->bg; \
                     _cell.f_rgb[0] = _desc->f_rgb[0]; \
@@ -102,12 +101,16 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 
 #define VCELL_SET_DEFAULT_COLORS(_cell, _desc) \
                 { \
-                    _cell.colors = _desc->default_colors; \
+                    _cell.fg = _desc->default_fg; \
+                    _cell.bg = _desc->default_bg; \
                     _cell.dirty = 1; \
                 }
 
-#define VCELL_GET_COLORS(_cell, _colors_ptr) \
-                { *_colors_ptr = _cell.colors; }
+#define VCELL_GET_COLORS(_cell, _fg_ptr, _bg_ptr) \
+                { \
+                    *_fg_ptr = _cell.fg; \
+                    *_bg_ptr = _cell.bg; \
+                }
 
 #endif
 

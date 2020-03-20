@@ -6,12 +6,6 @@
 
 #include "vterm.h"
 
-#define C16(a, b, c, d) a,
-enum {
-#include "c16_color.def"
-};
-#undef C16
-
 /*
     ncurses RGB values range from 0 to 1000 while the rest of the world
     pretty much uses 0 - 255 so we need to scale.
@@ -41,48 +35,48 @@ typedef struct _color_pair_s    color_pair_t;
 
 struct _color_pair_s
 {
-    int                     num;
-    int                     fg;
-    int                     bg;
+    int             num;
+    int             fg;
+    int             bg;
 
-    rgb_values_t            rgb_values[2];
+    rgb_values_t    rgb_values[2];
 
-    vterm_t                 *origin;        /*
-                                                indicates which instance
-                                                added the pair to the
-                                                global table.
-                                            */
+    vterm_t         *origin;        /*
+                                        indicates which instance
+                                        added the pair to the
+                                        global table.
+                                    */
 
-    bool                    custom;         /*
-                                                indicates if the pair was
-                                                loaded from the host
-                                                palette.
-                                            */
-    color_pair_t            *next;
-    color_pair_t            *prev;
+    bool            custom;         /*
+                                        indicates if the pair was
+                                        loaded from the host
+                                        palette.
+                                    */
+    color_pair_t    *next;
+    color_pair_t    *prev;
 };
 
 struct _color_cache_s
 {
-    sig_atomic_t    ref_count;              /*
-                                                incremented when an new
-                                                vterm instance is allocated.
-                                                it's decremented when a
-                                                vterm instance is destroyed.
-                                                when it reaches zero, all
-                                                resources are freed.
+    sig_atomic_t    ref_count;      /*
+                                        incremented when an new
+                                        vterm instance is allocated.
+                                        it's decremented when a
+                                        vterm instance is destroyed.
+                                        when it reaches zero, all
+                                        resources are freed.
 
-                                                use atomic type to prevent
-                                                race condition.
-                                            */
-    int             pair_count;
+                                        use atomic type to prevent
+                                        race condition.
+                                    */
+    int              pair_count;
 
-    int             reserved_pair;
+    int              reserved_pair;
 
-    int             term_colors;
-    int             term_pairs;
+    int              term_colors;
+    int              term_pairs;
 
-    color_pair_t    *head[PALETTE_MAX];
+    color_pair_t     *head[PALETTE_MAX];
 };
 
 typedef struct _color_cache_s   color_cache_t;
@@ -118,13 +112,7 @@ short
 color_cache_find_unused_pair(void);
 
 int
-color_cache_find_pair(short fg, short bg);
-
-int
-color_cache_find_exact_color(short r, short g, short b);
-
-int
-color_cache_find_nearest_color(short r, short g, short b);
+color_cache_find_pair(int fg, int bg);
 
 int
 color_cache_split_pair(int pair_num, short *fg, short *bg);

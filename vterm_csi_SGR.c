@@ -35,6 +35,7 @@
 #include "vterm_csi.h"
 #include "vterm_buffer.h"
 #include "color_cache.h"
+#include "nc_wrapper.h"
 
 void
 _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
@@ -47,14 +48,13 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed);
 void
 interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 {
-    extern short    rRGB[], gRGB[], bRGB[];
     vterm_desc_t    *v_desc = NULL;
     int             i;
     short           mapped_color;
     int             processed = 0;
     int             idx;
     short           fg, bg;
-    int             retval;
+    int             r, g, b;
     static void     *sgr_table[] =
                         {
                             [0]             = &&csi_sgr_RESET,
@@ -166,10 +166,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
 
         csi_sgr_FG:
             // set fg color (case # - 30 = fg color)
-            v_desc->fg = param[i] - 30;
-
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            v_desc->fg = vterm_get_mapped_color(vterm, param[i] - 30,
+                &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
 
             continue;
 
@@ -177,21 +175,20 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // code 38
             // set custom foreground color
             fg = interpret_custom_color(vterm, &param[i], pcount, &processed);
+
             if(fg == -1)
             {
                 i += (pcount - 1);
                 continue;
             }
 
-            mapped_color = vterm_get_mapped_color(vterm, fg);
+            mapped_color = vterm_get_mapped_color(vterm, fg, &r, &g, &b);
 
             if(mapped_color != -1) fg = mapped_color;
 
             if(fg != -1)
             {
                 v_desc->fg = fg;
-                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                    v_desc->bg);
             }
 
             i += processed;
@@ -208,12 +205,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_RESET_FG:
             // code 39
             // reset fg color
-            retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
-
-            if(retval != -1) v_desc->fg = fg;
-
-            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1 ? -1 : 0,
-                v_desc->fg, v_desc->bg);
+            v_desc->fg = vterm_get_mapped_color(vterm, v_desc->default_fg,
+                &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
 
             // if param[i] == 0 then we fall through to resetting BG as well
             if(param[i] != 0) continue;
@@ -221,21 +214,15 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_RESET_BG:
             // code 49
             // reset bg color
-            retval = color_cache_split_pair(v_desc->default_colors, &fg, &bg);
-
-            if(retval != -1) v_desc->bg = bg;
-
-            _vterm_set_color_pair_safe(v_desc, vterm, retval != -1 ? -1 : 0,
-                v_desc->fg, v_desc->bg);
+            v_desc->bg = vterm_get_mapped_color(vterm, v_desc->default_bg,
+                &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
 
             continue;
 
         csi_sgr_BG:
             // set bg color (case # - 40 = fg color)
-            v_desc->bg = param[i] - 40;
-
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            v_desc->bg = vterm_get_mapped_color(vterm, param[i] - 40,
+                &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
 
             continue;
 
@@ -249,15 +236,13 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 continue;
             }
 
-            mapped_color = vterm_get_mapped_color(vterm, bg);
+            mapped_color = vterm_get_mapped_color(vterm, bg, &r, &g, &b);
 
             if(mapped_color != -1) bg = mapped_color;
 
             if(bg != -1)
             {
                 v_desc->bg = bg;
-                _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                    v_desc->bg);
             }
 
             i += processed;
@@ -266,43 +251,18 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_AIX_FG:
             // codes 90 - 97
             // set 16 color fg (aixterm)
-            if(vterm->flags & VTERM_FLAG_C16)
-            {
-                fg = param[i] - 90;
-                v_desc->fg = vterm_add_mapped_color(vterm, fg + 90,
-                    rRGB[fg], gRGB[fg], bRGB[fg]);
-            }
-            else
-            {
-                if(vterm->flags & VTERM_FLAG_C8) v_desc->fg = param[i] - 90;
-                else
-                {
-                    v_desc->fg = (param[i] - 90) + 8;
-                }
-            }
-
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            fg = param[i] - 90;
+            if(!(vterm->flags & VTERM_FLAG_C8)) fg += 8;
+            v_desc->fg = vterm_get_mapped_color(vterm, fg, &r, &g, &b);
 
             continue;
 
         csi_sgr_AIX_BG:
             // codes 100 - 107
             // set 16 color bg (aixterm)
-            if(vterm->flags & VTERM_FLAG_C16)
-            {
-                bg = param[i] - 100;
-                v_desc->bg = vterm_add_mapped_color(vterm, bg + 100,
-                    rRGB[bg], gRGB[bg], bRGB[bg]);
-            }
-            else
-            {
-                v_desc->bg = param[i] - 100;
-                if((vterm->flags & VTERM_FLAG_C8) == 0) v_desc->bg += 8;
-            }
-
-            _vterm_set_color_pair_safe(v_desc, vterm, -1, v_desc->fg,
-                v_desc->bg);
+            bg = param[i] - 100;
+            if(!(vterm->flags & VTERM_FLAG_C8)) bg += 8;
+            v_desc->bg = vterm_get_mapped_color(vterm, bg, &r, &g, &b);
 
             continue;
 
@@ -311,26 +271,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     }
 }
 
-// inline void
-inline void
-_vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
-    int fg, int bg)
-{
-    // find the required pair in the cache
-    if(colors == -1) colors = color_cache_find_pair(fg, bg);
-
-    // no color pair found so we'll try and add it (if requested)
-    if(colors == -1) colors = color_cache_add_pair(vterm, fg, bg);
-
-    // one addtl safeguard
-    if(colors == -1) colors = 0;
-    v_desc->colors = colors;
-
-    color_content(fg, &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
-    color_content(bg, &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
-
-    return;
-}
 
 /*
     ISO-8613-6 sequenences are as follows:
@@ -403,7 +343,7 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed)
         if((pcount % 5) == 0)
         {
             new_color = vterm_add_mapped_color(vterm, -1,
-                (float)param[2], (float)param[3], (float)param[4]);
+                param[2], param[3], param[4], COLOR_PROXIMITY);
 
             *processed = 4;
 
@@ -413,7 +353,7 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed)
         if((pcount % 6) == 0)
         {
             new_color = vterm_add_mapped_color(vterm, -1,
-                (float)param[3], (float)param[4], (float)param[5]);
+                param[3], param[4], param[5], COLOR_PROXIMITY);
 
             *processed = 5;
 
@@ -424,3 +364,4 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed)
     *processed = pcount;
     return -1;
 }
+

@@ -81,7 +81,6 @@ struct _vterm_cell_s
 {
     wchar_t         wch[2];
     attr_t          attr;
-    int             colors;
     short           fg;
     short           bg;
     short           f_rgb[3];
@@ -489,18 +488,21 @@ int             vterm_wnd_update(vterm_t *vterm, int idx, int offset,
 
     @return:            returns 0 on success and -1 upon error.
 */
-int             vterm_set_colors(vterm_t *vterm, short fg, short bg);
+int             vterm_set_default_colors(vterm_t *vterm, int fg, int bg);
 
 /*
     get the color pair number of the default fg/bg combination.
 
     @params:
         vterm           a valid vterm object handle.
+        fg              pointer to an integer where the default foreground
+                        color will be returned.
+        bg              pointer to an integer where the default background
+                        color will be returned.
 
-    @return:            returns the color pair index set as the default
-                        fg/bg color combination.  returns -1 upon error.
+    @return:            returns 0 on success or -1 upon error.
 */
-long            vterm_get_colors(vterm_t *vterm);
+int             vterm_get_default_colors(vterm_t *vterm, int *fg, int *bg);
 
 /*
     add a new color to the instances private palette and map it global
@@ -515,12 +517,18 @@ long            vterm_get_colors(vterm_t *vterm);
         red             red RGB value ranging from 0 - 255
         green           green RGB value ranging from 0 - 255
         blue            blue RGB value ranging from 0 - 255
+        proximity       specifies the maximum distance the color can
+                        be from existing colors in the table before
+                        it is treated as a new color.  a value
+                        of zero means the exact color must already exist.
+                        specifying a larger value increases the perceptible
+                        color variance of the returned color.
 
     @return:            returns the number of the color mapping in the
                         global color space.
 */
 short           vterm_add_mapped_color(vterm_t *vterm, short color,
-                    int red, int green, int blue);
+                    int red, int green, int blue, float proximity);
 
 /*
     queries the vterm instance regarding specific non-standard color
@@ -530,14 +538,19 @@ short           vterm_add_mapped_color(vterm_t *vterm, short color,
     @params:
         vterm           a valid vterm object handle
         color           the color number according to the guest application.
-                        when this is a positive value, arguments red, green,
-                        and blue are ignored.
+        red             pointer to an integer where the red RGB value will
+                        be stored.
+        green           pointer to an integer where the green RGB value will
+                        be stored.
+        blue            pointer to an integer vwhere the blue RGB value will
+                        be stored.
 
     @return:            returns the number of the color mapping in the
                         global color space.
 
 */
-short               vterm_get_mapped_color(vterm_t *vterm, short color);
+short               vterm_get_mapped_color(vterm_t *vterm, short color,
+                        int *red, int *green, int *blue);
 
 /*
     queries the vterm instance for specific RGB color
@@ -548,13 +561,18 @@ short               vterm_get_mapped_color(vterm_t *vterm, short color);
         red             red RGB value ranging from 0 - 255
         green           green RGB value ranging from 0 - 255
         blue            blue RGB value ranging from 0 - 255
+        proximity       specifies the maximum distance the color can
+                        be from existing colors in the table.  a value
+                        of zero means the exact color must be returned.
+                        specifying a larger value increases the perceptible
+                        color variance of the returned color.
 
     @return:            returns the number of the color mapping in the
                         global color space.
 
 */
 short               vterm_get_mapped_rgb(vterm_t *vterm,
-                        int red, int green, int blue);
+                        int red, int green, int blue, float proximity);
 
 /*
     releases the color mapping table and frees the related entries in the

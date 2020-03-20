@@ -14,7 +14,7 @@
 
 #ifndef NOCURSES
 void
-vterm_wnd_set(vterm_t *vterm,WINDOW *window)
+vterm_wnd_set(vterm_t *vterm, WINDOW *window)
 {
     if(vterm == NULL) return;
 
@@ -49,7 +49,9 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
     int             height;
     int             r, c;
     attr_t          attrs;
-    short           colors;
+    int             fg;
+    int             bg;
+    int             colors;
     cchar_t         uch;
 
     if(vterm == NULL) return -1;
@@ -66,7 +68,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
     getmaxyx(vterm->window, height, width);
     VAR_UNUSED(width);
 
-    height = USE_MIN(height, v_desc->rows);
+    height = MIN_VAL(height, v_desc->rows);
 
     for(r = 0; r < height; r++)
     {
@@ -82,8 +84,14 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
                 continue;
             }
 
-            VCELL_GET_COLORS((*vcell), &colors);
+            VCELL_GET_COLORS((*vcell), &fg, &bg);
             VCELL_GET_ATTR((*vcell), &attrs);
+
+            colors = color_cache_find_pair(fg, bg);
+            if(colors == -1)
+            {
+                colors = color_cache_add_pair(vterm, fg, bg);
+            }
 
             /*
                 on Mac OS, the color and ACS attributes stored
@@ -110,8 +118,17 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
     {
         if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
         {
+            fg = v_desc->default_fg;
+            bg = v_desc->default_bg;
+
+            colors = color_cache_find_pair(fg, bg);
+            if(colors == -1)
+            {
+                colors = color_cache_add_pair(vterm, fg, bg);
+            }
+
             mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
-                v_desc->default_colors, NULL);
+                colors, NULL);
 
             VCELL_ROW_SET_DIRTY(&v_desc->cells[v_desc->crow][v_desc->ccol], 1);
         }

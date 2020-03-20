@@ -159,10 +159,23 @@ ncw_color_content(int color, int *r, int *g, int *b)
         *g = sgreen;
         *b = sblue;
 
+        //if((sred + sgreen + sblue) == 0)
+        //{
+        //    endwin();
+        //    fprintf(stderr, "%d : %d %d %d\n\r", color , sred, sgreen, sblue);
+        //}
+
         return retval;
     }
 
     retval = ncw->color_content(color, r, g, b);
+
+//    if((*r + *g + *b) == 0)
+//    {
+//        endwin();
+//        fprintf(stderr, "%d : %d %d %d\n\r", color , *r, *g, *b);
+//    }
+
 
     return retval;
 }
