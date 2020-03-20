@@ -255,7 +255,7 @@ vterm_free_mapped_colors(vterm_t *vterm)
     CDL_FOREACH_SAFE(vterm->color_map_head, mapped_color, tmp1, tmp2)
     {
         // set the color back to 0-0-0 to indicate that it's free
-        ncw_init_color(mapped_color->global_color, 0, 0, 0);
+        // ncw_init_color(mapped_color->global_color, 0, 0, 0);
 
         free(mapped_color);
     }
