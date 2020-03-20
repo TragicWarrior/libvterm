@@ -54,7 +54,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     int             processed = 0;
     int             idx;
     short           fg, bg;
-    int             r, g, b;
     static void     *sgr_table[] =
                         {
                             [0]             = &&csi_sgr_RESET,
@@ -182,7 +181,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 continue;
             }
 
-            mapped_color = vterm_get_mapped_color(vterm, fg, &r, &g, &b);
+            mapped_color = vterm_get_mapped_color(vterm, fg,
+                &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
 
             if(mapped_color != -1) fg = mapped_color;
 
@@ -236,7 +236,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                 continue;
             }
 
-            mapped_color = vterm_get_mapped_color(vterm, bg, &r, &g, &b);
+            mapped_color = vterm_get_mapped_color(vterm, bg,
+                &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
 
             if(mapped_color != -1) bg = mapped_color;
 
@@ -253,7 +254,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // set 16 color fg (aixterm)
             fg = param[i] - 90;
             if(!(vterm->flags & VTERM_FLAG_C8)) fg += 8;
-            v_desc->fg = vterm_get_mapped_color(vterm, fg, &r, &g, &b);
+            v_desc->fg = vterm_get_mapped_color(vterm, fg,
+                &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
 
             continue;
 
@@ -262,7 +264,8 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // set 16 color bg (aixterm)
             bg = param[i] - 100;
             if(!(vterm->flags & VTERM_FLAG_C8)) bg += 8;
-            v_desc->bg = vterm_get_mapped_color(vterm, bg, &r, &g, &b);
+            v_desc->bg = vterm_get_mapped_color(vterm, bg,
+                &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
 
             continue;
 
