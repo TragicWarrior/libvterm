@@ -323,8 +323,29 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 
 endif()
 
-install (TARGETS vterm-static vterm-shared DESTINATION lib)
+install (TARGETS vterm-static vterm-shared
+        EXPORT libvtermTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+        )
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+        libvtermConfigVersion.cmake
+        VERSION ${PACKAGE_VERSION}
+        COMPATIBILITY AnyNewerVersion
+)
+
 install (FILES vterm.h DESTINATION include)
+
+install(EXPORT libvtermTargets
+        FILE libvtermTargets.cmake
+        NAMESPACE libvterm::
+        DESTINATION lib/cmake/libvterm
+        )
+
 
 # Install pkgconfig files to libdata on BSD, otherwise lib
 if(CMAKE_SYSTEM_NAME MATCHES "BSD")
@@ -333,6 +354,12 @@ else()
     set(PKG_CONFIG_INSTALL_DIR "lib/pkgconfig")
 endif()
 install (FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION ${PKG_CONFIG_INSTALL_DIR})
+
+configure_file(libvtermConfig.cmake.in libvtermConfig.cmake @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libvtermConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/libvtermConfigVersion.cmake"
+        DESTINATION lib/cmake/libvterm
+        )
 
 set(CPACK_GENERATOR "DEB;RPM")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Bryan")
