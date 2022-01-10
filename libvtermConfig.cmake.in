@@ -1,0 +1,11 @@
+include(CMakeFindDependencyMacro)
+
+## Same syntax as find_package
+find_dependency(Curses REQUIRED)
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    include_directories(/usr/local/opt/ncurses/include)
+    link_directories(/usr/local/opt/ncurses/lib)
+endif() 
+
+# Add the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/libvtermTargets.cmake")

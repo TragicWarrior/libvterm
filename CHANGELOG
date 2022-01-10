@@ -1,3 +1,8 @@
+9.4
+
+* [Sioryn Willett] now installs libvtermConfig.cmake 
+  which enables find_package(libvterm) in cmake projects
+
 9.3
 
 * [Bryan Christ] Added support for anonymous colors which are used by
