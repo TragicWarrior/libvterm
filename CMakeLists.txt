@@ -119,6 +119,7 @@ add_library(vterm-static STATIC
     vterm_write.c
     stringv.c
     )
+set_target_properties(vterm-static PROPERTIES PUBLIC_HEADER "vterm.h")
 
 add_library(vterm.o OBJECT
     color_cache.c
@@ -182,6 +183,7 @@ add_library(vterm.o OBJECT
     vterm_write.c
     stringv.c
     )
+set_target_properties(vterm-static PROPERTIES PUBLIC_HEADER "vterm.h")
 
 add_library(vterm-shared SHARED
     $<TARGET_OBJECTS:vterm.o>
@@ -329,6 +331,7 @@ install (TARGETS vterm-static vterm-shared
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
+        PUBLIC_HEADER DESTINATION include
         )
 
 include(CMakePackageConfigHelpers)
@@ -337,8 +340,6 @@ write_basic_package_version_file(
         VERSION ${PACKAGE_VERSION}
         COMPATIBILITY AnyNewerVersion
 )
-
-install (FILES vterm.h DESTINATION include)
 
 install(EXPORT libvtermTargets
         FILE libvtermTargets.cmake
