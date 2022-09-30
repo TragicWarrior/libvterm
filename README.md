@@ -29,7 +29,7 @@ relatively easy to install a new version from source and place it in
 A standard build goes something like this:
 
 ```
-cmake CMakeList.txt
+cmake CMakeLists.txt
 make
 sudo make install
 ```
