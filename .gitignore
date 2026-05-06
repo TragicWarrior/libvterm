@@ -9,3 +9,4 @@ Makefile
 *.cmake
 CMakeFiles/*
 _CPack_Packages/*
+TODO.md

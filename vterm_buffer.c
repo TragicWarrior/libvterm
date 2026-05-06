@@ -67,6 +67,19 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     if(new_width < v_desc->max_cols) new_width = v_desc->max_cols;
     if(new_width >= v_desc->max_cols) v_desc->max_cols = new_width;
 
+    /*
+        when shrinking, free each row that will be discarded.  realloc()
+        of the row pointer array would otherwise drop these pointers
+        and leak the cell memory they reference.
+    */
+    if(height < v_desc->rows)
+    {
+        for(r = height; r < v_desc->rows; r++)
+        {
+            free(v_desc->cells[r]);
+        }
+    }
+
     // realloc to accomodate the new matrix size
     v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
         sizeof(vterm_cell_t*) * height);
