@@ -30,9 +30,9 @@ vterm_interpret_ctrl_char(vterm_t *vterm, char *data)
                             ['\a']      = &&ctrl_char_BELL,
                         };
 
-    // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    // active buffer descriptor (idx kept for VTERM_BUF_ALTERNATE compare below)
+    idx = vterm->vterm_desc_idx;
+    v_desc = vterm->v_desc_active;
 
     verb = data[0];
 

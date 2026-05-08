@@ -16,15 +16,13 @@ interpret_csi_REP(vterm_t *vterm, int param[], int pcount)
     vterm_cell_t    *vcell_prev;
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
     int             max_col;
     int             c;
 
     if(vterm == NULL) return;
 
     // set the vterm desciption selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     // if repeat value isn't supplied, return.  nothing to do.
     if(pcount == 0) return;

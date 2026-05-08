@@ -163,11 +163,9 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell = NULL;
-    int             idx;
 
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(v_desc->ccol >= v_desc->cols)
     {
@@ -220,14 +218,12 @@ void
 vterm_get_size( vterm_t *vterm, int *width, int *height )
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     if(vterm == NULL || width == NULL || height == NULL )
         return;
 
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     *width = v_desc->cols;
     *height = v_desc->rows;

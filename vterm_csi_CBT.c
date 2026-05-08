@@ -15,15 +15,13 @@ interpret_csi_CBT(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             tab_count = 1;          // default is one
     int             stride;
-    int             idx;
 
     if(vterm == NULL) return;
 
     if(pcount > 0) tab_count = param[0];
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     stride = v_desc->ccol % 8;
 

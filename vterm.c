@@ -90,6 +90,11 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     if(vterm == NULL)
         vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
 
+    // seed the active descriptor cache.  vterm_desc_idx defaults to 0
+    // (VTERM_BUF_STANDARD) from calloc; the inline array address is stable
+    // for the lifetime of the vterm_t.
+    vterm->v_desc_active = &vterm->vterm_desc[VTERM_BUF_STANDARD];
+
     // allocate a the buffer (a matrix of cells)
     vterm_buffer_alloc(vterm, VTERM_BUF_STANDARD, width, height);
 

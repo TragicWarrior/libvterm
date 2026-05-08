@@ -36,7 +36,6 @@ void
 interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
     int             n = 1;
     static void     *curmove_table[] =
                         {
@@ -62,8 +61,7 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
     }
 
     // set active vterm description selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     SWITCH(curmove_table, (unsigned int)verb, 0);
 

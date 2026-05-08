@@ -105,6 +105,15 @@ struct _vterm_s
 {
     vterm_desc_t    vterm_desc[3];              // normal buffer and alt buffer
     int             vterm_desc_idx;             // index of active buffer;
+    vterm_desc_t    *v_desc_active;             /*
+                                                    cached pointer to the
+                                                    active descriptor.  only
+                                                    written by
+                                                    vterm_buffer_set_active.
+                                                    read everywhere else
+                                                    instead of recomputing
+                                                    &vterm_desc[idx] per call.
+                                                */
 
     WINDOW          *window;                    // curses window
 

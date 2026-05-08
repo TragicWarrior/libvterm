@@ -22,15 +22,13 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     vterm_cell_t    *vcell;
     int             r;
     int             n = 1;          // number of scroll lines
-    int             idx;
     int             bottom_row;
     int             top_row;
     int             stride;
     int             i;
 
     // set selector for buffer description
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(pcount > 0)
     {

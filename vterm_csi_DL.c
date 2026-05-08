@@ -14,11 +14,9 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             c, r;
     int             n = 1;
-    int             idx;
 
     // set selector for buffer description
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(pcount && param[0] > 0) n = param[0];
 

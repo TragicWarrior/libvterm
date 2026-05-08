@@ -8,11 +8,9 @@ inline void
 clamp_cursor_to_bounds(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     // set vterm description buffer seletor
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(v_desc->crow < 0) v_desc->crow = 0;
 

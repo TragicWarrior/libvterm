@@ -24,9 +24,9 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
 
     if(pcount == 0) return;
 
-    // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    // active buffer descriptor (idx kept for cursor_show / VTERM_BUF_ALTERNATE compares)
+    idx = vterm->vterm_desc_idx;
+    v_desc = vterm->v_desc_active;
 
     for(i = 0; i < pcount; i++)
     {

@@ -19,11 +19,12 @@ vterm_erase(vterm_t *vterm, int idx, char fill_char)
     // a value of -1 means current, active buffer
     if(idx == -1)
     {
-        // set the vterm description buffer selector
-        idx = vterm_buffer_get_active(vterm);
+        v_desc = vterm->v_desc_active;
     }
-
-    v_desc = &vterm->vterm_desc[idx];
+    else
+    {
+        v_desc = &vterm->vterm_desc[idx];
+    }
 
     // post event that term is about to be erased
     if(vterm->event_mask & VTERM_MASK_TERM_PRECLEAR)
@@ -58,15 +59,13 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             c;
-    int             idx;
 
     if(vterm == NULL) return;
 
     if(fill_char == 0) fill_char = ' ';
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(row == -1) row = v_desc->crow;
     vcell = &v_desc->cells[row][0];
@@ -89,7 +88,6 @@ void
 vterm_erase_rows(vterm_t *vterm, int start_row, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     if(vterm == NULL) return;
     if(start_row < 0) return;
@@ -97,8 +95,7 @@ vterm_erase_rows(vterm_t *vterm, int start_row, char fill_char)
     if(fill_char == 0) fill_char = ' ';
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     while(start_row < v_desc->rows)
     {
@@ -114,7 +111,6 @@ vterm_erase_col(vterm_t *vterm, int col, char fill_char)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
     int             r;
 
     if(vterm == NULL) return;
@@ -122,8 +118,7 @@ vterm_erase_col(vterm_t *vterm, int col, char fill_char)
     if(fill_char == 0) fill_char = ' ';
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(col == -1) col = v_desc->ccol;
 
@@ -144,7 +139,6 @@ void
 vterm_erase_cols(vterm_t *vterm, int start_col, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     if(vterm == NULL) return;
     if(start_col < 0) return;
@@ -152,8 +146,7 @@ vterm_erase_cols(vterm_t *vterm, int start_col, char fill_char)
     if(fill_char == 0) fill_char = ' ';
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     while(start_col < v_desc->cols)
     {

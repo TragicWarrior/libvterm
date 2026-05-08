@@ -13,11 +13,9 @@ void
 vterm_cursor_move_home(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     // set vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     v_desc->ccol = 0;
 
@@ -38,11 +36,9 @@ vterm_cursor_move_backward(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
     int             min_row;
-    int             idx;
 
     // set vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(v_desc->buffer_state & STATE_ORIGIN_MODE)
         min_row = v_desc->scroll_min;
@@ -69,12 +65,10 @@ void
 vterm_cursor_move_tab(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
     int             tab_sz = 8;
 
     // set vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     // a tab on the last column push to the beginning of the next row
     if(v_desc->ccol == v_desc->cols - 1)
@@ -144,11 +138,9 @@ void
 vterm_cursor_save(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     // set vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     v_desc->saved_x = v_desc->ccol;
     v_desc->saved_y = v_desc->crow;
@@ -160,11 +152,9 @@ void
 vterm_cursor_restore(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     v_desc->ccol = v_desc->saved_x;
     v_desc->crow = v_desc->saved_y;
@@ -176,11 +166,9 @@ void
 vterm_get_cursor_position(vterm_t *vterm, int *column, int *row)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     *column = v_desc->ccol;
     *row = v_desc->crow;
