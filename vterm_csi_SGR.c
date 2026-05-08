@@ -52,7 +52,6 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
     int             i;
     short           mapped_color;
     int             processed = 0;
-    int             idx;
     short           fg, bg;
     int             retval;
     static void     *sgr_table[] =
@@ -83,8 +82,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
                         };
 
     // set vterm_desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(pcount == 0)
     {

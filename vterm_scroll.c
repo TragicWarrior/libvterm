@@ -21,9 +21,9 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
     vterm_desc_t    *v_desc = NULL;
     int             idx;
 
-    // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    // active buffer descriptor (idx kept for compares / shift_up,down calls)
+    idx = vterm->vterm_desc_idx;
+    v_desc = vterm->v_desc_active;
 
     /*
         on scroll up, copy a row to the history buffer, but only if the
@@ -76,9 +76,9 @@ vterm_scroll_down(vterm_t *vterm, bool reset_colors)
     vterm_desc_t    *v_desc = NULL;
     int             idx;
 
-    // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    // active buffer descriptor (idx kept for compares / shift_up,down calls)
+    idx = vterm->vterm_desc_idx;
+    v_desc = vterm->v_desc_active;
 
     // move the cursor up
     v_desc->crow--;

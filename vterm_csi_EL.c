@@ -34,12 +34,10 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             erase_start, erase_end, c;
     int             cmd = 0;
-    int             idx;
     int             row;
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     cmd =  (pcount > 0 ? param[0] : 0);
 

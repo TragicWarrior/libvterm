@@ -257,9 +257,11 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
         vterm_erase(vterm, idx, 0);
     }
 
-    // update the vterm buffer desc index
+    // update the vterm buffer desc index and the cached active pointer.
+    // these two MUST stay in sync -- v_desc_active is read on hot paths.
     vterm->vterm_desc_idx = idx;
-    v_desc = &vterm->vterm_desc[idx];
+    vterm->v_desc_active = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
     VCELL_ALL_SET_DIRTY(v_desc);
 
     // run the event hook if installed
@@ -425,15 +427,13 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    **buffer;
-    int             idx;
     int             r;
 
     if(vterm == NULL) return NULL;
     if(rows == NULL || cols == NULL) return NULL;
 
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     *rows = v_desc->rows;
     *cols = v_desc->max_cols;

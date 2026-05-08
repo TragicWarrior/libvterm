@@ -23,11 +23,9 @@ inline void
 interpret_esc_RI(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     // check to see if we're at the top already
     if(v_desc->crow <= v_desc->scroll_min)

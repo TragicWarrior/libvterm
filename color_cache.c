@@ -433,13 +433,11 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
 {
     vterm_desc_t    *v_desc = NULL;
     long            colors;
-    int             idx;
 
     if(vterm == NULL) return -1;
 
     // set vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
 #ifdef NOCURSES
     if(has_colors() == FALSE) return -1;
@@ -457,13 +455,11 @@ long
 vterm_get_colors(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             idx;
 
     if(vterm == NULL) return -1;
 
     // set vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
 #ifndef NOCURSES
         if(has_colors() == FALSE) return -1;

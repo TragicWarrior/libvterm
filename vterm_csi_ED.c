@@ -29,13 +29,11 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     vterm_desc_t    *v_desc = NULL;
     int             r, c;
     int             start_row, start_col, end_row, end_col;
-    int             idx;
 
     unsigned int    p;
 
     // set vterm desc buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     p = (pcount > 0 ? param[0] : 3);
 

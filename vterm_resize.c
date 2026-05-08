@@ -33,9 +33,9 @@ vterm_resize_full(vterm_t *vterm, uint16_t width, uint16_t height,
     if(vterm == NULL) return;
     if(width == 0 || height == 0) return;
 
-    // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    // active buffer descriptor (idx kept for the buffer_realloc call below)
+    idx = vterm->vterm_desc_idx;
+    v_desc = vterm->v_desc_active;
 
     delta_y = height - v_desc->rows;
     start_y = v_desc->rows;

@@ -17,11 +17,9 @@ interpret_csi_DECSTBM(vterm_t *vterm,int param[],int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
     int             newtop, newbottom;
-    int             idx;
 
     // set the vterm description selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     if(!pcount)
     {

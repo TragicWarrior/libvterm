@@ -58,10 +58,13 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
     // set vterm desc buffer selector
     if(idx == -1)
     {
-        idx = vterm_buffer_get_active(vterm);
+        idx = vterm->vterm_desc_idx;
+        v_desc = vterm->v_desc_active;
     }
-
-    v_desc = &vterm->vterm_desc[idx];
+    else
+    {
+        v_desc = &vterm->vterm_desc[idx];
+    }
 
     getmaxyx(vterm->window, height, width);
     VAR_UNUSED(width);

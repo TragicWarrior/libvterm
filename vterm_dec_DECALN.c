@@ -16,12 +16,10 @@ interpret_dec_DECALN(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
     vterm_cell_t    *vcell;
-    int             idx;
     int             r, c;
 
     // set the vterm description buffer selector
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     for(r = 0;r < v_desc->rows; r++)
     {

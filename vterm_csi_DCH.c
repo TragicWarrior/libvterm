@@ -13,15 +13,13 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     vterm_cell_t    *vcell_src;
     vterm_cell_t    *vcell_dst;
     int             stride;
-    int             idx;
     int             n = 1;
     int             c;
 
     if(pcount && param[0] > 0) n = param[0];
 
     // select the correct desc
-    idx = vterm_buffer_get_active(vterm);
-    v_desc = &vterm->vterm_desc[idx];
+    v_desc = vterm->v_desc_active;
 
     stride = v_desc->cols - v_desc->ccol;
     stride -= n;
