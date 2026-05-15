@@ -162,8 +162,25 @@ vterm_render(vterm_t *vterm, char *data, int len)
                 vterm->esbuf_len++;
                 vterm->esbuf[vterm->esbuf_len] = 0;
 
-                // if we are in escape mode (initiated by 0x1B) go here...
-                vterm_interpret_escapes(vterm);
+                if(vterm->esc_suffix_check != NULL)
+                {
+                    // stray ESC inside a non-OSC sequence kills the parse
+                    if(*data == '\033' && !IS_OSC_MODE(vterm))
+                    {
+                        vterm_escape_cancel(vterm);
+                        continue;
+                    }
+
+                    if(vterm->esc_suffix_check(vterm))
+                    {
+                        vterm->esc_handler(vterm);
+                        vterm_escape_cancel(vterm);
+                    }
+                }
+                else
+                {
+                    vterm_interpret_escapes(vterm);
+                }
                 continue;
             }
         }
