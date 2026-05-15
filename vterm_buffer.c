@@ -106,7 +106,7 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
             sizeof(vterm_cell_t) * new_width);
 
         // fill new cols with blanks
-        start_x = max_cols_old - 1;
+        start_x = max_cols_old;
         for(c = start_x; c < new_width; c++)
         {
             VCELL_ZERO_ALL(v_desc->cells[r][c]);
