@@ -18,26 +18,6 @@
 #define CCHARW_MAX  5
 #endif
 
-typedef union
-{
-    struct
-    {
-        uint8_t     b1 : 1;
-        uint8_t     b2 : 1;
-        uint8_t     b3 : 1;
-        uint8_t     b4 : 1;
-        uint8_t     b5 : 1;
-        uint8_t     b6 : 1;
-        uint8_t     b7 : 1;
-        uint8_t     b8 : 1;
-    }
-                    bits;
-    uint8_t         byte;
-}
-bit_pack_t;
-
-void utf8_str_to_wchar(wchar_t *wch, const char *str, int max);
-
 
 void
 vterm_utf8_start(vterm_t *vterm)
@@ -66,52 +46,34 @@ vterm_utf8_cancel(vterm_t *vterm)
 int
 vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
 {
-    uint32_t            utf8_code = 0;
+    unsigned char       lead = (unsigned char)vterm->utf8_buf[0];
+    uint32_t            utf8_code;
+    wchar_t             cp;
     int                 byte_count;
-    bit_pack_t          bit_pack;
-    int                 i = 0;
+    int                 i;
 
-    /*
-        pack in the first byte of the sequence.  it tells us how many
-        bytes are encoded.
-    */
-    bit_pack.byte = (uint8_t)vterm->utf8_buf[0];
+    if(lead < 0xC0) byte_count = 1;
+    else if(lead < 0xE0) byte_count = 2;
+    else if(lead < 0xF0) byte_count = 3;
+    else byte_count = 4;
 
-    // count the high-order bits
-    byte_count = bit_pack.bits.b8 + bit_pack.bits.b7 +
-        bit_pack.bits.b6 + bit_pack.bits.b5;
+    if(vterm->utf8_buf_len < byte_count) return -1;
 
-    // too early to decode.  return back for more reading.
-    if (vterm->utf8_buf_len < byte_count) return -1;
+    utf8_code = lead;
+    cp = lead & (0x7F >> byte_count);
 
-    // store first byte in the sequence
-    utf8_code = (uint32_t)bit_pack.byte;
-
-    // push in the rest of the bytes
-    for (i = 1; i < byte_count; i++)
+    for(i = 1; i < byte_count; i++)
     {
-        // make room for the next byte
-        utf8_code = utf8_code << 8;
+        unsigned char b = (unsigned char)vterm->utf8_buf[i];
 
-        // pack in the next byte for validation
-        bit_pack.byte = (uint8_t)vterm->utf8_buf[i];
-
-        /*
-            each continuation byte in a UTF8 sequence should have a marker.
-            effectively bit 8 should be 1 and bit 7 should be 0 so we'll
-            check for that.
-        */
-        if(bit_pack.bits.b8 == 1 && bit_pack.bits.b7 == 0)
+        if((b & 0xC0) != 0x80)
         {
-            // looks valid, so OR it in
-            utf8_code |= (uint8_t)vterm->utf8_buf[i];
-        }
-        else
-        {
-            // malformed UTF8 sequence? punt to error handler
             vterm_error(vterm, VTERM_ECODE_UTF8_MARKER_ERR, (void *)wch);
             return byte_count;
         }
+
+        utf8_code = (utf8_code << 8) | b;
+        cp = (cp << 6) | (b & 0x3F);
     }
 
     /*
@@ -235,39 +197,9 @@ vterm_utf8_decode(vterm_t *vterm, chtype *utf8_char, wchar_t *wch)
         default:            { *utf8_char = ' ';                 break;}
     }
 
-    utf8_str_to_wchar(wch, vterm->utf8_buf, CCHARW_MAX);
+    wch[0] = cp;
+    wch[1] = L'\0';
 
     return byte_count;
-}
-
-inline void
-utf8_str_to_wchar(wchar_t *wch, const char *str, int max)
-{
-    mbstate_t       mbs;
-    const char      *pos = str;
-    size_t          len = max;
-
-    memset(wch, 0, max);
-    memset(&mbs, 0, sizeof (mbstate_t));
-
-    /*
-        user didn't specify a length so we need to calculate.
-
-        according to the man pages for mbsrtowcw(), when the first
-        argument is NULL, the converstion take place but nothing is
-        written to memory.  however, the function still returns the
-        number of wide characters converted... effectively
-        measuring lengthy.
-    */
-    if(len == 0)
-    {
-        len = mbsrtowcs(NULL, &pos, 0, &mbs);
-    }
-
-    pos = str;
-    memset (&mbs, 0, sizeof (mbstate_t));
-    len = mbsrtowcs(wch, &pos, len - 1, &mbs);
-
-    return;
 }
 #endif
