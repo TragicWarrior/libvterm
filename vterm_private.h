@@ -209,6 +209,7 @@ struct _vterm_s
     int             (*write)            (vterm_t *, uint32_t);
     int             (*esc_handler)      (vterm_t *);
     int             (*rs1_reset)        (vterm_t *, char *);
+    int             rs1_off;            //  scanner offset within RXVT_RS1
     ssize_t         (*mouse_driver)     (vterm_t *, unsigned char *);
 
     // callbacks that the implementer can specify
