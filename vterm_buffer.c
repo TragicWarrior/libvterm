@@ -101,6 +101,9 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
             continue;
         }
 
+        // skip existing rows when width is unchanged
+        if(new_width == max_cols_old) continue;
+
         // this handles existing rows
         v_desc->cells[r] = (vterm_cell_t*)realloc(v_desc->cells[r],
             sizeof(vterm_cell_t) * new_width);
@@ -463,8 +466,6 @@ _vterm_buffer_alloc_raw(int rows, int cols)
     for(r = 0; r < rows; r++)
     {
         buffer[r] = (vterm_cell_t *)calloc(cols, sizeof(vterm_cell_t));
-
-        VCELL_ROW_SET_DIRTY(buffer[r], cols);
     }
 
     return buffer;
