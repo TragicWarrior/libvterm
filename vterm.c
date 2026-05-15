@@ -155,7 +155,9 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         others typically use \Ec
     */
     if(flags & VTERM_FLAG_RXVT)
+    {
         vterm->rs1_reset = interpret_csi_RS1_rxvt;
+    }
 
     if(flags & VTERM_FLAG_NOPTY)
     { // skip all the child process and fd stuff.

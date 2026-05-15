@@ -45,17 +45,13 @@ vterm_render(vterm_t *vterm, char *data, int len)
             plain-ASCII fast path.  most terminal output is long runs of
             printable ASCII (shell prompts, log lines, source code, build
             output).  when no escape sequence, no UTF-8 assembly, and no
-            rxvt RS1 scanner is active, drop straight into a tight loop
+            rxvt RS1 scanner is mid-match, drop straight into a tight loop
             that calls vterm_put_char and bypasses the per-byte C0/C1/
             UTF-8/escape branch barrage.
-
-            rxvt mode keeps a stateful scanner in rs1_reset that must see
-            every byte to track partial matches of RXVT_RS1, so we sit
-            out the fast path when it is installed.
         */
-        if(vterm->rs1_reset == NULL
-            && !IS_MODE_ESCAPED(vterm)
-            && !IS_MODE_UTF8(vterm))
+        if(!IS_MODE_ESCAPED(vterm)
+            && !IS_MODE_UTF8(vterm)
+            && vterm->rs1_off == 0)
         {
             while(i < len
                 && (unsigned char)*data >= 0x20
@@ -71,8 +67,12 @@ vterm_render(vterm_t *vterm, char *data, int len)
         // completely ignore NUL
         if(*data == 0) continue;
 
-        // special processing looking for reset sequence
-        if(vterm->rs1_reset != NULL) vterm->rs1_reset(vterm, (char *)data);
+        // only invoke the RS1 scanner on ESC or when mid-match
+        if(vterm->rs1_reset != NULL
+            && (vterm->rs1_off != 0 || *data == '\033'))
+        {
+            vterm->rs1_reset(vterm, (char *)data);
+        }
 
 
         if(!IS_MODE_ESCAPED(vterm))

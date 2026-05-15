@@ -8,40 +8,28 @@
 #include "vterm_buffer.h"
 
 
-/*
-    we're looking for a very specific sequence.  using a protothread here
-    would probably make sense, but it's pretty easy to do this with some
-    statics as well.
-*/
 int
 interpret_csi_RS1_rxvt(vterm_t *vterm, char *byte)
 {
-    static char     *end = RXVT_RS1 + sizeof(RXVT_RS1) - 2;
-    static char     *pos = RXVT_RS1;
+    static int      end = sizeof(RXVT_RS1) - 2;
 
-    // if we get a stray byte, reset sequence parser
-    if(byte[0] != pos[0])
+    if(byte[0] != RXVT_RS1[vterm->rs1_off])
     {
-        pos = RXVT_RS1;
+        vterm->rs1_off = 0;
         return 0;
     }
 
-    // do the bytes match and are we at the end
-    if((pos[0] == end[0] && pos == end))
+    if(vterm->rs1_off == end)
     {
-        // reset to standard buffer (and add other stuff if ncessary)
         vterm_buffer_set_active(vterm, VTERM_BUF_STANDARD);
-
-        // make cursor always visible after a reset
         vterm_cursor_show(vterm, VTERM_BUF_STANDARD);
 
-        // reset the parser
-        pos = RXVT_RS1;
+        vterm->rs1_off = 0;
 
         return 0;
     }
 
-    pos++;
+    vterm->rs1_off++;
 
     return 0;
 }
