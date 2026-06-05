@@ -60,6 +60,7 @@ Centos 7.8
 5 - test-colorcube (ncurses test)
 5 - yetris
 5 - nsnake
+4 - claude code
 ```
 
 ### Mac OS Testing ###
