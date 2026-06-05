@@ -392,7 +392,6 @@ int
 _vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes)
 {
     ssize_t bytes_written = 0;
-    int     retval = 0;
 
     if(buf == NULL) return -1;
 
@@ -400,7 +399,46 @@ _vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes)
     if(bytes_written != bytes)
     {
         vterm_error(vterm, VTERM_ECODE_PTY_WRITE_ERR, NULL);
+        return -1;
     }
 
-    return retval;
+    return bytes_written;
+}
+
+int
+vterm_write_mouse_event(vterm_t *vterm, MEVENT *mouse_event)
+{
+    unsigned char   buf[64];
+    ssize_t         bytes;
+
+    if(vterm == NULL || mouse_event == NULL) return -1;
+    if(vterm->mouse_driver == NULL) return 0;
+
+    vterm->pending_mouse = mouse_event;
+
+    if(mouse_event->bstate & BUTTON1_CLICKED)
+    {
+        MEVENT synth = *mouse_event;
+
+        synth.bstate = (synth.bstate & ~BUTTON1_CLICKED) | BUTTON1_PRESSED;
+        vterm->pending_mouse = &synth;
+        bytes = vterm->mouse_driver(vterm, buf);
+        if(bytes > 0) _vterm_write_pty(vterm, buf, bytes);
+
+        synth.bstate = (synth.bstate & ~BUTTON1_PRESSED) | BUTTON1_RELEASED;
+        vterm->pending_mouse = &synth;
+        bytes = vterm->mouse_driver(vterm, buf);
+        if(bytes > 0) _vterm_write_pty(vterm, buf, bytes);
+
+        vterm->pending_mouse = NULL;
+        return 1;
+    }
+
+    bytes = vterm->mouse_driver(vterm, buf);
+    vterm->pending_mouse = NULL;
+
+    if(bytes > 0)
+        return _vterm_write_pty(vterm, buf, bytes);
+
+    return 0;
 }
