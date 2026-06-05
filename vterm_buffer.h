@@ -28,75 +28,92 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
             int src_offset, int dst_offset, int rows);
 
 
-#define VCELL_ZERO_ALL(_cell) \
-            { \
-                memset(&_cell, 0, sizeof(_cell)); \
-                _cell.dirty = 1; \
-            }
+/*
+    dirty-bit primitives.  dirty state lives in a side-table bitmap
+    on vterm_desc_t (dirty_bits[row][col >> 3] bit (col & 7)) -- one
+    bit per cell instead of a per-cell byte that wasted 4 bytes after
+    struct padding.
+*/
 
-#define VCELL_ROW_SET_DIRTY(_cell, _stride) \
-            { \
-                __typeof__ (_cell) _ctmp = (_cell); \
-                __typeof__ (_stride) _stmp= (_stride); \
-                do \
-                { \
-                    _ctmp->dirty = 1; \
-                    _ctmp++; \
-                    _stmp--; \
-                } \
-                while(_stmp > 0); \
-            }
+#define VCELL_DIRTY_ROW_BYTES(_cols)    (((_cols) + 7) >> 3)
 
+#define VCELL_DIRTY_SET(_desc, _r, _c) \
+            ((_desc)->dirty_bits[(_r)][(_c) >> 3] |= \
+                (uint8_t)(1u << ((_c) & 7)))
 
-#define VCELL_ROW_SET_CLEAN(_cell, _stride) \
+#define VCELL_DIRTY_CLEAR(_desc, _r, _c) \
+            ((_desc)->dirty_bits[(_r)][(_c) >> 3] &= \
+                (uint8_t)~(1u << ((_c) & 7)))
+
+#define VCELL_DIRTY_TEST(_desc, _r, _c) \
+            (((_desc)->dirty_bits[(_r)][(_c) >> 3] >> ((_c) & 7)) & 1u)
+
+#define VCELL_DIRTY_SET_ROW(_desc, _r) \
+            memset((_desc)->dirty_bits[(_r)], 0xFF, \
+                VCELL_DIRTY_ROW_BYTES((_desc)->cols))
+
+#define VCELL_DIRTY_CLR_ROW(_desc, _r) \
+            memset((_desc)->dirty_bits[(_r)], 0x00, \
+                VCELL_DIRTY_ROW_BYTES((_desc)->cols))
+
+#define VCELL_DIRTY_SET_RANGE(_desc, _r, _start, _count) \
             { \
-                __typeof__ (_cell) _ctmp = (_cell); \
-                __typeof__ (_stride) _stmp = (_stride); \
-                do \
-                { \
-                    _ctmp->dirty = 0; \
-                    _ctmp++; \
-                    _stmp--; \
-                } \
-                while(_stmp > 0); \
+                int _i; \
+                for(_i = 0; _i < (_count); _i++) \
+                    VCELL_DIRTY_SET((_desc), (_r), (_start) + _i); \
             }
 
 #define VCELL_ALL_SET_DIRTY(_vdesc) \
             { \
                 __typeof__ (_vdesc) _vtmp = (_vdesc); \
-                for(int _r = 0; _r < _vtmp->rows; _r++) \
+                int _r; \
+                for(_r = 0; _r < _vtmp->rows; _r++) \
                 { \
-                    VCELL_ROW_SET_DIRTY(_vtmp->cells[_r], _vtmp->cols); \
+                    VCELL_DIRTY_SET_ROW(_vtmp, _r); \
                 } \
             }
 
-#define VCELL_SET_CHAR(_cell, _ch) \
+
+/*
+    cell mutation macros.  every mutation also marks the cell dirty.
+    they take (desc, row, col, ...) instead of a cell pointer so they
+    can update the bitmap at the same site.
+*/
+
+#define VCELL_ZERO_ALL(_desc, _r, _c) \
             { \
-                _cell.wch[0] = _ch; \
-                _cell.wch[1] = '\0'; \
-                _cell.dirty = 1; \
+                memset(&(_desc)->cells[(_r)][(_c)], 0, \
+                    sizeof((_desc)->cells[(_r)][(_c)])); \
+                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
             }
 
-#define VCELL_SET_ATTR(_cell, _attr) \
-                { \
-                    _cell.attr = _attr; \
-                    _cell.dirty = 1 ; \
-                }
+#define VCELL_SET_CHAR(_desc, _r, _c, _ch) \
+            { \
+                (_desc)->cells[(_r)][(_c)].wch[0] = (_ch); \
+                (_desc)->cells[(_r)][(_c)].wch[1] = L'\0'; \
+                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
+            }
+
+#define VCELL_SET_ATTR(_desc, _r, _c, _attr) \
+            { \
+                (_desc)->cells[(_r)][(_c)].attr = (_attr); \
+                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
+            }
+
+#define VCELL_SET_COLORS(_desc, _r, _c) \
+            { \
+                (_desc)->cells[(_r)][(_c)].colors = (_desc)->colors; \
+                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
+            }
+
+#define VCELL_SET_DEFAULT_COLORS(_desc, _r, _c) \
+            { \
+                (_desc)->cells[(_r)][(_c)].colors = (_desc)->default_colors; \
+                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
+            }
 
 #define VCELL_GET_ATTR(_cell, _attr_ptr) \
                 { *_attr_ptr = _cell.attr; }
-
-#define VCELL_SET_COLORS(_cell, _desc) \
-                { \
-                    _cell.colors = _desc->colors; \
-                    _cell.dirty = 1; \
-                }
-
-#define VCELL_SET_DEFAULT_COLORS(_cell, _desc) \
-                { \
-                    _cell.colors = _desc->default_colors; \
-                    _cell.dirty = 1; \
-                }
 
 #define VCELL_GET_COLORS(_cell, _colors_ptr) \
                 { *_colors_ptr = _cell.colors; }

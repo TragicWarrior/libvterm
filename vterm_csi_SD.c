@@ -19,7 +19,6 @@ void
 interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    vterm_cell_t    *vcell;
     int             r;
     int             n = 1;          // number of scroll lines
     int             bottom_row;
@@ -55,7 +54,7 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
     {
         memcpy(v_desc->cells[r], v_desc->cells[r - n], stride);
 
-        VCELL_ROW_SET_DIRTY(v_desc->cells[r], v_desc->cols);
+        VCELL_DIRTY_SET_ROW(v_desc, r);
     }
 
     top_row = v_desc->scroll_min;
@@ -63,16 +62,11 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
 
     for(r = top_row; r < bottom_row + 1; r++)
     {
-        vcell = &v_desc->cells[r][0];
-
         for(c = 0; c < v_desc->cols; c++)
         {
-
-            VCELL_SET_CHAR((*vcell), ' ');
-            VCELL_SET_ATTR((*vcell), v_desc->curattr);
-            VCELL_SET_COLORS((*vcell), v_desc);
-
-            vcell++;
+            VCELL_SET_CHAR(v_desc, r, c, ' ');
+            VCELL_SET_ATTR(v_desc, r, c, v_desc->curattr);
+            VCELL_SET_COLORS(v_desc, r, c);
         }
     }
 

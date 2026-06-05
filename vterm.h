@@ -83,7 +83,6 @@ struct _vterm_cell_s
     wchar_t         wch[2];
     attr_t          attr;
     int             colors;
-    uint8_t         dirty;
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;

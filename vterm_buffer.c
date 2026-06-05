@@ -25,6 +25,16 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 
     v_desc->cells = _vterm_buffer_alloc_raw(height, width);
 
+    v_desc->dirty_bits = (uint8_t **)calloc(height, sizeof(uint8_t *));
+    {
+        int r;
+        for(r = 0; r < height; r++)
+        {
+            v_desc->dirty_bits[r] = (uint8_t *)calloc(1,
+                VCELL_DIRTY_ROW_BYTES(width));
+        }
+    }
+
     v_desc->rows = height;
     v_desc->cols = width;
     v_desc->max_cols = width;
@@ -77,12 +87,16 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
         for(r = height; r < v_desc->rows; r++)
         {
             free(v_desc->cells[r]);
+            free(v_desc->dirty_bits[r]);
         }
     }
 
     // realloc to accomodate the new matrix size
     v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
         sizeof(vterm_cell_t*) * height);
+
+    v_desc->dirty_bits = (uint8_t **)realloc(v_desc->dirty_bits,
+        sizeof(uint8_t *) * height);
 
     for(r = 0; r < height; r++)
     {
@@ -92,10 +106,13 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
             v_desc->cells[r] =
                 (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * new_width));
 
-            // fill new row with blanks
+            v_desc->dirty_bits[r] = (uint8_t *)calloc(1,
+                VCELL_DIRTY_ROW_BYTES(new_width));
+
+            // fill new row with blanks (also marks each cell dirty)
             for(c = 0; c < new_width; c++)
             {
-                VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
+                VCELL_SET_CHAR(v_desc, r, c, ' ');
             }
 
             continue;
@@ -104,16 +121,32 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
         // skip existing rows when width is unchanged
         if(new_width == max_cols_old) continue;
 
-        // this handles existing rows
+        /*
+            existing-row grow path.  per the new_width >= max_cols ratchet
+            above (lines 67-68), new_width is never less than max_cols_old
+            here -- the per-row alloc only ever grows.
+        */
         v_desc->cells[r] = (vterm_cell_t*)realloc(v_desc->cells[r],
             sizeof(vterm_cell_t) * new_width);
 
-        // fill new cols with blanks
+        {
+            int old_bytes = VCELL_DIRTY_ROW_BYTES(max_cols_old);
+            int new_bytes = VCELL_DIRTY_ROW_BYTES(new_width);
+            if(new_bytes > old_bytes)
+            {
+                v_desc->dirty_bits[r] = (uint8_t *)realloc(
+                    v_desc->dirty_bits[r], new_bytes);
+                memset(v_desc->dirty_bits[r] + old_bytes, 0,
+                    new_bytes - old_bytes);
+            }
+        }
+
+        // fill new cols with blanks (also marks each cell dirty)
         start_x = max_cols_old;
         for(c = start_x; c < new_width; c++)
         {
-            VCELL_ZERO_ALL(v_desc->cells[r][c]);
-            VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
+            VCELL_ZERO_ALL(v_desc, r, c);
+            VCELL_SET_CHAR(v_desc, r, c, ' ');
         }
     }
 
@@ -159,10 +192,19 @@ vterm_buffer_dealloc(vterm_t *vterm, int idx)
     {
         free(v_desc->cells[r]);
         v_desc->cells[r] = NULL;
+
+        if(v_desc->dirty_bits != NULL)
+        {
+            free(v_desc->dirty_bits[r]);
+            v_desc->dirty_bits[r] = NULL;
+        }
     }
 
     free(v_desc->cells);
     v_desc->cells = NULL;
+
+    free(v_desc->dirty_bits);
+    v_desc->dirty_bits = NULL;
 
     return;
 }
@@ -432,7 +474,8 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     {
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
-        VCELL_ROW_SET_DIRTY(*vcell_dst, stride);
+        // mark the cloned cells dirty in the destination's bitmap
+        VCELL_DIRTY_SET_RANGE(v_desc_dst, dst_offset + r, 0, stride);
 
         vcell_src++;
         vcell_dst++;
@@ -464,8 +507,6 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
         // mem copy one row at a time
         memcpy(&buffer[r][0], &v_desc->cells[r][0],
             v_desc->cols * sizeof(vterm_cell_t));
-
-        VCELL_ROW_SET_DIRTY(buffer[r], v_desc->cols);
     }
 
     return buffer;

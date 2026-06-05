@@ -41,7 +41,7 @@ interpret_csi_REP(vterm_t *vterm, int param[], int pcount)
     {
         memcpy(vcell, vcell_prev, sizeof(vterm_cell_t));
 
-        VCELL_ROW_SET_DIRTY(vcell, 1);
+        VCELL_DIRTY_SET(v_desc, v_desc->crow, c);
 
         vcell++;
     }

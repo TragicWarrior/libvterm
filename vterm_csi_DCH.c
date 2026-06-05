@@ -25,8 +25,7 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     stride -= n;
 
     // copy into temporary buffer
-    vcell_src = &v_desc->cells[v_desc->crow][v_desc->ccol];
-    vcell_src += n;
+    vcell_src = &v_desc->cells[v_desc->crow][v_desc->ccol + n];
     vcell_dst = &v_desc->cells[v_desc->crow][v_desc->ccol];
 
     /*
@@ -38,23 +37,17 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     {
         memcpy(&vcell_dst->wch, &vcell_src->wch, sizeof(vcell_dst->wch));
 
-        VCELL_ROW_SET_DIRTY(vcell_dst, 1);
+        VCELL_DIRTY_SET(v_desc, v_desc->crow, v_desc->ccol + c);
 
         vcell_src++;
         vcell_dst++;
     }
 
     // zero out cells created by the void
-    vcell_dst = &v_desc->cells[v_desc->crow][v_desc->ccol];
-    vcell_dst += stride;
-
-    // same logic as above change the character of the cell only
     for(c = 0; c < n; c++)
     {
-        VCELL_SET_CHAR((*vcell_dst), ' ');
-        VCELL_SET_COLORS((*vcell_dst), v_desc);
-
-        vcell_dst++;
+        VCELL_SET_CHAR(v_desc, v_desc->crow, v_desc->ccol + stride + c, ' ');
+        VCELL_SET_COLORS(v_desc, v_desc->crow, v_desc->ccol + stride + c);
     }
 
     return;

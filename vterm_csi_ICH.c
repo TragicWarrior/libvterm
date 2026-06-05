@@ -44,20 +44,17 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
     for(c = scr_end; c >= max_col; c--)
     {
         memcpy(vcell_new, vcell_old, sizeof(vterm_cell_t));
-        VCELL_ROW_SET_DIRTY(vcell_new, 1);
+        VCELL_DIRTY_SET(v_desc, v_desc->crow, c);
 
         vcell_new--;
         vcell_old--;
     }
 
-    vcell_new = &v_desc->cells[v_desc->crow][v_desc->ccol];
     for(c = v_desc->ccol; c < max_col; c++)
     {
-        VCELL_SET_CHAR((*vcell_new), ' ');
-        VCELL_SET_ATTR((*vcell_new), v_desc->curattr);
-        VCELL_SET_COLORS((*vcell_new), v_desc);
-
-        vcell_new++;
+        VCELL_SET_CHAR(v_desc, v_desc->crow, c, ' ');
+        VCELL_SET_ATTR(v_desc, v_desc->crow, c, v_desc->curattr);
+        VCELL_SET_COLORS(v_desc, v_desc->crow, c);
     }
 
     return;

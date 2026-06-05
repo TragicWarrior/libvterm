@@ -30,7 +30,6 @@
 void
 interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 {
-    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             erase_start, erase_end, c;
     int             cmd = 0;
@@ -70,12 +69,9 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 
     for(c = erase_start; c <= erase_end; c++)
     {
-        vcell = &v_desc->cells[row][c];
-
-        // VCELL_SET_CHAR((*vcell), 'm');
-        VCELL_SET_CHAR((*vcell), ' ');
-        VCELL_SET_ATTR((*vcell), v_desc->curattr);
-        VCELL_SET_COLORS((*vcell), v_desc);
+        VCELL_SET_CHAR(v_desc, row, c, ' ');
+        VCELL_SET_ATTR(v_desc, row, c, v_desc->curattr);
+        VCELL_SET_COLORS(v_desc, row, c);
     }
 
     return;

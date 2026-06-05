@@ -75,6 +75,15 @@ struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
     vterm_cell_t    **cells;
+    uint8_t         **dirty_bits;               /*
+                                                    side-table dirty bitmap;
+                                                    1 bit per cell, one row per
+                                                    buffer row, ceil(cols/8)
+                                                    bytes per row.  parallel to
+                                                    cells -- stays in lockstep
+                                                    across alloc/realloc/clone/
+                                                    shift.
+                                                */
     // vterm_cell_t    last_cell;               // contents of last cell write
 
     unsigned long   buffer_state;               // internal state control
