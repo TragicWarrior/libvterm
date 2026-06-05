@@ -124,7 +124,6 @@ add_library(vterm-static STATIC
     vterm_esc_RI.c
     vterm_history.c
     vterm_hook.c
-    vterm_misc.c
     vterm_osc.c
     vterm_osc_DA.c
     vterm_read.c
@@ -187,7 +186,6 @@ add_library(vterm.o OBJECT
     vterm_esc_RI.c
     vterm_history.c
     vterm_hook.c
-    vterm_misc.c
     vterm_osc.c
     vterm_osc_DA.c
     vterm_read.c
