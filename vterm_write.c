@@ -313,6 +313,17 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         }
     }
 
+    if(bytes == 3 && buf[0] == '\x1b' && buf[1] == 'O'
+        && !(vterm->internal_state & STATE_CURSOR_APP))
+    {
+        char suffix = buf[2];
+        if(suffix == 'A' || suffix == 'B' || suffix == 'C' || suffix == 'D'
+            || suffix == 'H' || suffix == 'F')
+        {
+            buf[1] = '[';
+        }
+    }
+
     if(keycode == KEY_MOUSE)
     {
         if(vterm->mouse_driver != NULL)

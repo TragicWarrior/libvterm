@@ -30,6 +30,13 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
+        // DECCKM: application cursor keys
+        if(param[i] == 1)
+        {
+            vterm->internal_state |= STATE_CURSOR_APP;
+            continue;
+        }
+
         /*
             DECCOLM
 

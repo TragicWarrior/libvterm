@@ -24,6 +24,7 @@ Centos 7.8
 5 - apt
 5 - yum
 5 - bastet
+5 - btop
 5 - myman
 5 - last file manager
 5 - ranger

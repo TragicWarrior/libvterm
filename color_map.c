@@ -57,52 +57,50 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
         if(global_color >= COLORS) return -1;
 
         next_color++;
+
+        mapped_color = (color_map_t *)calloc(1, sizeof(color_map_t));
+
+        mapped_color->private_color = color;
+        mapped_color->global_color = global_color;
+        mapped_color->red = red;
+        mapped_color->green = green;
+        mapped_color->blue = blue;
+
+        red = (red / 255.0) * 1000.0;
+        green = (green / 255.0) * 1000.0;
+        blue = (blue / 255.0) * 1000.0;
+
+        retval = ncw_init_color(global_color, (int)red, (int)green, (int)blue);
+
+        CDL_APPEND(vterm->color_map_head, mapped_color);
+
+        return global_color;
     }
-    else
+
+    // non-truecolor: find nearest existing palette color
     {
-        // start looking past the first 8 basic colors
-        global_color = COLOR_WHITE + 1;
+        short nr, ng, nb;
 
-        // look for a free color number in the global color table
-        for(;;)
-        {
-            // explode color
-            retval = ncw_color_content(global_color, &r, &g, &b);
+        nr = (short)((red / 255.0) * 1000.0);
+        ng = (short)((green / 255.0) * 1000.0);
+        nb = (short)((blue / 255.0) * 1000.0);
 
-            if(retval == ERR)
-            {
-                // TODO:  handle color exhausion
-                return -1;
-            }
+        global_color = color_cache_find_nearest_color(nr, ng, nb);
 
-            // a black value indicates an unused color
-            if((r + g + b) == 0) break;
+        if(global_color < 0) return -1;
 
-            // no free color numbers in the global color table
-            if(global_color == 0x7FFF) return -1;
+        mapped_color = (color_map_t *)calloc(1, sizeof(color_map_t));
 
-            global_color++;
-        }
+        mapped_color->private_color = color;
+        mapped_color->global_color = global_color;
+        mapped_color->red = red;
+        mapped_color->green = green;
+        mapped_color->blue = blue;
+
+        CDL_APPEND(vterm->color_map_head, mapped_color);
+
+        return global_color;
     }
-
-    mapped_color = (color_map_t *)calloc(1, sizeof(color_map_t));
-
-    mapped_color->private_color = color;
-    mapped_color->global_color = global_color;
-    mapped_color->red = red;
-    mapped_color->green = green;
-    mapped_color->blue = blue;
-
-    // convert traditional RGB values (0 - 255) to ncurses range of 0 - 1000
-    red = (red / 255.0) * 1000.0;
-    green = (green / 255.0) * 1000.0;
-    blue = (blue / 255.0) * 1000.0;
-
-    retval = ncw_init_color(global_color, (int)red, (int)green, (int)blue);
-
-    CDL_APPEND(vterm->color_map_head, mapped_color);
-
-    return global_color;
 }
 
 short

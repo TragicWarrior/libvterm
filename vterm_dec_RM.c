@@ -27,6 +27,13 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
 
     for(i = 0; i < pcount; i++)
     {
+        // DECCKM: normal cursor keys
+        if(param[i] == 1)
+        {
+            vterm->internal_state &= ~STATE_CURSOR_APP;
+            continue;
+        }
+
         /*
             DECCOLM
 

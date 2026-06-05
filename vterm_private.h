@@ -42,6 +42,7 @@
                                                     cursor home is relative
                                                     to the scroll region
                                                 */
+#define STATE_CURSOR_APP        (1UL << 16)     //  DECCKM: application cursor keys
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
