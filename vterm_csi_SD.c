@@ -36,8 +36,16 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
     }
 
     // safety check
-    if(n > v_desc->rows) return;
     if(n < 1) return;
+
+    /*
+        n can't exceed the height of the scroll region; scrolling by more
+        than that simply clears the whole region.  clamping here keeps the
+        clear loop below (which runs from scroll_min upward by n rows) from
+        writing past scroll_max -- and therefore past cells[].
+    */
+    if(n > v_desc->scroll_max - v_desc->scroll_min + 1)
+        n = v_desc->scroll_max - v_desc->scroll_min + 1;
 
     top_row = v_desc->scroll_min + (n - 1);
     bottom_row = v_desc->scroll_max;

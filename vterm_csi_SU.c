@@ -36,8 +36,15 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     }
 
     // safety checks
-    if(n > v_desc->rows) return;
     if(n < 1) return;
+
+    /*
+        clamp n to the scroll region height (see interpret_csi_SD).  without
+        this, the clear loop's top_row (scroll_max - n + 1) can run below
+        scroll_min -- or negative -- and index cells[] out of bounds.
+    */
+    if(n > v_desc->scroll_max - v_desc->scroll_min + 1)
+        n = v_desc->scroll_max - v_desc->scroll_min + 1;
 
     top_row = v_desc->scroll_min;
     bottom_row = v_desc->scroll_max - (n - 1);

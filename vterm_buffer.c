@@ -122,6 +122,22 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 
     v_desc->scroll_max = height - 1;
 
+    /*
+        scroll_max is reset above, but scroll_min must be brought back into
+        range too.  shrinking the buffer can leave a previously-set DECSTBM
+        top margin pointing at or past the new last row.  a stale scroll_min
+        then drives out-of-bounds row writes -- interpret_csi_SD's clear
+        loop, origin-mode cursor home, and vterm_scroll_down all index
+        cells[] starting at scroll_min and would walk past the row pointer
+        array, corrupting the heap.  when the old region no longer fits,
+        drop it back to full height.
+    */
+    if(v_desc->scroll_min > v_desc->scroll_max)
+    {
+        v_desc->scroll_min = 0;
+        v_desc->buffer_state &= ~STATE_SCROLL_SHORT;
+    }
+
     return;
 }
 
