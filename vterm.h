@@ -83,10 +83,6 @@ struct _vterm_cell_s
     wchar_t         wch[2];
     attr_t          attr;
     int             colors;
-    short           fg;
-    short           bg;
-    short           f_rgb[3];
-    short           b_rgb[3];
     uint8_t         dirty;
 };
 

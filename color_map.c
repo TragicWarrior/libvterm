@@ -12,8 +12,6 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
 {
     color_map_t     *mapped_color;
     short           global_color;
-    int             r, g, b;
-    int             retval;
 
     /*
         is color one of the standard colors?
@@ -70,7 +68,7 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
         green = (green / 255.0) * 1000.0;
         blue = (blue / 255.0) * 1000.0;
 
-        retval = ncw_init_color(global_color, (int)red, (int)green, (int)blue);
+        ncw_init_color(global_color, (int)red, (int)green, (int)blue);
 
         CDL_APPEND(vterm->color_map_head, mapped_color);
 

@@ -356,9 +356,6 @@ _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
     if(colors == -1) colors = 0;
     v_desc->colors = colors;
 
-    color_content(fg, &v_desc->f_rgb[0], &v_desc->f_rgb[1], &v_desc->f_rgb[2]);
-    color_content(bg, &v_desc->b_rgb[0], &v_desc->b_rgb[1], &v_desc->b_rgb[2]);
-
     return;
 }
 

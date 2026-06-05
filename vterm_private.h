@@ -96,8 +96,6 @@ struct _vterm_desc_s
 
     int             fg;                         // current fg color
     int             bg;                         // current bg color
-    short           f_rgb[3];                   // current fg RGB values
-    short           b_rgb[3];                   // current bg RGB values
 };
 
 typedef struct _vterm_desc_s    vterm_desc_t;
