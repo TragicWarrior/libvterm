@@ -11,7 +11,10 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
     int         retval = 0;
     int         x, y;
 
-    getmouse(&mouse_event);
+    if(vterm->pending_mouse != NULL)
+        memcpy(&mouse_event, vterm->pending_mouse, sizeof(MEVENT));
+    else
+        getmouse(&mouse_event);
     x = mouse_event.x;
     y = mouse_event.y;
 

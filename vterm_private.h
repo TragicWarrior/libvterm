@@ -172,6 +172,7 @@ struct _vterm_s
     unsigned long   internal_state;             //  internal state control
 
     uint16_t        mouse_mode;                 //  mouse mode
+    MEVENT          *pending_mouse;             //  injected event for drivers
     mouse_config_t  *mouse_config;              /*
                                                     saves and restores the
                                                     state of the mouse

@@ -375,6 +375,8 @@ ssize_t         vterm_read_pipe(vterm_t *vterm, int timeout);
 */
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
+int             vterm_write_mouse_event(vterm_t *vterm, MEVENT *mouse_event);
+
 /*
     sets a pointer that can be used for anything.  it is extremely useful
     for handling ancillary data or operations when an event hook is
