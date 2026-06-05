@@ -12,6 +12,9 @@ set(MINOR_VERSION 3)
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 option(DEFINE_CURSES "Build with curses" ON)
+option(ENABLE_BACKTRACE
+    "Install a fatal-signal handler that writes a glibc backtrace to ./vterm-crash-<pid>.log"
+    OFF)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC -fno-plt")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99 -Wall -fPIC -fno-plt")
@@ -186,6 +189,38 @@ add_library(vterm.o OBJECT
 add_library(vterm-shared SHARED
     $<TARGET_OBJECTS:vterm.o>
     )
+
+#
+# Optional backtrace handler.  When ENABLE_BACKTRACE is ON, vterm_debug.c
+# is compiled into the regular libvterm.so/.a and its constructor installs
+# fatal-signal handlers (SEGV/ABRT/BUS/FPE/ILL).  On signal, a glibc
+# backtrace is dumped to ./vterm-crash-<pid>.log in the process's CWD and
+# the signal is re-raised under its default disposition so the process
+# still terminates (and cores if rlimits allow).
+#
+# Enable with:    cmake -DENABLE_BACKTRACE=ON  .
+# Disable with:   cmake -DENABLE_BACKTRACE=OFF .
+#
+if(ENABLE_BACKTRACE)
+    message(STATUS "libvterm: backtrace handler ENABLED")
+
+    target_sources(vterm-static PRIVATE vterm_debug.c)
+    target_sources(vterm.o      PRIVATE vterm_debug.c)
+
+    # -g for line numbers, -O0 for predictable frames,
+    # -fno-omit-frame-pointer for reliable unwinding
+    target_compile_options(vterm-static PRIVATE
+        -g -O0 -fno-omit-frame-pointer)
+    target_compile_options(vterm.o PRIVATE
+        -g -O0 -fno-omit-frame-pointer)
+
+    target_compile_definitions(vterm-static PRIVATE VTERM_DEBUG_BACKTRACE)
+    target_compile_definitions(vterm.o      PRIVATE VTERM_DEBUG_BACKTRACE)
+
+    # -rdynamic exposes symbols so backtrace_symbols_fd() can resolve names
+    set_property(TARGET vterm-shared APPEND_STRING
+        PROPERTY LINK_FLAGS " -rdynamic")
+endif()
 
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
