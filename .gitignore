@@ -10,3 +10,7 @@ Makefile
 CMakeFiles/*
 _CPack_Packages/*
 TODO.md
+
+# test harness binaries (built with -DBUILD_TESTS=ON)
+/test_resize
+/test_bufapi

@@ -383,6 +383,29 @@ else()
 endif()
 install (FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION ${PKG_CONFIG_INSTALL_DIR})
 
+#
+# Optional regression harnesses (OFF by default; not installed).
+#
+#   cmake -DBUILD_TESTS=ON .
+#   make
+#   ./test_resize          # 8000 deterministic resize/scroll/copy iters
+#   ./test_resize <seed>   # alternate size sequence
+#   ./test_bufapi          # direct buffer-API: alt-screen clone + dealloc
+#
+# Built to corner the resize failure mode that sank earlier contiguous-
+# buffer attempts.  Run under ASan for full value:
+#   cmake -DBUILD_TESTS=ON -DCMAKE_C_FLAGS="-fsanitize=address -g" .
+#
+option(BUILD_TESTS "Build the libvterm regression test harnesses" OFF)
+if(BUILD_TESTS)
+    add_executable(test_resize test/test_resize.c)
+    add_executable(test_bufapi test/test_bufapi.c)
+    foreach(_t test_resize test_bufapi)
+        target_include_directories(${_t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_link_libraries(${_t} vterm-static -lncursesw -lutil -lm -lrt)
+    endforeach()
+endif()
+
 set(CPACK_GENERATOR "DEB;RPM")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Bryan")
 SET(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
