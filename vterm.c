@@ -234,6 +234,7 @@ vterm_destroy(vterm_t *vterm)
     }
 
     free(vterm->read_buf);
+    free(vterm->title);
 
     free(vterm);
 

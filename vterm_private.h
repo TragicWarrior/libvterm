@@ -21,6 +21,7 @@
 
 #define ESEQ_BUF_SIZE           128             // escape buffer max
 #define UTF8_BUF_SIZE           5               // 4 bytes + 0-terminator
+#define VTERM_TITLE_BUF_SZ      128             // max OSC-set window title
 
 #define STATE_ALT_CHARSET       (1UL << 1)
 #define STATE_ESCAPE_MODE       (1UL << 2)
@@ -118,14 +119,17 @@ struct _vterm_s
 
     color_map_t     *color_map_head;
 
-    char            ttyname[96];                // populated with ttyname_r()
+    char            ttyname[32];                // populated with ttyname_r()
 
-    char            title[128];                 /*
+    char            *title;                     /*
                                                     possibly the name of the
                                                     application running in the
                                                     terminal.  the data is
                                                     supplied by the Xterm OSC
-                                                    code sequences.
+                                                    code sequences.  NULL
+                                                    until an OSC 0/1/2 fires;
+                                                    lazy-allocated at
+                                                    VTERM_TITLE_BUF_SZ.
                                                 */
     char            *read_buf;                  /*
                                                     new incoming data goes

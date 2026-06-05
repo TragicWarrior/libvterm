@@ -26,6 +26,9 @@ vterm_get_title(vterm_t *vterm, char *buf, int buf_sz)
     if(buf_sz < 2) return;
 
     memset(buf, 0, buf_sz);
+
+    if(vterm->title == NULL) return;
+
     strncpy(buf, vterm->title, buf_sz - 1);
 
     return;
@@ -58,12 +61,6 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
     {
         // Change Icon Name and Window Title
         case 0:
-        {
-            max_sz = ARRAY_SZ(vterm->title);
-            count = vterm_osc_read_string(vterm, pos, vterm->title, max_sz);
-
-            break;
-        }
 
         // Change Icon Name
         case 1:
@@ -75,8 +72,14 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
                 todo:  for now we will simply copy the string and
                 treat all OSC sequences the same (icon, name, both).
             */
-            max_sz = ARRAY_SZ(vterm->title);
-            count = vterm_osc_read_string(vterm, pos, vterm->title, max_sz);
+            if(vterm->title == NULL)
+            {
+                vterm->title = (char *)calloc(1, VTERM_TITLE_BUF_SZ);
+                if(vterm->title == NULL) break;
+            }
+
+            count = vterm_osc_read_string(vterm, pos, vterm->title,
+                VTERM_TITLE_BUF_SZ);
 
             break;
         }
