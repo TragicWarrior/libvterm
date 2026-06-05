@@ -1228,6 +1228,13 @@ vshell_parse_cmdline(vshell_t *vshell)
                 continue;
             }
 
+            if (strncmp(vshell->argv[i], "--truecolor",
+                strlen("--truecolor")) == 0)
+            {
+                vshell->vterm_flags |= VTERM_FLAG_TRUECOLOR;
+                continue;
+            }
+
 #ifndef ASYNC_NOT_OKAY
             if (strncmp(vshell->argv[i], "--async", strlen("--async")) == 0)
             {
@@ -1355,6 +1362,8 @@ vshell_print_help(void)
                 "               vshell will attempt to use hi-color mode.\n\r"
                 "--c16          When running in 16 color mode use the\n\r"
                 "               libvterm palette instead.\n\r"
+                "--truecolor    Set COLORTERM to truecolor for\n\r"
+                "               24-bit color support.\n\r"
                 "--exec <prg>   Launch program at start up.\n\r";
 
     printf("\n\rLibvterm version: %s\n\r\n\r%s\n\r",

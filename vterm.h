@@ -35,6 +35,7 @@
 #define VTERM_FLAG_XTERM        (1UL << 2)      //  emulate xterm (default)
 #define VTERM_FLAG_XTERM_256    (1UL << 3)      //  emulate xterm-256
 #define VTERM_FLAG_LINUX        (1UL << 4)      //  emulate linux
+#define VTERM_FLAG_TRUECOLOR    (1UL << 11)     //  set COLORTERM=truecolor
 
 #define VTERM_FLAG_AIO          (1UL << 7)      //  async i/o
 #define VTERM_FLAG_NOPTY        (1UL << 8)      /*

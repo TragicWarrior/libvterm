@@ -345,7 +345,11 @@ _vterm_set_guest_env(vterm_t *vterm)
     if(vterm->flags & VTERM_FLAG_XTERM)
     {
         setenv("TERM", "xterm", 1);
-        setenv("COLORTERM", "xterm", 1);
+
+        if(vterm->flags & VTERM_FLAG_TRUECOLOR)
+            setenv("COLORTERM", "truecolor", 1);
+        else
+            setenv("COLORTERM", "xterm", 1);
     }
 
     if(vterm->flags & VTERM_FLAG_XTERM_256)
@@ -361,7 +365,10 @@ _vterm_set_guest_env(vterm_t *vterm)
             setenv("TERM", "xterm-256color", 1);
 #endif
 
-        setenv("COLORTERM", "xterm", 1);
+        if(vterm->flags & VTERM_FLAG_TRUECOLOR)
+            setenv("COLORTERM", "truecolor", 1);
+        else
+            setenv("COLORTERM", "xterm", 1);
     }
 
     if(vterm->flags & VTERM_FLAG_LINUX)

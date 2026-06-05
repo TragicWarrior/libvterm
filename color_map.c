@@ -48,28 +48,41 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     global_color = vterm_get_mapped_rgb(vterm, red, green, blue);
     if(global_color != -1) return global_color;
 
-    // start looking past the first 8 basic colors
-    global_color = COLOR_WHITE + 1;
-
-    // look for a free color number in the global color table
-    for(;;)
+    if(vterm->flags & VTERM_FLAG_TRUECOLOR)
     {
-        // explode color
-        retval = ncw_color_content(global_color, &r, &g, &b);
+        static short next_color = 16;
 
-        if(retval == ERR)
+        global_color = next_color;
+
+        if(global_color >= COLORS) return -1;
+
+        next_color++;
+    }
+    else
+    {
+        // start looking past the first 8 basic colors
+        global_color = COLOR_WHITE + 1;
+
+        // look for a free color number in the global color table
+        for(;;)
         {
-            // TODO:  handle color exhausion
-            return -1;
+            // explode color
+            retval = ncw_color_content(global_color, &r, &g, &b);
+
+            if(retval == ERR)
+            {
+                // TODO:  handle color exhausion
+                return -1;
+            }
+
+            // a black value indicates an unused color
+            if((r + g + b) == 0) break;
+
+            // no free color numbers in the global color table
+            if(global_color == 0x7FFF) return -1;
+
+            global_color++;
         }
-
-        // a black value indicates an unused color
-        if((r + g + b) == 0) break;
-
-        // no free color numbers in the global color table
-        if(global_color == 0x7FFF) return -1;
-
-        global_color++;
     }
 
     mapped_color = (color_map_t *)calloc(1, sizeof(color_map_t));
