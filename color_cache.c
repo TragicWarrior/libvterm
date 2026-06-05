@@ -703,12 +703,6 @@ _color_cache_profile_pair(color_pair_t *pair)
         &pair->hsl_values[0].s,
         &pair->hsl_values[0].l);
 
-    // store the CIE2000 lab foreground values
-    // rgb2lab(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
-    //    &pair->cie_values[0].l,
-    //    &pair->cie_values[0].a,
-    //    &pair->cie_values[0].b);
-
     // extract background RGB
     ncw_color_content(pair->bg, &r, &g, &b);
 
@@ -721,12 +715,6 @@ _color_cache_profile_pair(color_pair_t *pair)
         &pair->hsl_values[1].h,
         &pair->hsl_values[1].s,
         &pair->hsl_values[1].l);
-
-    // store the CIE2000 lab background values
-    // rgb2lab(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
-    //    &pair->cie_values[1].l,
-    //    &pair->cie_values[1].a,
-    //    &pair->cie_values[1].b);
 
     return;
 }
