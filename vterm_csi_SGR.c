@@ -40,6 +40,35 @@ void
 _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
     int fg, int bg);
 
+static int
+_rgb_to_xterm256(int r, int g, int b)
+{
+    static const int cube_values[] = { 0, 0x5f, 0x87, 0xaf, 0xd7, 0xff };
+    int     ci, gi;
+    int     cr, cg, cb;
+    int     gv, cube_dist, gray_dist;
+
+    cr = (r < 48) ? 0 : (r < 115) ? 1 : (r - 35) / 40;
+    cg = (g < 48) ? 0 : (g < 115) ? 1 : (g - 35) / 40;
+    cb = (b < 48) ? 0 : (b < 115) ? 1 : (b - 35) / 40;
+    if(cr > 5) cr = 5;
+    if(cg > 5) cg = 5;
+    if(cb > 5) cb = 5;
+
+    ci = 16 + (36 * cr) + (6 * cg) + cb;
+    cube_dist = (r - cube_values[cr]) * (r - cube_values[cr])
+              + (g - cube_values[cg]) * (g - cube_values[cg])
+              + (b - cube_values[cb]) * (b - cube_values[cb]);
+
+    gi = (r + g + b - 24) / 30;
+    if(gi < 0) gi = 0;
+    if(gi > 23) gi = 23;
+    gv = 8 + (10 * gi);
+    gray_dist = (r - gv) * (r - gv) + (g - gv) * (g - gv) + (b - gv) * (b - gv);
+
+    return (gray_dist < cube_dist) ? 232 + gi : ci;
+}
+
 long
 interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed);
 
@@ -314,6 +343,9 @@ inline void
 _vterm_set_color_pair_safe(vterm_desc_t *v_desc, vterm_t *vterm, short colors,
     int fg, int bg)
 {
+    if(colors == -1 && vterm->pair_select != NULL)
+        colors = vterm->pair_select(vterm, fg, bg);
+
     // find the required pair in the cache
     if(colors == -1) colors = color_cache_find_pair(fg, bg);
 
@@ -398,6 +430,23 @@ interpret_custom_color(vterm_t *vterm, int param[], int pcount, int *processed)
     // set to nearest rgb value
     if(method == 2)
     {
+        if(!(vterm->flags & VTERM_FLAG_TRUECOLOR))
+        {
+            if((pcount % 5) == 0)
+            {
+                *processed = 4;
+                return _rgb_to_xterm256(param[2], param[3], param[4]);
+            }
+
+            if((pcount % 6) == 0)
+            {
+                *processed = 5;
+                return _rgb_to_xterm256(param[3], param[4], param[5]);
+            }
+
+            *processed = pcount;
+            return -1;
+        }
         if((pcount % 5) == 0)
         {
             new_color = vterm_add_mapped_color(vterm, -1,
