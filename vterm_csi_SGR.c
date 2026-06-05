@@ -174,7 +174,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_XCOLOR_FG:
             // code 38
             // set custom foreground color
-            fg = interpret_custom_color(vterm, &param[i], pcount, &processed);
+            fg = interpret_custom_color(vterm, &param[i], pcount - i, &processed);
             if(fg == -1)
             {
                 i += (pcount - 1);
@@ -240,7 +240,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
         csi_sgr_XCOLOR_BG:
             // code 48
             // set custom background color
-            bg = interpret_custom_color(vterm, &param[i], pcount, &processed);
+            bg = interpret_custom_color(vterm, &param[i], pcount - i, &processed);
             if(bg == -1)
             {
                 i += (pcount - 1);
