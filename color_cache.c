@@ -514,12 +514,10 @@ color_cache_find_exact_color(short r, short g, short b)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
     bool                    fg_found = FALSE;
     bool                    bg_found = FALSE;
 
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
     {
         /*
             we're searching for a color that contains a specific RGB
@@ -628,11 +626,9 @@ color_cache_find_pair(short fg, short bg)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
 
     // iterate through the cache looking for a match
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
     {
         if(pair->fg == fg && pair->bg == bg)
         {
@@ -657,11 +653,9 @@ color_cache_split_pair(int pair_num, short *fg, short *bg)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
     bool                    found = FALSE;
 
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
     {
         if(pair->num == pair_num)
         {
