@@ -1,28 +1,51 @@
 # Introduction #
 
-Based on ROTE, libvterm is a terminal emulator library which attempts to
-mimic VT100, rxvt, xterm and xterm 256 color capabilities. Although the
-natural display apparatus is curses, current contributions from Hitachi-ID
-have allowed it to use a stream buffer for output.
+libvterm is a terminal emulator library for embedding a working VT
+implementation inside another program.  It descends from ROTE and
+emulates the VT100, rxvt, xterm, xterm-256color, and Linux console
+modes.  As of 10.0 it also supports 24-bit truecolor and a tunable
+RGB-to-xterm color cache.  The natural display apparatus is curses,
+but the library can also drive a stream buffer for output (a
+contribution from Hitachi-ID).
 
-# Requirements
+# Features #
+
+* VT100, rxvt, xterm, xterm-256color, and Linux console emulation
+* 24-bit truecolor (via `--truecolor` on vshell or VTERM_FLAG_TRUECOLOR
+  on the API) with COLORTERM=truecolor exported into the child
+* 256-color mode with RGB-to-xterm cube/grayscale mapping and a
+  pair_select callback so integrators can pin color pairs
+* Per-instance OSC 4 palette isolation -- palette tweaks in one vterm
+  don't bleed into a sibling
+* UTF-8 throughout, with a fast direct-byte-math decoder
+* Multi-buffer support (standard + alternate) with scrollback /
+  history on the standard buffer
+* Mouse: X10 and SGR protocols, GPM wheel forwarding, and
+  vterm_write_mouse_event for embedder-driven injection
+* Async I/O interface (SIGIO + self-pipe trick) for callers that
+  don't want to spin a thread
+* Optional crash handler (`ENABLE_BACKTRACE`) that writes a glibc
+  backtrace to `./vterm-crash-<pid>.log` for post-mortem debugging
+* Link-time optimization auto-enabled when the toolchain supports it
+
+# Requirements #
 
 * A working compiler
-  *  GCC version 4.5 or higher for Linux
-  *  Clang for Mac OS and FreeBSD
-* The "wide" version of ncurses (ncursesw) and headers installed in a
-  reasonably sane location see notes on Mac OS).
-* CMake 3.10.2 or higher.
+  * GCC 4.5 or later on Linux
+  * Clang on Mac OS and FreeBSD
+* ncursesw (the "wide" build of ncurses) and headers installed in a
+  reasonably sane location (see Mac OS notes)
+* CMake 3.10.2 or later
 
-The build system for libvterm is CMake.  In order to properly find and link
-against ncursesw, CMake must be too old.  The oldest version that has
-been tested successfully is 3.10.2 (which was released in January of 2018).
-Older versions _might_ work.  If you edit the CMakeList.txt you can change
-the minimum requirement for CMake version.
+The build system is CMake.  In order to properly find and link
+against ncursesw, your CMake must not be too old.  3.10.2 (January
+2018) is the oldest version that has been tested successfully; older
+versions _might_ work, and you can edit `CMakeLists.txt` to lower
+the minimum if you want to try.
 
-When the version of CMake provided by your OS vendor is too old, it is
-relatively easy to install a new version from source and place it in
-/usr/local/bin/ or some other alternate location.  
+When the version of CMake provided by your OS vendor is too old, it
+is straightforward to install a newer one from source and place it in
+`/usr/local/bin/` or another alternate location.
 
 # Building #
 
@@ -34,36 +57,41 @@ make
 sudo make install
 ```
 
-A successful build will place the shared library in /usr/local/lib and the
-demo program (vshell) in /usr/local/bin/.  If you your runtime linker
-configuration (typically /etc/ld.so.conf) isn't configured to look in this
-location you, will need to manually add it and update the linker cache
-(typically running ldconfig). 
+A successful build installs the shared library to `/usr/local/lib` and
+the `vshell` demo program to `/usr/local/bin/`.  If your runtime
+linker configuration (typically `/etc/ld.so.conf`) isn't configured to
+look in this location, you will need to add it and refresh the linker
+cache (typically `ldconfig`).
+
+`vshell` is the canonical demo: it embeds libvterm into a tmux-like
+front end and exposes the major API surfaces (scrollback, mouse,
+title, resize, color modes).  Useful flags include `--truecolor`,
+`--c16`, `--no-utf8`, `--vt100`, and `--exec <program>`.
 
 ## FreeBSD ##
 
-CMake does not detect the ncurses or ncurses wide library correctly on
-FreeBSD.  Therefore, the CMake build check for ncurses is conditionally
-excluded on FreeBSD.  As a result, the build process on FreeBSD blindly
-expects ncurses headers to be found at /usr/local/include/ncurses (which
-is where it gets installed via ports).
+CMake does not detect the ncurses or ncursesw library correctly on
+FreeBSD, so the build check is conditionally excluded there.  As a
+result the build expects ncurses headers at
+`/usr/local/include/ncurses` (the ports install location).
 
 ## Mac OS ##
 
-Porting of libvterm was done on Mojave.  Mileage on other version of
-Mac OS may vary.  The version of ncurses which comes with XCode does
-not include support for wide characters which libvterm needs to supprt
-UTF-8 encoded Unicode.  As a result, the build environment is designed
-to look for the library in:
+Porting was done on Mojave; mileage on other versions may vary.  The
+ncurses that ships with XCode lacks wide-character support, which
+libvterm needs for UTF-8.  The build is therefore wired to look in:
 
+```
 /usr/local/opt/ncurses/
+```
 
-The easiest way to get this is to install 'htop' via homembrew.
+The easiest way to get a working ncursesw there is to install `htop`
+via Homebrew.
 
 ## Debian Packages ##
 
-If you want to build a deb package for Debian or Debian based systems
-(such as Ubuntu) then:
+If you want to build a `.deb` for Debian or a Debian-based system
+(Ubuntu, etc.):
 
 ```
 sudo make package
@@ -71,15 +99,15 @@ sudo make package
 
 # Performance Tuning #
 
-A terminal emulation should be light and fast.  Whenever possible, the
-routines in libvterm are written (or re-written) to be highly efficient.
-When the library is compiled, gcc -O2 optimizations are enabled.  The
-library has been reasonably tested with -O3 optimizations enabled.  Turning
-these on should result in about a 2-percent improvement in CPU usage.  In
-the future -O3 might become the default.
+A terminal emulator should be light and fast.  Where it matters the
+hot paths in libvterm are written (or re-written) for efficiency.  By
+default the build enables `gcc -O2`; `-O3` has been reasonably tested
+and yields roughly a 2% CPU improvement -- it may become the default
+in the future.
 
-Link-time optimization (LTO) is auto-enabled when the toolchain supports
-it (CMake's CheckIPOSupported probe).  LTO lets the compiler inline across
-translation-unit boundaries, which matters for the many small cross-TU
-helpers in libvterm.  It is automatically disabled when ENABLE_BACKTRACE
-is set, since that mode forces -O0 for predictable stack frames.
+Link-time optimization (LTO) is auto-enabled when the toolchain
+supports it (CMake's `CheckIPOSupported` probe).  LTO lets the
+compiler inline across translation-unit boundaries, which matters
+for the many small cross-TU helpers in libvterm.  It is automatically
+disabled when `ENABLE_BACKTRACE` is set, since that mode forces `-O0`
+for predictable stack frames.

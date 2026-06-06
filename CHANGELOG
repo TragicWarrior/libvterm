@@ -1,3 +1,77 @@
+10.0
+
+Color
+* [Bryan Christ] Add --truecolor flag for 24-bit color support.  Sets
+  COLORTERM=truecolor in the child environment so programs that probe
+  for it (vim, htop, mpv, etc.) light up the full RGB path.
+* [Bryan Christ] Add 256-color support: RGB-to-xterm cube/grayscale
+  mapping, pair_select callback so integrators can pin pairs, and a
+  significantly improved color cache.
+* [Bryan Christ] Fix SGR extended color parsing for compound
+  sequences (CSI 38 ; 5 ; n / CSI 38 ; 2 ; r ; g ; b interleaved
+  with other SGR params).
+* [Bryan Christ] Add DECCKM state tracking and OSC 4 palette
+  isolation so per-instance palette tweaks don't leak.
+* [Bryan Christ] Drop dead per-cell color fields and SGR
+  color_content calls; drop unused cie_values field from
+  color_pair_t.
+* [Bryan Christ] Don't zero ncurses color slots on vterm destroy --
+  hosts that share the palette with libvterm no longer lose their
+  colors when an instance shuts down.
+
+Mouse
+* [Bryan Christ] Fix _vterm_write_pty return value and add
+  vterm_write_mouse_event API so embedders can inject mouse reports
+  into the child's PTY.
+* [Bryan Christ] Add pending mouse event injection so GPM wheel
+  events forwarded out-of-band still reach the child cleanly.
+
+Buffer, render, parser
+* [Bryan Christ] Allocate buffer cells in one contiguous block per
+  buffer instead of per-row.  Cuts allocator pressure and improves
+  cache locality on resize-heavy workloads.
+* [Bryan Christ] Move the per-cell dirty flag to a side-table
+  bitmap.  Shrinks the cell struct and makes the "any dirty?" check
+  branch-cheap.
+* [Bryan Christ] Skip redundant dirty walks and width-unchanged
+  reallocs in vterm_buffer_realloc.
+* [Bryan Christ] Add plain-ASCII fast path to vterm_render.
+* [Bryan Christ] Cache the active buffer descriptor pointer.
+* [Bryan Christ] Replace the bit-field UTF-8 decoder with direct
+  byte math.
+* [Bryan Christ] Dispatch escape type once on the first byte, then
+  only suffix-check thereafter.
+* [Bryan Christ] Fold the RS1 scanner into the escape handler and
+  enable the fast path for rxvt.
+* [Bryan Christ] Inline clamp_cursor_to_bounds; drop duplicate
+  DECSTBM guard.
+* [Bryan Christ] Use plain CDL_FOREACH for read-only lookup walks
+  instead of the SAFE variant.
+* [Bryan Christ] Shrink vterm_t: lazy-alloc title; right-size
+  ttyname.
+
+Fixes
+* [Bryan Christ] Fix off-by-one in vterm_buffer_realloc width-grow.
+* [Bryan Christ] Clamp scroll_min on realloc and SD/SU n to the
+  scroll region.
+* [Bryan Christ] Only push to scrollback on a real scroll, and clone
+  the row that disappears (vs. moving it).
+* [Bryan Christ] Fix memory leak.
+
+Build / tooling
+* [Bryan Christ] Enable link-time optimization when the toolchain
+  supports it (CMake CheckIPOSupported probe).  Disabled
+  automatically when ENABLE_BACKTRACE is set so stack frames stay
+  predictable.
+* [Bryan Christ] Add optional backtrace handler via
+  ENABLE_BACKTRACE: installs a fatal-signal handler that writes a
+  glibc backtrace to ./vterm-crash-<pid>.log.
+* [Bryan Christ] Bump to 10.0; drive PROJECT_VERSION (and the
+  pkg-config Version field) from MAJOR_VERSION / MINOR_VERSION so
+  the CMake side has a single source of truth.  LIBVTERM_VERSION in
+  vterm.h remains a hand-edited literal.
+* [Bryan Christ] Add Claude Code to the compatibility list.
+
 9.3
 
 * [Bryan Christ] Added support for anonymous colors which are used by
