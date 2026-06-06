@@ -206,7 +206,7 @@ void
 vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
-    vterm_cell_t    *vcell = NULL;
+    int             row, col;
 
     // set vterm desc buffer selector
     v_desc = vterm->v_desc_active;
@@ -221,25 +221,22 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
         }
     }
 
-    /*
-        store the location of the cell so we don't have to do
-        multiple scalar look-ups later.
-    */
-    vcell = &v_desc->cells[v_desc->crow][v_desc->ccol];
+    row = v_desc->crow;
+    col = v_desc->ccol;
 
     // handle plain ASCII scenario
     if(wch == NULL)
     {
-        VCELL_SET_CHAR((*vcell), c);
-        VCELL_SET_COLORS((*vcell), v_desc);
+        VCELL_SET_CHAR(v_desc, row, col, c);
+        VCELL_SET_COLORS(v_desc, row, col);
 
         if(IS_MODE_ACS(vterm))
         {
-            VCELL_SET_ATTR((*vcell), v_desc->curattr | A_ALTCHARSET);
+            VCELL_SET_ATTR(v_desc, row, col, v_desc->curattr | A_ALTCHARSET);
         }
         else
         {
-            VCELL_SET_ATTR((*vcell), v_desc->curattr);
+            VCELL_SET_ATTR(v_desc, row, col, v_desc->curattr);
         }
 
         v_desc->ccol++;
@@ -248,10 +245,12 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     }
 
     // handle wide character
-    memcpy(vcell->wch, wch, sizeof(vcell->wch));
+    memcpy(v_desc->cells[row][col].wch, wch,
+        sizeof(v_desc->cells[row][col].wch));
+    VCELL_DIRTY_SET(v_desc, row, col);
 
-    VCELL_SET_ATTR((*vcell), v_desc->curattr);
-    VCELL_SET_COLORS((*vcell), v_desc);
+    VCELL_SET_ATTR(v_desc, row, col, v_desc->curattr);
+    VCELL_SET_COLORS(v_desc, row, col);
 
     v_desc->ccol++;
 

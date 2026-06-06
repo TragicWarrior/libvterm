@@ -19,7 +19,6 @@ void
 interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    vterm_cell_t    *vcell;
     int             r;
     int             n = 1;          // number of scroll lines
     int             bottom_row;
@@ -36,8 +35,15 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     }
 
     // safety checks
-    if(n > v_desc->rows) return;
     if(n < 1) return;
+
+    /*
+        clamp n to the scroll region height (see interpret_csi_SD).  without
+        this, the clear loop's top_row (scroll_max - n + 1) can run below
+        scroll_min -- or negative -- and index cells[] out of bounds.
+    */
+    if(n > v_desc->scroll_max - v_desc->scroll_min + 1)
+        n = v_desc->scroll_max - v_desc->scroll_min + 1;
 
     top_row = v_desc->scroll_min;
     bottom_row = v_desc->scroll_max - (n - 1);
@@ -47,7 +53,7 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
     {
         memcpy(v_desc->cells[r], v_desc->cells[r + n], stride);
 
-        VCELL_ROW_SET_DIRTY(v_desc->cells[r], v_desc->cols);
+        VCELL_DIRTY_SET_ROW(v_desc, r);
     }
 
     top_row = v_desc->scroll_max - (n - 1);
@@ -55,15 +61,11 @@ interpret_csi_SU(vterm_t *vterm, int param[], int pcount)
 
     for(r = top_row; r < bottom_row; r++)
     {
-        vcell = &v_desc->cells[r][0];
-
         for(i = 0; i < v_desc->cols; i++)
         {
-            VCELL_SET_CHAR((*vcell), ' ');
-            VCELL_SET_ATTR((*vcell), v_desc->curattr);
-            VCELL_SET_COLORS((*vcell), v_desc);
-
-            vcell++;
+            VCELL_SET_CHAR(v_desc, r, i, ' ');
+            VCELL_SET_ATTR(v_desc, r, i, v_desc->curattr);
+            VCELL_SET_COLORS(v_desc, r, i);
         }
     }
 

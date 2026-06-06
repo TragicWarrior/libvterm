@@ -15,7 +15,6 @@ void
 interpret_dec_DECALN(vterm_t *vterm)
 {
     vterm_desc_t    *v_desc = NULL;
-    vterm_cell_t    *vcell;
     int             r, c;
 
     // set the vterm description buffer selector
@@ -23,15 +22,11 @@ interpret_dec_DECALN(vterm_t *vterm)
 
     for(r = 0;r < v_desc->rows; r++)
     {
-        vcell = &v_desc->cells[r][0];
-
         for(c = 0; c < v_desc->cols; c++)
         {
-            VCELL_SET_CHAR((*vcell), 'E');
-            VCELL_SET_ATTR((*vcell), A_NORMAL);
-            VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
-
-            vcell++;
+            VCELL_SET_CHAR(v_desc, r, c, 'E');
+            VCELL_SET_ATTR(v_desc, r, c, A_NORMAL);
+            VCELL_SET_DEFAULT_COLORS(v_desc, r, c);
         }
     }
 

@@ -12,6 +12,72 @@
 
 static vterm_cell_t** _vterm_buffer_alloc_raw(int rows, int cols);
 
+/*
+    Contiguous matrix allocators.  The cell data for an entire buffer
+    lives in ONE block; cells[r] points STRIDE cells apart into it.
+    cells[0] is therefore the block base -- dealloc frees cells[0] (the
+    whole block) plus the row-pointer array.  This holds because nothing
+    ever swaps/rotates row pointers (scroll/clone memcpy contents, never
+    pointers), so cells[0] stays the base for the buffer's lifetime.
+    Wins: one malloc header instead of N, contiguous rows for cache
+    locality during scroll/erase, less fragmentation.
+
+    NOTE: vterm_copy_buffer keeps the per-row _vterm_buffer_alloc_raw
+    below -- its returned buffer is freed per-row by the caller (vwm),
+    so that allocation must stay per-row to preserve the public
+    free contract.
+*/
+static vterm_cell_t**
+_vterm_cells_alloc_contig(int rows, int stride)
+{
+    vterm_cell_t    **ptrs;
+    vterm_cell_t    *block;
+    int             r;
+
+    if(rows < 1 || stride < 1) return NULL;
+
+    ptrs  = (vterm_cell_t **)calloc((size_t)rows, sizeof(vterm_cell_t *));
+    block = (vterm_cell_t *)calloc((size_t)rows * (size_t)stride,
+                sizeof(vterm_cell_t));
+
+    if(ptrs == NULL || block == NULL)
+    {
+        free(ptrs);
+        free(block);
+        return NULL;
+    }
+
+    for(r = 0; r < rows; r++)
+        ptrs[r] = block + (size_t)r * (size_t)stride;
+
+    return ptrs;
+}
+
+static uint8_t**
+_vterm_dirty_alloc_contig(int rows, int row_bytes)
+{
+    uint8_t **ptrs;
+    uint8_t  *block;
+    int      r;
+
+    if(rows < 1 || row_bytes < 1) return NULL;
+
+    ptrs  = (uint8_t **)calloc((size_t)rows, sizeof(uint8_t *));
+    block = (uint8_t *)calloc((size_t)rows * (size_t)row_bytes, 1);
+
+    if(ptrs == NULL || block == NULL)
+    {
+        free(ptrs);
+        free(block);
+        return NULL;
+    }
+
+    for(r = 0; r < rows; r++)
+        ptrs[r] = block + (size_t)r * (size_t)row_bytes;
+
+    return ptrs;
+}
+
 void
 vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 {
@@ -23,7 +89,9 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
 
     v_desc = &vterm->vterm_desc[idx];
 
-    v_desc->cells = _vterm_buffer_alloc_raw(height, width);
+    v_desc->cells = _vterm_cells_alloc_contig(height, width);
+    v_desc->dirty_bits = _vterm_dirty_alloc_contig(height,
+        VCELL_DIRTY_ROW_BYTES(width));
 
     v_desc->rows = height;
     v_desc->cols = width;
@@ -39,12 +107,18 @@ void
 vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 {
     vterm_desc_t    *v_desc;
-    int             delta_y = 0;
-    int             start_x = 0;
-    int             max_cols_old;
-    int             new_width;
-    uint16_t        r;
-    uint16_t        c;
+    vterm_cell_t    **old_cells;
+    uint8_t         **old_dirty;
+    vterm_cell_t    **new_cells;
+    uint8_t         **new_dirty;
+    int             old_rows;
+    int             max_cols_old;       // == old physical row stride
+    int             old_dbytes;
+    int             new_stride;         // ratcheted physical row width
+    int             new_dbytes;
+    int             copy_rows;
+    int             copy_cell_bytes;
+    int             r, c;
 
     if(vterm == NULL) return;
 
@@ -58,69 +132,106 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     if(width == -1) width = v_desc->cols;
     if(height == -1) height = v_desc->rows;
 
-    delta_y = height - v_desc->rows;
-
-    // true up total colum count and never reduce buffer row width
+    old_rows     = v_desc->rows;
     max_cols_old = v_desc->max_cols;
-    new_width = width;
-
-    if(new_width < v_desc->max_cols) new_width = v_desc->max_cols;
-    if(new_width >= v_desc->max_cols) v_desc->max_cols = new_width;
+    old_dbytes   = VCELL_DIRTY_ROW_BYTES(max_cols_old);
 
     /*
-        when shrinking, free each row that will be discarded.  realloc()
-        of the row pointer array would otherwise drop these pointers
-        and leak the cell memory they reference.
+        physical row width never shrinks (the historical max_cols ratchet).
+        a request narrower than the historical max keeps the wider stride;
+        only the logical width (cols) drops.
     */
-    if(height < v_desc->rows)
+    new_stride = (width > max_cols_old) ? width : max_cols_old;
+    new_dbytes = VCELL_DIRTY_ROW_BYTES(new_stride);
+
+    old_cells = v_desc->cells;
+    old_dirty = v_desc->dirty_bits;
+
+    /*
+        allocate fresh contiguous blocks at the new geometry, copy the
+        surviving content across, then free the old blocks.  resize is a
+        rare, human-driven event -- not a hot path -- so the extra
+        alloc+copy buys a far simpler, race-free path than reshaping a
+        contiguous block in place (which has to reason about row-stride
+        changes and overlapping moves).  the descriptor is only ever
+        observed in a fully-consistent state.
+    */
+    new_cells = _vterm_cells_alloc_contig(height, new_stride);
+    new_dirty = _vterm_dirty_alloc_contig(height, new_dbytes);
+
+    if(new_cells == NULL || new_dirty == NULL)
     {
-        for(r = height; r < v_desc->rows; r++)
-        {
-            free(v_desc->cells[r]);
-        }
+        // allocation failed -- leave the buffer untouched
+        if(new_cells != NULL) { free(new_cells[0]); free(new_cells); }
+        if(new_dirty != NULL) { free(new_dirty[0]); free(new_dirty); }
+        return;
     }
 
-    // realloc to accomodate the new matrix size
-    v_desc->cells = (vterm_cell_t**)realloc(v_desc->cells,
-        sizeof(vterm_cell_t*) * height);
+    // copy surviving rows -- content and dirty bits -- from old to new.
+    // stride only ever grows, so an old row always fits in a new row.
+    copy_rows = (old_rows < height) ? old_rows : height;
+    copy_cell_bytes = max_cols_old * (int)sizeof(vterm_cell_t);
 
-    for(r = 0; r < height; r++)
+    for(r = 0; r < copy_rows; r++)
     {
-        // when adding new rows, we can just calloc() them.
-        if((delta_y > 0) && (r > (v_desc->rows - 1)))
-        {
-            v_desc->cells[r] =
-                (vterm_cell_t*)calloc(1, (sizeof(vterm_cell_t) * new_width));
+        memcpy(new_cells[r], old_cells[r], (size_t)copy_cell_bytes);
+        memcpy(new_dirty[r], old_dirty[r], (size_t)old_dbytes);
+    }
 
-            // fill new row with blanks
-            for(c = 0; c < new_width; c++)
+    // release the old blocks (cells[0]/dirty_bits[0] are the block bases)
+    free(old_cells[0]);
+    free(old_cells);
+    free(old_dirty[0]);
+    free(old_dirty);
+
+    /*
+        commit the new geometry BEFORE any VCELL_* fill so the dirty-bit
+        macros (which index off v_desc->cells / v_desc->dirty_bits) see a
+        consistent descriptor.
+    */
+    v_desc->cells      = new_cells;
+    v_desc->dirty_bits = new_dirty;
+    v_desc->rows       = height;
+    v_desc->cols       = width;
+    v_desc->max_cols   = new_stride;
+
+    // blank brand-new rows entirely (space-fill marks each cell dirty)
+    for(r = copy_rows; r < height; r++)
+    {
+        for(c = 0; c < new_stride; c++)
+            VCELL_SET_CHAR(v_desc, r, c, ' ');
+    }
+
+    // blank newly-added columns on surviving rows when the stride grew
+    if(new_stride > max_cols_old)
+    {
+        for(r = 0; r < copy_rows; r++)
+        {
+            for(c = max_cols_old; c < new_stride; c++)
             {
-                VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
+                VCELL_ZERO_ALL(v_desc, r, c);
+                VCELL_SET_CHAR(v_desc, r, c, ' ');
             }
-
-            continue;
-        }
-
-        // skip existing rows when width is unchanged
-        if(new_width == max_cols_old) continue;
-
-        // this handles existing rows
-        v_desc->cells[r] = (vterm_cell_t*)realloc(v_desc->cells[r],
-            sizeof(vterm_cell_t) * new_width);
-
-        // fill new cols with blanks
-        start_x = max_cols_old;
-        for(c = start_x; c < new_width; c++)
-        {
-            VCELL_ZERO_ALL(v_desc->cells[r][c]);
-            VCELL_SET_CHAR(v_desc->cells[r][c], ' ');
         }
     }
-
-    v_desc->rows = height;
-    v_desc->cols = width;
 
     v_desc->scroll_max = height - 1;
+
+    /*
+        scroll_max is reset above, but scroll_min must be brought back into
+        range too.  shrinking the buffer can leave a previously-set DECSTBM
+        top margin pointing at or past the new last row.  a stale scroll_min
+        then drives out-of-bounds row writes -- interpret_csi_SD's clear
+        loop, origin-mode cursor home, and vterm_scroll_down all index
+        cells[] starting at scroll_min and would walk past the row pointer
+        array, corrupting the heap.  when the old region no longer fits,
+        drop it back to full height.
+    */
+    if(v_desc->scroll_min > v_desc->scroll_max)
+    {
+        v_desc->scroll_min = 0;
+        v_desc->buffer_state &= ~STATE_SCROLL_SHORT;
+    }
 
     return;
 }
@@ -130,23 +241,30 @@ void
 vterm_buffer_dealloc(vterm_t *vterm, int idx)
 {
     vterm_desc_t    *v_desc;
-    int             r;
 
     if(vterm == NULL) return;
 
     v_desc = &vterm->vterm_desc[idx];
 
-    // prevent a double-free
-    if(v_desc->cells == NULL) return;
-
-    for(r = 0; r < v_desc->rows; r++)
+    /*
+        cells/dirty_bits are each one contiguous block reached through a
+        row-pointer array.  [0] is the block base (rows are never
+        swapped), so freeing [0] releases the whole block.  guard each
+        independently so a partial alloc failure can't deref a NULL base.
+    */
+    if(v_desc->cells != NULL)
     {
-        free(v_desc->cells[r]);
-        v_desc->cells[r] = NULL;
+        free(v_desc->cells[0]);
+        free(v_desc->cells);
+        v_desc->cells = NULL;
     }
 
-    free(v_desc->cells);
-    v_desc->cells = NULL;
+    if(v_desc->dirty_bits != NULL)
+    {
+        free(v_desc->dirty_bits[0]);
+        free(v_desc->dirty_bits);
+        v_desc->dirty_bits = NULL;
+    }
 
     return;
 }
@@ -416,7 +534,8 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
     {
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
-        VCELL_ROW_SET_DIRTY(*vcell_dst, stride);
+        // mark the cloned cells dirty in the destination's bitmap
+        VCELL_DIRTY_SET_RANGE(v_desc_dst, dst_offset + r, 0, stride);
 
         vcell_src++;
         vcell_dst++;
@@ -448,8 +567,6 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
         // mem copy one row at a time
         memcpy(&buffer[r][0], &v_desc->cells[r][0],
             v_desc->cols * sizeof(vterm_cell_t));
-
-        VCELL_ROW_SET_DIRTY(buffer[r], v_desc->cols);
     }
 
     return buffer;

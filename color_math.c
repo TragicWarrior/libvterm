@@ -340,7 +340,7 @@ hue2rgb(float v1, float v2, float vh)
         return v2;
 
     if((3 * vh) < 2)
-        return (v1 + (v2 - v1) * ((2 / 3) - vh) * 6);
+        return (v1 + (v2 - v1) * ((2.0 / 3.0) - vh) * 6);
 
     return v1;
 }

@@ -67,14 +67,8 @@ color_cache_init(void)
     color_cache->term_colors = tigetnum("colors");
     color_cache->term_pairs = tigetnum("pairs");
 
-    // clamp max pairs at 0x7FFF
-#ifdef NCURSES_EXT_COLORS
     if(color_cache->term_pairs > 0x7FFF)
         color_cache->term_pairs = 0x7FFF;
-#else
-    if(color_cache->term_pairs > 0xFF)
-        color_cache->term_pairs = 0xFF;
-#endif
 
     // take a snapshot of the current palette
     color_cache_save_palette(PALETTE_HOST);
@@ -295,11 +289,57 @@ color_cache_add_pair(vterm_t *origin, short fg, short bg)
 
     if(i <= 0)
     {
-        i = color_cache_find_lru_pair();
-    }
+        int             fg_r, fg_g, fg_b;
+        int             bg_r, bg_g, bg_b;
+        float           fg_l, fg_a, fg_bb;
+        float           bg_l, bg_a, bg_bb;
+        float           best_delta = HUGE_VALF;
+        int             best_pair = -1;
+        color_pair_t    *p;
+        rgb_t           tmp;
 
-    // we've exhausted all options.  return pair 0.
-    if(i <= 0) return 0;
+        ncw_color_content(fg, &fg_r, &fg_g, &fg_b);
+        tmp[0] = NCURSES_RGB(fg_r);
+        tmp[1] = NCURSES_RGB(fg_g);
+        tmp[2] = NCURSES_RGB(fg_b);
+        rgb2lab(tmp, &fg_l, &fg_a, &fg_bb);
+
+        ncw_color_content(bg, &bg_r, &bg_g, &bg_b);
+        tmp[0] = NCURSES_RGB(bg_r);
+        tmp[1] = NCURSES_RGB(bg_g);
+        tmp[2] = NCURSES_RGB(bg_b);
+        rgb2lab(tmp, &bg_l, &bg_a, &bg_bb);
+
+        CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], p)
+        {
+            float   pl, pa, pb;
+            float   fg_dist, bg_dist, total;
+
+            tmp[0] = NCURSES_RGB(p->rgb_values[0].r);
+            tmp[1] = NCURSES_RGB(p->rgb_values[0].g);
+            tmp[2] = NCURSES_RGB(p->rgb_values[0].b);
+            rgb2lab(tmp, &pl, &pa, &pb);
+            fg_dist = cie76_delta(fg_l, fg_a, fg_bb, pl, pa, pb);
+
+            tmp[0] = NCURSES_RGB(p->rgb_values[1].r);
+            tmp[1] = NCURSES_RGB(p->rgb_values[1].g);
+            tmp[2] = NCURSES_RGB(p->rgb_values[1].b);
+            rgb2lab(tmp, &pl, &pa, &pb);
+            bg_dist = cie76_delta(bg_l, bg_a, bg_bb, pl, pa, pb);
+
+            total = fg_dist + bg_dist;
+            if(total < best_delta)
+            {
+                best_delta = total;
+                best_pair = p->num;
+                if(total == 0.0f) break;
+            }
+        }
+
+        if(best_pair >= 0) return best_pair;
+
+        return 0;
+    }
 
     CDL_SEARCH_SCALAR(color_cache->head[PALETTE_ACTIVE], pair, num, i);
 
@@ -474,12 +514,10 @@ color_cache_find_exact_color(short r, short g, short b)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
     bool                    fg_found = FALSE;
     bool                    bg_found = FALSE;
 
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
     {
         /*
             we're searching for a color that contains a specific RGB
@@ -533,15 +571,64 @@ color_cache_find_exact_color(short r, short g, short b)
 }
 
 int
+color_cache_find_nearest_color(short r, short g, short b)
+{
+    extern color_cache_t    *color_cache;
+    color_pair_t            *pair;
+    float                   best_delta = HUGE_VALF;
+    int                     best_color = -1;
+    float                   l1, a1, b1;
+    float                   l2, a2, b2;
+    float                   delta;
+    rgb_t                   tmp;
+
+    tmp[0] = NCURSES_RGB(r);
+    tmp[1] = NCURSES_RGB(g);
+    tmp[2] = NCURSES_RGB(b);
+    rgb2lab(tmp, &l1, &a1, &b1);
+
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
+    {
+        // check foreground color
+        tmp[0] = NCURSES_RGB(pair->rgb_values[0].r);
+        tmp[1] = NCURSES_RGB(pair->rgb_values[0].g);
+        tmp[2] = NCURSES_RGB(pair->rgb_values[0].b);
+        rgb2lab(tmp, &l2, &a2, &b2);
+
+        delta = cie76_delta(l1, a1, b1, l2, a2, b2);
+        if(delta < best_delta)
+        {
+            best_delta = delta;
+            best_color = pair->fg;
+            if(delta == 0.0f) return best_color;
+        }
+
+        // check background color
+        tmp[0] = NCURSES_RGB(pair->rgb_values[1].r);
+        tmp[1] = NCURSES_RGB(pair->rgb_values[1].g);
+        tmp[2] = NCURSES_RGB(pair->rgb_values[1].b);
+        rgb2lab(tmp, &l2, &a2, &b2);
+
+        delta = cie76_delta(l1, a1, b1, l2, a2, b2);
+        if(delta < best_delta)
+        {
+            best_delta = delta;
+            best_color = pair->bg;
+            if(delta == 0.0f) return best_color;
+        }
+    }
+
+    return best_color;
+}
+
+int
 color_cache_find_pair(short fg, short bg)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
 
     // iterate through the cache looking for a match
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
     {
         if(pair->fg == fg && pair->bg == bg)
         {
@@ -566,11 +653,9 @@ color_cache_split_pair(int pair_num, short *fg, short *bg)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
-    color_pair_t            *tmp1;
-    color_pair_t            *tmp2;
     bool                    found = FALSE;
 
-    CDL_FOREACH_SAFE(color_cache->head[PALETTE_ACTIVE], pair, tmp1, tmp2)
+    CDL_FOREACH(color_cache->head[PALETTE_ACTIVE], pair)
     {
         if(pair->num == pair_num)
         {
@@ -618,12 +703,6 @@ _color_cache_profile_pair(color_pair_t *pair)
         &pair->hsl_values[0].s,
         &pair->hsl_values[0].l);
 
-    // store the CIE2000 lab foreground values
-    // rgb2lab(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
-    //    &pair->cie_values[0].l,
-    //    &pair->cie_values[0].a,
-    //    &pair->cie_values[0].b);
-
     // extract background RGB
     ncw_color_content(pair->bg, &r, &g, &b);
 
@@ -636,12 +715,6 @@ _color_cache_profile_pair(color_pair_t *pair)
         &pair->hsl_values[1].h,
         &pair->hsl_values[1].s,
         &pair->hsl_values[1].l);
-
-    // store the CIE2000 lab background values
-    // rgb2lab(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
-    //    &pair->cie_values[1].l,
-    //    &pair->cie_values[1].a,
-    //    &pair->cie_values[1].b);
 
     return;
 }

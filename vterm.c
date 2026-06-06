@@ -220,40 +220,6 @@ vterm_destroy(vterm_t *vterm)
 
     if(vterm == NULL) return;
 
-    // DEBUG_COLOR_PAIRS(vterm->color_cache, 20);
-
-/*
-    {
-        color_pair_t    *pair;
-        int             limit = 20;
-
-        CDL_FOREACH(vterm->color_cache->pair_head, pair)
-        {
-            if(limit == 0) break;
-
-            printf("Pair Num:   %d\n\r", pair->num);
-            printf("RGB 256 Fg: r: %d, g: %d, b: %d\n\r",
-                pair->rgb_values[0].r / 4,
-                pair->rgb_values[0].g / 4,
-                pair->rgb_values[0].b / 4);
-            printf("HSL fg:     h: %f, s: %f, l: %f\n\r",
-                pair->hsl_values[0].h,
-                pair->hsl_values[0].s,
-                pair->hsl_values[0].l);
-            printf("CIE fg:     l: %f, a: %f, b: %f\n\r",
-                pair->cie_values[0].l,
-                pair->cie_values[0].a,
-                pair->cie_values[0].b);
-            printf("RGB 256 Bg: r: %d, g: %d, b: %d\n\r",
-                pair->rgb_values[1].r / 4,
-                pair->rgb_values[1].g / 4,
-                pair->rgb_values[1].b / 4);
-
-            limit--;
-        }
-    }
-*/
-
     color_cache_free_pairs(vterm);
     vterm_free_mapped_colors(vterm);
     color_cache_release();
@@ -268,6 +234,7 @@ vterm_destroy(vterm_t *vterm)
     }
 
     free(vterm->read_buf);
+    free(vterm->title);
 
     free(vterm);
 
@@ -345,7 +312,11 @@ _vterm_set_guest_env(vterm_t *vterm)
     if(vterm->flags & VTERM_FLAG_XTERM)
     {
         setenv("TERM", "xterm", 1);
-        setenv("COLORTERM", "xterm", 1);
+
+        if(vterm->flags & VTERM_FLAG_TRUECOLOR)
+            setenv("COLORTERM", "truecolor", 1);
+        else
+            setenv("COLORTERM", "xterm", 1);
     }
 
     if(vterm->flags & VTERM_FLAG_XTERM_256)
@@ -361,7 +332,10 @@ _vterm_set_guest_env(vterm_t *vterm)
             setenv("TERM", "xterm-256color", 1);
 #endif
 
-        setenv("COLORTERM", "xterm", 1);
+        if(vterm->flags & VTERM_FLAG_TRUECOLOR)
+            setenv("COLORTERM", "truecolor", 1);
+        else
+            setenv("COLORTERM", "xterm", 1);
     }
 
     if(vterm->flags & VTERM_FLAG_LINUX)

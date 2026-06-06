@@ -12,6 +12,25 @@ set(MINOR_VERSION 3)
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 option(DEFINE_CURSES "Build with curses" ON)
+option(ENABLE_BACKTRACE
+    "Install a fatal-signal handler that writes a glibc backtrace to ./vterm-crash-<pid>.log"
+    OFF)
+
+# Link-time optimization: lets the compiler inline across translation
+# unit boundaries.  libvterm has many small cross-TU helpers
+# (vterm_buffer_get_active, clamp_cursor_to_bounds, the VCELL_* shapes)
+# that benefit.  Disabled with ENABLE_BACKTRACE since that mode forces
+# -O0 for predictable frames.
+if(NOT ENABLE_BACKTRACE)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT _libvterm_ipo_ok OUTPUT _libvterm_ipo_err)
+    if(_libvterm_ipo_ok)
+        message(STATUS "libvterm: link-time optimization ENABLED")
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(STATUS "libvterm: LTO unavailable: ${_libvterm_ipo_err}")
+    endif()
+endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -std=c99 -Wall -fPIC -fno-plt")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99 -Wall -fPIC -fno-plt")
@@ -105,7 +124,6 @@ add_library(vterm-static STATIC
     vterm_esc_RI.c
     vterm_history.c
     vterm_hook.c
-    vterm_misc.c
     vterm_osc.c
     vterm_osc_DA.c
     vterm_read.c
@@ -168,7 +186,6 @@ add_library(vterm.o OBJECT
     vterm_esc_RI.c
     vterm_history.c
     vterm_hook.c
-    vterm_misc.c
     vterm_osc.c
     vterm_osc_DA.c
     vterm_read.c
@@ -186,6 +203,38 @@ add_library(vterm.o OBJECT
 add_library(vterm-shared SHARED
     $<TARGET_OBJECTS:vterm.o>
     )
+
+#
+# Optional backtrace handler.  When ENABLE_BACKTRACE is ON, vterm_debug.c
+# is compiled into the regular libvterm.so/.a and its constructor installs
+# fatal-signal handlers (SEGV/ABRT/BUS/FPE/ILL).  On signal, a glibc
+# backtrace is dumped to ./vterm-crash-<pid>.log in the process's CWD and
+# the signal is re-raised under its default disposition so the process
+# still terminates (and cores if rlimits allow).
+#
+# Enable with:    cmake -DENABLE_BACKTRACE=ON  .
+# Disable with:   cmake -DENABLE_BACKTRACE=OFF .
+#
+if(ENABLE_BACKTRACE)
+    message(STATUS "libvterm: backtrace handler ENABLED")
+
+    target_sources(vterm-static PRIVATE vterm_debug.c)
+    target_sources(vterm.o      PRIVATE vterm_debug.c)
+
+    # -g for line numbers, -O0 for predictable frames,
+    # -fno-omit-frame-pointer for reliable unwinding
+    target_compile_options(vterm-static PRIVATE
+        -g -O0 -fno-omit-frame-pointer)
+    target_compile_options(vterm.o PRIVATE
+        -g -O0 -fno-omit-frame-pointer)
+
+    target_compile_definitions(vterm-static PRIVATE VTERM_DEBUG_BACKTRACE)
+    target_compile_definitions(vterm.o      PRIVATE VTERM_DEBUG_BACKTRACE)
+
+    # -rdynamic exposes symbols so backtrace_symbols_fd() can resolve names
+    set_property(TARGET vterm-shared APPEND_STRING
+        PROPERTY LINK_FLAGS " -rdynamic")
+endif()
 
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -333,6 +382,29 @@ else()
     set(PKG_CONFIG_INSTALL_DIR "lib/pkgconfig")
 endif()
 install (FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION ${PKG_CONFIG_INSTALL_DIR})
+
+#
+# Optional regression harnesses (OFF by default; not installed).
+#
+#   cmake -DBUILD_TESTS=ON .
+#   make
+#   ./test_resize          # 8000 deterministic resize/scroll/copy iters
+#   ./test_resize <seed>   # alternate size sequence
+#   ./test_bufapi          # direct buffer-API: alt-screen clone + dealloc
+#
+# Built to corner the resize failure mode that sank earlier contiguous-
+# buffer attempts.  Run under ASan for full value:
+#   cmake -DBUILD_TESTS=ON -DCMAKE_C_FLAGS="-fsanitize=address -g" .
+#
+option(BUILD_TESTS "Build the libvterm regression test harnesses" OFF)
+if(BUILD_TESTS)
+    add_executable(test_resize test/test_resize.c)
+    add_executable(test_bufapi test/test_bufapi.c)
+    foreach(_t test_resize test_bufapi)
+        target_include_directories(${_t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_link_libraries(${_t} vterm-static -lncursesw -lutil -lm -lrt)
+    endforeach()
+endif()
 
 set(CPACK_GENERATOR "DEB;RPM")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Bryan")

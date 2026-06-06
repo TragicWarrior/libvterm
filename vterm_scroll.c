@@ -25,32 +25,44 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
     idx = vterm->vterm_desc_idx;
     v_desc = vterm->v_desc_active;
 
-    /*
-        on scroll up, copy a row to the history buffer, but only if the
-        active buffer is the standard buffer.
-    */
-    if(idx == VTERM_BUF_STANDARD)
-    {
-        vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY, -1, -1, 1);
-
-        vterm_buffer_clone(vterm, VTERM_BUF_STANDARD, VTERM_BUF_HISTORY,
-            vterm->vterm_desc[VTERM_BUF_STANDARD].crow,
-            vterm->vterm_desc[VTERM_BUF_HISTORY].rows - 1, 1);
-    }
-
     v_desc->crow++;
 
     /*
         we just moved the cursor down a row.  if we haven't hit the bottom
-        edge yet, then we're done.
+        edge yet, then we're done -- no row was lost, so nothing belongs
+        in the scrollback history.  (the prior implementation cloned the
+        cursor's row to history unconditionally here, which meant every
+        \n added a duplicate of still-visible content -- visible as a
+        stack of identical UI redraws when scrolling back through an app
+        like Claude Code that repaints its prompt in place several times
+        per second.)
     */
     if(v_desc->crow <= v_desc->scroll_max) return;
 
     /*
-        must scroll the scrolling region up by 1 line, and put cursor on
-        last line of it
+        scroll-region overflow: the cursor wanted to advance past
+        scroll_max, so we have to shift the region up and surrender the
+        top row.  pin the cursor to the last row of the region.
     */
     v_desc->crow = v_desc->scroll_max;
+
+    /*
+        push the row that's about to disappear into scrollback, but only
+        for the standard buffer (alt screen is intentionally not
+        captured) and only when scroll_min == 0 (a DECSTBM region with a
+        top margin is scrolling internally, not off the actual top of
+        the screen, so its evictions don't belong in history -- matches
+        xterm convention).  Clone runs BEFORE the shift so we capture
+        the row at its true source position.
+    */
+    if(idx == VTERM_BUF_STANDARD && v_desc->scroll_min == 0)
+    {
+        vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY, -1, -1, 1);
+
+        vterm_buffer_clone(vterm, VTERM_BUF_STANDARD, VTERM_BUF_HISTORY,
+            v_desc->scroll_min,
+            vterm->vterm_desc[VTERM_BUF_HISTORY].rows - 1, 1);
+    }
 
     vterm_buffer_shift_up(vterm, idx,
         v_desc->scroll_min, v_desc->scroll_max, 1);

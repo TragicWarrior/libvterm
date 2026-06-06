@@ -7,7 +7,6 @@
 void
 vterm_erase(vterm_t *vterm, int idx, char fill_char)
 {
-    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             r, c;
 
@@ -38,15 +37,11 @@ vterm_erase(vterm_t *vterm, int idx, char fill_char)
 
     for(r = 0;r < v_desc->rows; r++)
     {
-        vcell = &v_desc->cells[r][0];
-
         for(c = 0; c < v_desc->cols; c++)
         {
-            VCELL_SET_CHAR((*vcell), fill_char);
-            VCELL_SET_ATTR((*vcell), A_NORMAL);
-            VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
-
-            vcell++;
+            VCELL_SET_CHAR(v_desc, r, c, fill_char);
+            VCELL_SET_ATTR(v_desc, r, c, A_NORMAL);
+            VCELL_SET_DEFAULT_COLORS(v_desc, r, c);
         }
     }
 
@@ -56,7 +51,6 @@ vterm_erase(vterm_t *vterm, int idx, char fill_char)
 void
 vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
 {
-    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             c;
 
@@ -68,17 +62,14 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
     v_desc = vterm->v_desc_active;
 
     if(row == -1) row = v_desc->crow;
-    vcell = &v_desc->cells[row][0];
 
     for(c = 0;c < v_desc->cols; c++)
     {
-        VCELL_SET_CHAR((*vcell), fill_char);
-        VCELL_SET_ATTR((*vcell), A_NORMAL);
+        VCELL_SET_CHAR(v_desc, row, c, fill_char);
+        VCELL_SET_ATTR(v_desc, row, c, A_NORMAL);
 
         if(reset_colors == TRUE)
-            VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
-
-        vcell++;
+            VCELL_SET_DEFAULT_COLORS(v_desc, row, c);
     }
 
     return;
@@ -109,7 +100,6 @@ vterm_erase_rows(vterm_t *vterm, int start_row, char fill_char)
 void
 vterm_erase_col(vterm_t *vterm, int col, char fill_char)
 {
-    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             r;
 
@@ -124,12 +114,9 @@ vterm_erase_col(vterm_t *vterm, int col, char fill_char)
 
     for(r = 0; r < v_desc->rows; r++)
     {
-        // store the cell address to reduce scalar look-ups
-        vcell = &v_desc->cells[r][col];
-
-        VCELL_SET_CHAR((*vcell), fill_char);
-        VCELL_SET_ATTR((*vcell), A_NORMAL);
-        VCELL_SET_DEFAULT_COLORS((*vcell), v_desc);
+        VCELL_SET_CHAR(v_desc, r, col, fill_char);
+        VCELL_SET_ATTR(v_desc, r, col, A_NORMAL);
+        VCELL_SET_DEFAULT_COLORS(v_desc, r, col);
     }
 
     return;

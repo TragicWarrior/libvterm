@@ -10,7 +10,6 @@
 void
 interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 {
-    vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
     int             c, r;
     int             n = 1;
@@ -22,24 +21,20 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 
     for(r = v_desc->crow; r <= v_desc->scroll_max; r++)
     {
-        vcell = &v_desc->cells[r][0];
-
         if(r + n <= v_desc->scroll_max)
         {
             memcpy(v_desc->cells[r], v_desc->cells[r + n],
                 sizeof(vterm_cell_t) * v_desc->cols);
 
-            VCELL_ROW_SET_DIRTY(v_desc->cells[r], v_desc->cols);
+            VCELL_DIRTY_SET_ROW(v_desc, r);
         }
         else
         {
             for(c = 0; c < v_desc->cols; c++)
             {
-                VCELL_SET_CHAR((*vcell), ' ');
-                VCELL_SET_ATTR((*vcell), v_desc->curattr);
-                VCELL_SET_COLORS((*vcell), v_desc);
-
-                vcell++;
+                VCELL_SET_CHAR(v_desc, r, c, ' ');
+                VCELL_SET_ATTR(v_desc, r, c, v_desc->curattr);
+                VCELL_SET_COLORS(v_desc, r, c);
             }
         }
     }

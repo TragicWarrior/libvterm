@@ -21,6 +21,7 @@
 
 #define ESEQ_BUF_SIZE           128             // escape buffer max
 #define UTF8_BUF_SIZE           5               // 4 bytes + 0-terminator
+#define VTERM_TITLE_BUF_SZ      128             // max OSC-set window title
 
 #define STATE_ALT_CHARSET       (1UL << 1)
 #define STATE_ESCAPE_MODE       (1UL << 2)
@@ -42,6 +43,7 @@
                                                     cursor home is relative
                                                     to the scroll region
                                                 */
+#define STATE_CURSOR_APP        (1UL << 16)     //  DECCKM: application cursor keys
 
 #define IS_MODE_ESCAPED(x)      (x->internal_state & STATE_ESCAPE_MODE)
 #define IS_MODE_ACS(x)          (x->internal_state & STATE_ALT_CHARSET)
@@ -73,6 +75,15 @@ struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
     vterm_cell_t    **cells;
+    uint8_t         **dirty_bits;               /*
+                                                    side-table dirty bitmap;
+                                                    1 bit per cell, one row per
+                                                    buffer row, ceil(cols/8)
+                                                    bytes per row.  parallel to
+                                                    cells -- stays in lockstep
+                                                    across alloc/realloc/clone/
+                                                    shift.
+                                                */
     // vterm_cell_t    last_cell;               // contents of last cell write
 
     unsigned long   buffer_state;               // internal state control
@@ -95,8 +106,6 @@ struct _vterm_desc_s
 
     int             fg;                         // current fg color
     int             bg;                         // current bg color
-    short           f_rgb[3];                   // current fg RGB values
-    short           b_rgb[3];                   // current bg RGB values
 };
 
 typedef struct _vterm_desc_s    vterm_desc_t;
@@ -119,14 +128,17 @@ struct _vterm_s
 
     color_map_t     *color_map_head;
 
-    char            ttyname[96];                // populated with ttyname_r()
+    char            ttyname[32];                // populated with ttyname_r()
 
-    char            title[128];                 /*
+    char            *title;                     /*
                                                     possibly the name of the
                                                     application running in the
                                                     terminal.  the data is
                                                     supplied by the Xterm OSC
-                                                    code sequences.
+                                                    code sequences.  NULL
+                                                    until an OSC 0/1/2 fires;
+                                                    lazy-allocated at
+                                                    VTERM_TITLE_BUF_SZ.
                                                 */
     char            *read_buf;                  /*
                                                     new incoming data goes
@@ -171,6 +183,7 @@ struct _vterm_s
     unsigned long   internal_state;             //  internal state control
 
     uint16_t        mouse_mode;                 //  mouse mode
+    MEVENT          *pending_mouse;             //  injected event for drivers
     mouse_config_t  *mouse_config;              /*
                                                     saves and restores the
                                                     state of the mouse

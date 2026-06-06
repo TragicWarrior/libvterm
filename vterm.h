@@ -35,6 +35,7 @@
 #define VTERM_FLAG_XTERM        (1UL << 2)      //  emulate xterm (default)
 #define VTERM_FLAG_XTERM_256    (1UL << 3)      //  emulate xterm-256
 #define VTERM_FLAG_LINUX        (1UL << 4)      //  emulate linux
+#define VTERM_FLAG_TRUECOLOR    (1UL << 11)     //  set COLORTERM=truecolor
 
 #define VTERM_FLAG_AIO          (1UL << 7)      //  async i/o
 #define VTERM_FLAG_NOPTY        (1UL << 8)      /*
@@ -82,11 +83,6 @@ struct _vterm_cell_s
     wchar_t         wch[2];
     attr_t          attr;
     int             colors;
-    short           fg;
-    short           bg;
-    short           f_rgb[3];
-    short           b_rgb[3];
-    uint8_t         dirty;
 };
 
 typedef struct _vterm_cell_s    vterm_cell_t;
@@ -373,6 +369,8 @@ ssize_t         vterm_read_pipe(vterm_t *vterm, int timeout);
     @return:            returns 0 on success and -1 on error.
 */
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
+
+int             vterm_write_mouse_event(vterm_t *vterm, MEVENT *mouse_event);
 
 /*
     sets a pointer that can be used for anything.  it is extremely useful

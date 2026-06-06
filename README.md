@@ -77,3 +77,9 @@ When the library is compiled, gcc -O2 optimizations are enabled.  The
 library has been reasonably tested with -O3 optimizations enabled.  Turning
 these on should result in about a 2-percent improvement in CPU usage.  In
 the future -O3 might become the default.
+
+Link-time optimization (LTO) is auto-enabled when the toolchain supports
+it (CMake's CheckIPOSupported probe).  LTO lets the compiler inline across
+translation-unit boundaries, which matters for the many small cross-TU
+helpers in libvterm.  It is automatically disabled when ENABLE_BACKTRACE
+is set, since that mode forces -O0 for predictable stack frames.
