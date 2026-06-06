@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.10.2)
 #set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
 
 project(libvterm C)
-set(MAJOR_VERSION 9)
-set(MINOR_VERSION 3)
+set(MAJOR_VERSION 10)
+set(MINOR_VERSION 0)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
@@ -335,7 +335,7 @@ SET_TARGET_PROPERTIES(vterm-static PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUT
 SET_TARGET_PROPERTIES(vterm-shared PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUTPUT 1)
 
 # set the subst vars that configure_file() will use
-set(PROJECT_VERSION 1.0)
+set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION})
 
 set(PKG_CONFIG_LIBS
     "-lvterm"
