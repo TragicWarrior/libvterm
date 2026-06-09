@@ -61,7 +61,6 @@
 
 // helper functions
 float   cielab2hue(float a, float b);
-float   hue2rgb(float v1, float v2, float vh);
 
 
 /*
@@ -128,110 +127,6 @@ rgb2lab(rgb_t rgb, float *l, float *a, float *b)
     *l = (xyz[1] * 116) - 16;
     *a = (xyz[0] - xyz[1]) * 500;
     *b = (xyz[1] - xyz[2]) * 200;
-
-    return;
-}
-
-/*/
-    convert RGB to HSL system
-
-    R, G and B input range = 0 - 255
-    H, S and L output range = 0 - 1.0
-
-    http://http://www.easyrgb.com/en/math.php
-*/
-void
-rgb2hsl(rgb_t rgb, float *h, float *s, float *l)
-{
-    float   min;
-    float   max;
-    float   delta_max;
-    float   delta_red;
-    float   delta_green;
-    float   delta_blue;
-
-    RGB_R(rgb) /= 255;
-    RGB_G(rgb) /= 255;
-    RGB_B(rgb) /= 255;
-
-    // which color has the smallest value
-    min = MIN_VAL(RGB_G(rgb), RGB_R(rgb));
-    if(min > RGB_B(rgb)) min = RGB_B(rgb);
-
-    // which color has the largest value
-    max = MAX_VAL(RGB_G(rgb), RGB_R(rgb));
-    if(max < RGB_B(rgb)) max = RGB_B(rgb);
-
-    delta_max = max - min;
-
-    // calculate lightness
-    *l = (min + max) / 2.0;
-
-    // this is shade of gray
-    if(delta_max == 0)
-    {
-        *h = 0;
-        *s = 0;
-        return;
-    }
-
-    // calculate saturation
-    if (*l < 0.5)
-        *s = delta_max / (max + min);
-    else
-        *s = delta_max / (2.0 - max - min);
-
-    // calculate hue
-    delta_red = (((max - RGB_R(rgb)) / 6.0) + (delta_max / 2.0)) / delta_max;
-    delta_green = (((max - RGB_G(rgb)) / 6.0) + (delta_max / 2.0)) / delta_max;
-    delta_blue = (((max - RGB_B(rgb)) / 6.0) + (delta_max / 2.0)) / delta_max;
-
-    if(max == RGB_R(rgb))
-    {
-        *h = delta_blue - delta_green;
-    }
-
-    if(max == RGB_G(rgb))
-    {
-        *h = (1.0 / 3.0) + delta_red - delta_blue;
-    }
-
-    if(max == RGB_B(rgb))
-    {
-        *h = (2.0 / 3.0) + delta_green - delta_red;
-    }
-
-    if(*h < 0) *h += 1;
-    if(*h > 1) *h -= 1;
-
-    return;
-}
-
-void
-hsl2rgb(float h, float s, float l, float *r, float *g, float *b)
-{
-    float   v1;
-    float   v2;
-
-    if(s == 0)
-    {
-        *r = l * 255;
-        *g = l * 255;
-        *b = l * 255;
-
-        return;
-    }
-
-    if(l < 0.5)
-        v2 = l * (1 + s);
-    else
-        v2 = (l + s) - (s * l);
-
-    v1 = (2 * l) - v2;
-
-    *r = 255 * hue2rgb(v1, v2, h + 0.3333333);
-    *g = 255 * hue2rgb(v1, v2, h);
-    *b = 255 * hue2rgb(v1, v2, h - 0.3333333);
 
     return;
 }
@@ -324,23 +219,4 @@ cielab2hue(float a, float b)
     if(a > 0 && b < 0) bias = 360;
 
     return RAD2DEG(atanf(b / a)) + bias;
-}
-
-float
-hue2rgb(float v1, float v2, float vh)
-{
-    if(vh < 0) vh += 1;
-
-    if(vh > 1) vh -= 1;
-
-    if(( 6 * vh ) < 1)
-        return (v1 + (v2 - v1) * 6 * vh);
-
-    if((2 * vh) < 1)
-        return v2;
-
-    if((3 * vh) < 2)
-        return (v1 + (v2 - v1) * ((2.0 / 3.0) - vh) * 6);
-
-    return v1;
 }
