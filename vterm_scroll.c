@@ -52,16 +52,13 @@ vterm_scroll_up(vterm_t *vterm, bool reset_colors)
         captured) and only when scroll_min == 0 (a DECSTBM region with a
         top margin is scrolling internally, not off the actual top of
         the screen, so its evictions don't belong in history -- matches
-        xterm convention).  Clone runs BEFORE the shift so we capture
-        the row at its true source position.
+        xterm convention).  The append runs BEFORE the shift so we
+        capture the row at its true source position.
     */
     if(idx == VTERM_BUF_STANDARD && v_desc->scroll_min == 0)
     {
-        vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY, -1, -1, 1);
-
-        vterm_buffer_clone(vterm, VTERM_BUF_STANDARD, VTERM_BUF_HISTORY,
-            v_desc->scroll_min,
-            vterm->vterm_desc[VTERM_BUF_HISTORY].rows - 1, 1);
+        vterm_buffer_history_append(vterm, VTERM_BUF_STANDARD,
+            v_desc->scroll_min);
     }
 
     vterm_buffer_shift_up(vterm, idx,

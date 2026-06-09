@@ -27,6 +27,13 @@ int     vterm_buffer_shift_down(vterm_t *vterm, int idx,
 int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
             int src_offset, int dst_offset, int rows);
 
+/*
+    capture one row of src_idx into the scrollback ring: the row is
+    copied over the OLDEST history row and the ring head advances.
+*/
+int     vterm_buffer_history_append(vterm_t *vterm, int src_idx,
+            int src_row);
+
 
 /*
     dirty-bit primitives.  dirty state lives in a side-table bitmap
