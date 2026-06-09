@@ -204,31 +204,36 @@ main(void)
     CHECK(retval == 0, "hist shift_up retval %d", retval);
     CHECK(!any_dirty(hist), "hist: shift must not set dirty");
 
-    /* ---- vterm_set_history_size grow: shift_down with stride > 1 ----
-       6 -> 20 rows: realloc blank-fills rows 6..19 with ' ', then
-       shift_down(-1, -1, 14) must land the 6 original rows at 14..19.
-       The old per-row loop reads cells[-13..-1] here (ASan faults). */
+    /* ---- vterm_set_history_size grow: 6 -> 20 rows must land the 6
+       original rows at the LOGICAL tail (14..19) with blanks above.
+       checked through vterm_desc_row_phys so the assertion holds for
+       both the legacy shift implementation (head always 0) and a ring
+       implementation (head rotates).  legacy note: the shift_down
+       (-1, -1, 14) path read cells[-13..-1] here (ASan faults) before
+       the rows_moved fix. */
     fill_ident(hist);
 
     vterm_set_history_size(vt, 20);
     CHECK(hist->rows == 20, "grow: rows %d", hist->rows);
 
     for(r = 6; r <= 13; r++)
-        CHECK(row_is(hist, r, L' '), "grow: row %d blank", r);
+        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L' '),
+            "grow: row %d blank", r);
     for(r = 14; r <= 19; r++)
-        CHECK(row_is(hist, r, L'A' + r - 14), "grow: row %d content", r);
+        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L'A' + r - 14),
+            "grow: row %d content", r);
 
-    /* ---- vterm_set_history_size shrink: shift_up with stride > 1 ----
-       20 -> 9 rows: shift_up(-1, -1, 11) keeps the newest 9 rows
-       (blanks at 0..2, the original 6 rows at 3..8), then realloc
-       clips to 9. */
+    /* ---- vterm_set_history_size shrink: 20 -> 9 rows keeps the
+       NEWEST 9 logical rows (blanks at 0..2, original 6 at 3..8) ---- */
     vterm_set_history_size(vt, 9);
     CHECK(hist->rows == 9, "shrink: rows %d", hist->rows);
 
     for(r = 0; r <= 2; r++)
-        CHECK(row_is(hist, r, L' '), "shrink: row %d blank", r);
+        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L' '),
+            "shrink: row %d blank", r);
     for(r = 3; r <= 8; r++)
-        CHECK(row_is(hist, r, L'A' + r - 3), "shrink: row %d content", r);
+        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L'A' + r - 3),
+            "shrink: row %d content", r);
 
     vterm_buffer_dealloc(vt, VTERM_BUF_STANDARD);
     vterm_buffer_dealloc(vt, VTERM_BUF_HISTORY);
