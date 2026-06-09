@@ -37,6 +37,26 @@
 #define VTERM_FLAG_LINUX        (1UL << 4)      //  emulate linux
 #define VTERM_FLAG_TRUECOLOR    (1UL << 11)     //  set COLORTERM=truecolor
 
+#define VTERM_FLAG_EXTMOUSE     (1UL << 5)      /*
+                                                    the host owns the real
+                                                    terminal's mouse (e.g.
+                                                    libvterm is embedded in a
+                                                    window manager like vwm
+                                                    that enables mouse itself,
+                                                    possibly via raw escapes
+                                                    that bypass ncurses' mask
+                                                    so has_mouse() can't see
+                                                    it).  libvterm then never
+                                                    touches ncurses' mousemask;
+                                                    it only tracks the child's
+                                                    mouse mode and re-encodes
+                                                    the events the host hands
+                                                    it.  (The child still gets
+                                                    its mouse -- this is about
+                                                    who drives ncurses, not
+                                                    whether mouse works.)
+                                                */
+
 #define VTERM_FLAG_AIO          (1UL << 7)      //  async i/o
 #define VTERM_FLAG_NOPTY        (1UL << 8)      /*
                                                     skip all the fd and pty

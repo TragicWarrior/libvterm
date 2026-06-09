@@ -30,8 +30,17 @@ mouse_driver_init(vterm_t *vterm)
     {
         mouse_state = calloc(1, sizeof(mouse_state_t));
 
-        if(has_mouse() == TRUE)
+        if(has_mouse() == TRUE || (vterm->flags & VTERM_FLAG_EXTMOUSE))
         {
+            /*
+                the host owns the real terminal's mouse -- either ncurses
+                reports it armed, or the host told us so explicitly via
+                VTERM_FLAG_EXTMOUSE.  the explicit flag is required when the
+                host enables mouse with raw escape sequences that bypass
+                ncurses' mask (e.g. vwm), because has_mouse() then reports
+                FALSE and we would otherwise wrongly seize the mask out from
+                under it.
+            */
             mouse_state->origin = NULL;
         }
         else
@@ -126,6 +135,14 @@ mouse_driver_save_state(vterm_t *vterm)
     mmask_t     mouse_mask = EVERY_MOUSE_EVENT;
 
     /*
+        when the host owns the mouse (VTERM_FLAG_EXTMOUSE) we must never
+        touch ncurses' mousemask -- not even the transient save/restore
+        below, which would momentarily re-arm it and (on each event) emit
+        ncurses' own mouse enable/disable escapes, fighting the host's setup.
+    */
+    if(vterm->flags & VTERM_FLAG_EXTMOUSE) return;
+
+    /*
         if the mouse origin is anyone but this instance, then we need to
         save the previous mask and interval so we can restore it later.
     */
@@ -142,6 +159,9 @@ void
 mouse_driver_restore_state(vterm_t *vterm)
 {
     extern mouse_state_t    *mouse_state;
+
+    /* host owns the mouse -- save_state was a no-op, so is this */
+    if(vterm->flags & VTERM_FLAG_EXTMOUSE) return;
 
     /*
         if the mouse origin is anyone but this instance, then we need to
