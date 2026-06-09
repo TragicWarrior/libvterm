@@ -1,3 +1,17 @@
+10.1
+
+Mouse
+* [Bryan Christ] Add VTERM_FLAG_EXTMOUSE.  When set, libvterm treats the
+  host as the owner of the real terminal's mouse: it never touches
+  ncurses' mousemask, only tracks the child's mouse mode and re-encodes
+  the events the host hands it.  Without it, the has_mouse() probe in the
+  mouse driver misfires whenever the host enables mouse via raw escape
+  sequences that bypass ncurses' mask (as vwm does), so libvterm wrongly
+  seizes mousemask(ALL_MOUSE_EVENTS) the moment a child app enables mouse
+  -- breaking the host's own mouse handling.  Default behaviour is
+  unchanged; standalone consumers that don't set the flag still auto-seize
+  as before.
+
 10.0
 
 Color
