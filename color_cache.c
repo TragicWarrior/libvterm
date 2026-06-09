@@ -698,23 +698,12 @@ _color_cache_profile_pair(color_pair_t *pair)
     pair->rgb_values[0].g = g;
     pair->rgb_values[0].b = b;
 
-    rgb2hsl(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
-        &pair->hsl_values[0].h,
-        &pair->hsl_values[0].s,
-        &pair->hsl_values[0].l);
-
     // extract background RGB
     ncw_color_content(pair->bg, &r, &g, &b);
 
     pair->rgb_values[1].r = r;
     pair->rgb_values[1].g = g;
     pair->rgb_values[1].b = b;
-
-    // store the HLS background values
-    rgb2hsl(RGB_FLOAT(NCURSES_RGB(r), NCURSES_RGB(g), NCURSES_RGB(b)),
-        &pair->hsl_values[1].h,
-        &pair->hsl_values[1].s,
-        &pair->hsl_values[1].l);
 
     return;
 }
@@ -729,7 +718,6 @@ _color_cache_reset_pair(color_pair_t *pair)
     pair->bg = 0;
 
     memset(pair->rgb_values, 0, sizeof(pair->rgb_values));
-    memset(pair->hsl_values, 0, sizeof(pair->hsl_values));
 
     ncw_init_pair(pair->num, 0, 0);
 

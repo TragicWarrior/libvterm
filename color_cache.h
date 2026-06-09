@@ -34,15 +34,7 @@ struct _rgb_values_s
     short   b;
 };
 
-struct _hsl_values_s
-{
-    float   h;
-    float   s;
-    float   l;
-};
-
 typedef struct _rgb_values_s    rgb_values_t;
-typedef struct _hsl_values_s    hsl_values_t;
 
 typedef struct _color_pair_s    color_pair_t;
 
@@ -53,7 +45,6 @@ struct _color_pair_s
     int                     bg;
 
     rgb_values_t            rgb_values[2];
-    hsl_values_t            hsl_values[2];
 
     vterm_t                 *origin;        /*
                                                 indicates which instance
