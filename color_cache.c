@@ -64,6 +64,14 @@ color_cache_init(void)
     color_cache = (color_cache_t *)calloc(1, sizeof(color_cache_t));
     color_cache->ref_count = 1;
 
+    /*
+        profile the ENTIRE pair space, never a "working set".  vterm
+        instances run concurrently (e.g. in vwm) and share the process
+        color space; preventing color distortion -- especially with
+        hicolor apps -- requires every pair initialized and profiled so
+        nearest-color matching can search the full palette.  the 0x7FFF
+        cap below is the short-pair API bound, not a tuning knob.
+    */
     color_cache->term_colors = tigetnum("colors");
     color_cache->term_pairs = tigetnum("pairs");
 
