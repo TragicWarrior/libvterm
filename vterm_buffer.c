@@ -411,39 +411,57 @@ vterm_buffer_shift_up(vterm_t *vterm, int idx,
     int top_row, int bottom_row, int stride)
 {
     vterm_desc_t    *v_desc = NULL;
-    vterm_cell_t    **vcell_src;
-    vterm_cell_t    **vcell_dst;
-    int             curr_row;
-    int             region;
-    int             col_mem;
-    int             r;
+    int             rows_moved;
 
     // set vterm desc buffer selector
     v_desc = &vterm->vterm_desc[idx];
 
-    // computer real values when -1 is supplied
+    // compute real values when -1 is supplied
     if(top_row == -1) top_row = 0;
     if(bottom_row == -1) bottom_row = v_desc->rows - 1;
 
-    region = bottom_row - top_row;
-    if(region < 1) return -1;
+    if(bottom_row - top_row < 1) return -1;
 
-    curr_row = top_row + stride;
+    /*
+        rows that survive the shift.  a stride >= the region height
+        shifts everything out -- nothing to copy (callers blank the
+        vacated rows).
+    */
+    rows_moved = bottom_row - top_row - stride + 1;
 
-    vcell_src = &v_desc->cells[curr_row];
-    vcell_dst = &v_desc->cells[top_row];
-
-    col_mem = sizeof(vterm_cell_t) * v_desc->cols;
-
-    for(r = 0; r < region; r++)
+    if(rows_moved > 0)
     {
-        if(curr_row > bottom_row) break;
+        if(v_desc->cols == v_desc->max_cols)
+        {
+            /*
+                un-ratcheted (the common case): rows are contiguous in
+                one block (_vterm_cells_alloc_contig), so the whole
+                shift is a single overlapping move.
+            */
+            memmove(v_desc->cells[top_row],
+                v_desc->cells[top_row + stride],
+                (size_t)rows_moved * (size_t)v_desc->max_cols
+                    * sizeof(vterm_cell_t));
+        }
+        else
+        {
+            /*
+                ratcheted stride: physical rows are wider than the
+                visible width.  copy only the visible span -- a full-
+                stride block move multiplies the bytes copied by
+                max_cols/cols and blows test_resize's ASan watchdog in
+                its ratchet storm.  ascending order: dst row is always
+                below src row.
+            */
+            size_t  col_mem = (size_t)v_desc->cols * sizeof(vterm_cell_t);
+            int     r;
 
-        memcpy(*vcell_dst, *vcell_src, col_mem);
-
-        curr_row++;
-        vcell_src++;
-        vcell_dst++;
+            for(r = 0; r < rows_moved; r++)
+            {
+                memcpy(v_desc->cells[top_row + r],
+                    v_desc->cells[top_row + stride + r], col_mem);
+            }
+        }
     }
 
     /*
@@ -464,33 +482,49 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     int top_row, int bottom_row, int stride)
 {
     vterm_desc_t    *v_desc = NULL;
-    vterm_cell_t    **vcell_src;
-    vterm_cell_t    **vcell_dst;
-    int             region;
-    int             col_mem;
-    int             r;
+    int             rows_moved;
 
     // set vterm desc buffer selector
     v_desc = &vterm->vterm_desc[idx];
 
-    // computer real values when -1 is supplied
+    // compute real values when -1 is supplied
     if(top_row == -1) top_row = 0;
     if(bottom_row == -1) bottom_row = v_desc->rows - 1;
 
-    region = bottom_row - top_row;
-    if(region < 1) return -1;
+    if(bottom_row - top_row < 1) return -1;
 
-    vcell_src = &v_desc->cells[bottom_row - stride];
-    vcell_dst = &v_desc->cells[bottom_row];
+    /*
+        rows that survive the shift; rows [top_row .. bottom_row - stride]
+        land on [top_row + stride .. bottom_row].  a stride >= the region
+        height shifts everything out -- nothing to copy.
+    */
+    rows_moved = bottom_row - top_row - stride + 1;
 
-    col_mem = sizeof(vterm_cell_t) * v_desc->cols;
-
-    for(r = 0; r < region; r++)
+    // see shift_up for the fast-path / ratchet rationale
+    if(rows_moved > 0)
     {
-        memcpy(*vcell_dst, *vcell_src, col_mem);
+        if(v_desc->cols == v_desc->max_cols)
+        {
+            memmove(v_desc->cells[top_row + stride],
+                v_desc->cells[top_row],
+                (size_t)rows_moved * (size_t)v_desc->max_cols
+                    * sizeof(vterm_cell_t));
+        }
+        else
+        {
+            /*
+                descending order: dst row is always above src row, so
+                the highest destination must be written first.
+            */
+            size_t  col_mem = (size_t)v_desc->cols * sizeof(vterm_cell_t);
+            int     r;
 
-        vcell_src--;
-        vcell_dst--;
+            for(r = rows_moved - 1; r >= 0; r--)
+            {
+                memcpy(v_desc->cells[top_row + stride + r],
+                    v_desc->cells[top_row + r], col_mem);
+            }
+        }
     }
 
     /*
