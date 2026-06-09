@@ -63,14 +63,20 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
                     VCELL_DIRTY_SET((_desc), (_r), (_start) + _i); \
             }
 
+/*
+    the dirty bitmap is one contiguous block with rows
+    VCELL_DIRTY_ROW_BYTES(max_cols) apart (alloc/realloc size it from
+    the physical stride), so the whole-buffer set is a single memset.
+    bits for offscreen tail columns (cols..max_cols-1) get set too --
+    harmless: readers only test bits below cols, and a later re-widen
+    wants the revealed columns repainted anyway.
+*/
 #define VCELL_ALL_SET_DIRTY(_vdesc) \
             { \
                 __typeof__ (_vdesc) _vtmp = (_vdesc); \
-                int _r; \
-                for(_r = 0; _r < _vtmp->rows; _r++) \
-                { \
-                    VCELL_DIRTY_SET_ROW(_vtmp, _r); \
-                } \
+                memset(_vtmp->dirty_bits[0], 0xFF, \
+                    (size_t)_vtmp->rows * \
+                    (size_t)VCELL_DIRTY_ROW_BYTES(_vtmp->max_cols)); \
             }
 
 
