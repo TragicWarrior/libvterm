@@ -525,6 +525,15 @@ vshell_handle_key(vshell_t *vshell, int32_t keystroke)
     if(keystroke == 0x1b2d)
     {
         vshell_destroy_pane(vshell, vshell->active_pane);
+
+        /*
+            closing the last pane ends the session: the main loops
+            exit when pane_count reaches 0, same as when the last
+            child exits on its own.  without this check the re-fetch
+            below returns NULL and dereferencing it segfaults.
+        */
+        if(vshell->pane_count == 0) return;
+
         vpane = vshell_get_pane(vshell, vshell->active_pane);
         vpane->state |= TERM_STATE_DIRTY;
         vshell_resize(vshell);
