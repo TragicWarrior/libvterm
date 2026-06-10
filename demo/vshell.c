@@ -477,8 +477,14 @@ vshell_handle_key(vshell_t *vshell, int32_t keystroke)
         return;
     }
 
-    // alt H
-    if(keystroke == 0x1b48)
+    /*
+        alt ?  (alt H kept as a quiet alias -- GTK terminals like
+        xfce4-terminal grab Alt+H for their Help menu mnemonic, but
+        it still works on terminals that pass it through.  Alt+/ is
+        deliberately NOT an alias: it would shadow bash's M-/
+        complete-filename binding inside every pane)
+    */
+    if(keystroke == 0x1b3f || keystroke == 0x1b48)
     {
         if(vshell->vshell_flags & VSHELL_FLAG_HELP)
             vshell->vshell_flags &= ~VSHELL_FLAG_HELP;
@@ -790,13 +796,13 @@ vshell_update_canvas(vshell_t *vshell, int flags)
                 history_sz = vterm_get_history_size(vpane->vterm);
 
                 len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s | %04d / %04d | Help = < Alt H > ]", mode,
+                    L"[ Active | %s | %04d / %04d | Help = < Alt ? > ]", mode,
                     vpane->cursor_pos + vpane->height, history_sz);
             }
             else
             {
                 len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s | Help < Alt H > ]", mode);
+                    L"[ Active | %s | Help < Alt ? > ]", mode);
             }
 
             wattron(vshell->canvas, WA_BOLD);
@@ -1359,7 +1365,7 @@ vshell_help_init(vshell_t *vshell)
                             L"",
                             L"",
                             L"",
-                            L"Alt H     Show / hide help"   };
+                            L"Alt ?     Show / hide help"   };
 
 
     wchar_t         wbuf[WBUF_MAX];
