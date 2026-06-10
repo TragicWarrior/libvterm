@@ -74,8 +74,24 @@ destroy_vterm(vterm_t *vt)
     free(vt);
 }
 
+
+/* render a NUL-terminated escape string -- no hand-counted lengths */
+static void
+R(vterm_t *vt, const char *s)
+{
+    vterm_render(vt, (char *)s, (int)strlen(s));
+}
+
 #define CELL(_vt, _r, _c) \
             ((_vt)->vterm_desc[VTERM_BUF_STANDARD].cells[(_r)][(_c)])
+
+static void
+clear_dirty(vterm_desc_t *d)
+{
+    int r;
+
+    for(r = 0; r < d->rows; r++) VCELL_DIRTY_CLR_ROW(d, r);
+}
 
 static void
 run_bench(void)
@@ -117,6 +133,31 @@ main(int argc, char **argv)
     if(argc > 1 && strcmp(argv[1], "bench") == 0)
     {
         run_bench();
+        return 0;
+    }
+
+    /* full-screen clear storm: ED 2 is the largest span workload */
+    if(argc > 1 && strcmp(argv[1], "bench-clear") == 0)
+    {
+        struct timespec t0, t1;
+        long            ms;
+        int             i;
+
+        vt = make_vterm(80, 24);
+
+        clock_gettime(CLOCK_MONOTONIC, &t0);
+
+        for(i = 0; i < 200000; i++)
+            R(vt, "\033[2Jxx");
+
+        clock_gettime(CLOCK_MONOTONIC, &t1);
+
+        ms = (t1.tv_sec - t0.tv_sec) * 1000L
+            + (t1.tv_nsec - t0.tv_nsec) / 1000000L;
+
+        printf("bench-clear: 200000 full-screen ED2: %ld ms\n", ms);
+
+        destroy_vterm(vt);
         return 0;
     }
 
@@ -179,6 +220,142 @@ main(int argc, char **argv)
     CHECK(CELL(vt, 3, 1).wch[0] == L'V', "wrap: second col of row 3");
     CHECK(std->crow == 3 && std->ccol == 2, "wrap: cursor %d,%d",
         std->ccol, std->crow);
+
+    /*
+        ==== erase / fill flavor contract ====
+
+        the erase-family loops come in three flavors.  poke colors and
+        default_colors to DIFFERENT values so the assertions can tell
+        them apart (color SGRs would route through the color cache,
+        which needs live curses -- direct field pokes don't).
+    */
+    std->colors = 7;            /* "current" colors  */
+    std->default_colors = 3;    /* "default" colors  */
+
+    /* ---- ED 2 (\e[2J): bce flavor -- ' ' + curattr + current colors.
+       set reverse first so attr carriage is visible ---- */
+    R(vt, "\033[7m\033[2J");
+
+    CHECK(CELL(vt, 1, 5).wch[0] == L' ', "ed2: blank");
+    CHECK(CELL(vt, 1, 5).attr & A_REVERSE, "ed2: carries curattr");
+    CHECK(CELL(vt, 1, 5).colors == 7, "ed2: current colors (%d)",
+        CELL(vt, 1, 5).colors);
+    CHECK(CELL(vt, 5, 19).wch[0] == L' ', "ed2: last cell");
+    R(vt, "\033[27m");
+
+    /* ED 2 quirk: default_colors adopted current colors */
+    CHECK(std->default_colors == 7, "ed2: default_colors quirk (%d)",
+        std->default_colors);
+    std->default_colors = 3;    /* restore for later flavor checks */
+
+    /* ---- EL variants: span + dirty-bit boundaries ---- */
+    R(vt, "\033[2;1H");           /* row 1 (0-based), col 0 */
+    R(vt, "QQQQQQQQQQQQQQQQQQQQ");
+    clear_dirty(std);
+
+    R(vt, "\033[2;4H\033[K");     /* EL 0 from col 3 */
+
+    CHECK(CELL(vt, 1, 2).wch[0] == L'Q', "el0: col 2 untouched");
+    for(c = 3; c < 20; c++)
+        CHECK(CELL(vt, 1, c).wch[0] == L' ', "el0: col %d blank", c);
+    for(c = 0; c < 3; c++)
+        CHECK(!VCELL_DIRTY_TEST(std, 1, c), "el0: col %d stays clean", c);
+    for(c = 3; c < 20; c++)
+        CHECK(VCELL_DIRTY_TEST(std, 1, c), "el0: col %d dirty", c);
+
+    R(vt, "\033[3;1H");           /* row 2, col 0 */
+    R(vt, "RRRRRRRRRRRRRRRRRRRR");
+    clear_dirty(std);
+
+    R(vt, "\033[3;18H\033[1K");  /* EL 1 to col 17 */
+
+    for(c = 0; c <= 17; c++)
+        CHECK(CELL(vt, 2, c).wch[0] == L' ', "el1: col %d blank", c);
+    CHECK(CELL(vt, 2, 18).wch[0] == L'R', "el1: col 18 untouched");
+    CHECK(VCELL_DIRTY_TEST(std, 2, 17), "el1: col 17 dirty");
+    CHECK(!VCELL_DIRTY_TEST(std, 2, 18), "el1: col 18 stays clean");
+
+    /* ---- ECH: n cells from the cursor, bce flavor ---- */
+    R(vt, "\033[4;1HSSSSSSSSSS");
+    R(vt, "\033[4;3H\033[4X");   /* 4 cells from col 2 */
+
+    CHECK(CELL(vt, 3, 1).wch[0] == L'S', "ech: col 1 untouched");
+    for(c = 2; c <= 5; c++)
+    {
+        CHECK(CELL(vt, 3, c).wch[0] == L' ', "ech: col %d blank", c);
+        CHECK(CELL(vt, 3, c).colors == 7, "ech: col %d colors", c);
+    }
+    CHECK(CELL(vt, 3, 6).wch[0] == L'S', "ech: col 6 untouched");
+
+    /* ---- ICH: shift right, inserted cells blank with bce flavor ---- */
+    R(vt, "\033[5;1HTTTTT");
+    R(vt, "\033[5;1H\033[2@");   /* insert 2 at col 0 */
+
+    CHECK(CELL(vt, 4, 0).wch[0] == L' ', "ich: inserted blank");
+    CHECK(CELL(vt, 4, 1).wch[0] == L' ', "ich: inserted blank 2");
+    CHECK(CELL(vt, 4, 2).wch[0] == L'T', "ich: shifted content");
+
+    /* ---- IL / DL: vacated rows blank with bce flavor ---- */
+    R(vt, "\033[1;1H\033[2J");
+    std->default_colors = 3;    /* the ED 2 quirk re-adopted current */
+    R(vt, "\033[1;1HAAAA\r\nBBBB\r\nCCCC");
+    R(vt, "\033[1;1H\033[1L");   /* insert line at row 0 */
+
+    CHECK(CELL(vt, 0, 0).wch[0] == L' ', "il: new row blank");
+    CHECK(CELL(vt, 1, 0).wch[0] == L'A', "il: pushed row");
+    CHECK(CELL(vt, 2, 0).wch[0] == L'B', "il: pushed row 2");
+
+    R(vt, "\033[1;1H\033[1M");   /* delete line at row 0 */
+
+    CHECK(CELL(vt, 0, 0).wch[0] == L'A', "dl: rows pulled up");
+    CHECK(CELL(vt, 1, 0).wch[0] == L'B', "dl: rows pulled up 2");
+    CHECK(CELL(vt, 5, 0).wch[0] == L' ', "dl: vacated bottom blank");
+    CHECK(CELL(vt, 5, 0).colors == 7, "dl: vacated bce colors");
+
+    /* ---- DECALN: reset flavor -- 'E' + A_NORMAL + default colors ---- */
+    R(vt, "\033#8");
+
+    CHECK(CELL(vt, 2, 10).wch[0] == L'E', "decaln: E fill");
+    CHECK(CELL(vt, 2, 10).attr == A_NORMAL, "decaln: A_NORMAL");
+    CHECK(CELL(vt, 2, 10).colors == 3, "decaln: default colors (%d)",
+        CELL(vt, 2, 10).colors);
+
+    /* ---- erase_row(FALSE): preserve flavor -- per-cell colors
+       must SURVIVE (the ALT-scroll / esc-IND path) ---- */
+    for(c = 0; c < std->cols; c++)
+    {
+        CELL(vt, 4, c).wch[0] = L'Z';
+        CELL(vt, 4, c).colors = 40 + c;         /* distinct per cell */
+        CELL(vt, 4, c).attr = A_REVERSE;
+    }
+
+    vterm_erase_row(vt, 4, FALSE, 0);
+
+    for(c = 0; c < std->cols; c++)
+    {
+        CHECK(CELL(vt, 4, c).wch[0] == L' ', "rowF: col %d blank", c);
+        CHECK(CELL(vt, 4, c).attr == A_NORMAL, "rowF: col %d attr", c);
+        CHECK(CELL(vt, 4, c).colors == 40 + c,
+            "rowF: col %d colors PRESERVED (%d)", c, CELL(vt, 4, c).colors);
+    }
+
+    /* ---- erase_row(TRUE): reset flavor ---- */
+    vterm_erase_row(vt, 4, TRUE, 0);
+
+    for(c = 0; c < std->cols; c++)
+        CHECK(CELL(vt, 4, c).colors == 3, "rowT: col %d default colors", c);
+
+    /* ---- vterm_erase_cols: reset flavor from a start column ---- */
+    R(vt, "\033[1;1H\033[2J");
+    std->default_colors = 9;    /* distinct from current (7) */
+    R(vt, "\033[1;1HXXXXXXXXXX");
+    vterm_erase_cols(vt, 5, 0);
+
+    CHECK(CELL(vt, 0, 4).wch[0] == L'X', "cols: col 4 untouched");
+    CHECK(CELL(vt, 0, 5).wch[0] == L' ', "cols: col 5 blank");
+    CHECK(CELL(vt, 5, 19).wch[0] == L' ', "cols: last row blank");
+    CHECK(CELL(vt, 0, 5).colors == 9, "cols: default colors (%d)",
+        CELL(vt, 0, 5).colors);
 
     destroy_vterm(vt);
 
