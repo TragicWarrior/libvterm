@@ -8,7 +8,7 @@ void
 vterm_erase(vterm_t *vterm, int idx, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             r, c;
+    int             r;
 
     if(vterm == NULL) return;
 
@@ -37,12 +37,8 @@ vterm_erase(vterm_t *vterm, int idx, char fill_char)
 
     for(r = 0;r < v_desc->rows; r++)
     {
-        for(c = 0; c < v_desc->cols; c++)
-        {
-            VCELL_SET_CHAR(v_desc, r, c, fill_char);
-            VCELL_SET_ATTR(v_desc, r, c, A_NORMAL);
-            VCELL_SET_DEFAULT_COLORS(v_desc, r, c);
-        }
+        vterm_fill_span(v_desc, r, 0, v_desc->cols - 1,
+            (wchar_t)fill_char, A_NORMAL, v_desc->default_colors);
     }
 
     return;
@@ -52,7 +48,6 @@ void
 vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             c;
 
     if(vterm == NULL) return;
 
@@ -63,14 +58,10 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
 
     if(row == -1) row = v_desc->crow;
 
-    for(c = 0;c < v_desc->cols; c++)
-    {
-        VCELL_SET_CHAR(v_desc, row, c, fill_char);
-        VCELL_SET_ATTR(v_desc, row, c, A_NORMAL);
-
-        if(reset_colors == TRUE)
-            VCELL_SET_DEFAULT_COLORS(v_desc, row, c);
-    }
+    // colors == -1 preserves each cell's existing colors
+    vterm_fill_span(v_desc, row, 0, v_desc->cols - 1,
+        (wchar_t)fill_char, A_NORMAL,
+        reset_colors == TRUE ? v_desc->default_colors : -1);
 
     return;
 }
@@ -112,11 +103,11 @@ vterm_erase_col(vterm_t *vterm, int col, char fill_char)
 
     if(col == -1) col = v_desc->ccol;
 
+    // a vertical 1-wide span: one whole-cell store per row
     for(r = 0; r < v_desc->rows; r++)
     {
-        VCELL_SET_CHAR(v_desc, r, col, fill_char);
-        VCELL_SET_ATTR(v_desc, r, col, A_NORMAL);
-        VCELL_SET_DEFAULT_COLORS(v_desc, r, col);
+        VCELL_SET_ALL(v_desc, r, col, (wchar_t)fill_char, A_NORMAL,
+            v_desc->default_colors);
     }
 
     return;
@@ -126,6 +117,7 @@ void
 vterm_erase_cols(vterm_t *vterm, int start_col, char fill_char)
 {
     vterm_desc_t    *v_desc = NULL;
+    int             r;
 
     if(vterm == NULL) return;
     if(start_col < 0) return;
@@ -135,10 +127,11 @@ vterm_erase_cols(vterm_t *vterm, int start_col, char fill_char)
     // set the vterm description buffer selector
     v_desc = vterm->v_desc_active;
 
-    while(start_col < v_desc->cols)
+    // row-major: one span per row instead of one full-rows pass per column
+    for(r = 0; r < v_desc->rows; r++)
     {
-        vterm_erase_col(vterm, start_col, fill_char);
-        start_col++;
+        vterm_fill_span(v_desc, r, start_col, v_desc->cols - 1,
+            (wchar_t)fill_char, A_NORMAL, v_desc->default_colors);
     }
 
     return;

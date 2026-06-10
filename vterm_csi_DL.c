@@ -11,7 +11,7 @@ void
 interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             c, r;
+    int             r;
     int             n = 1;
 
     // set selector for buffer description
@@ -30,12 +30,8 @@ interpret_csi_DL(vterm_t *vterm, int param[], int pcount)
         }
         else
         {
-            for(c = 0; c < v_desc->cols; c++)
-            {
-                VCELL_SET_CHAR(v_desc, r, c, ' ');
-                VCELL_SET_ATTR(v_desc, r, c, v_desc->curattr);
-                VCELL_SET_COLORS(v_desc, r, c);
-            }
+            vterm_fill_span(v_desc, r, 0, v_desc->cols - 1, L' ',
+                v_desc->curattr, v_desc->colors);
         }
     }
 

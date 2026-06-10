@@ -227,30 +227,24 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     // handle plain ASCII scenario
     if(wch == NULL)
     {
-        VCELL_SET_CHAR(v_desc, row, col, c);
-        VCELL_SET_COLORS(v_desc, row, col);
+        attr_t  attr = v_desc->curattr;
 
-        if(IS_MODE_ACS(vterm))
-        {
-            VCELL_SET_ATTR(v_desc, row, col, v_desc->curattr | A_ALTCHARSET);
-        }
-        else
-        {
-            VCELL_SET_ATTR(v_desc, row, col, v_desc->curattr);
-        }
+        if(IS_MODE_ACS(vterm)) attr |= A_ALTCHARSET;
+
+        VCELL_SET_ALL(v_desc, row, col, c, attr, v_desc->colors);
 
         v_desc->ccol++;
 
         return;
     }
 
-    // handle wide character
-    memcpy(v_desc->cells[row][col].wch, wch,
-        sizeof(v_desc->cells[row][col].wch));
-    VCELL_DIRTY_SET(v_desc, row, col);
-
-    VCELL_SET_ATTR(v_desc, row, col, v_desc->curattr);
-    VCELL_SET_COLORS(v_desc, row, col);
+    /*
+        handle wide character.  the decoder terminates at wch[1], so
+        storing wch[0] through the whole-cell macro is byte-identical
+        to copying the pair.
+    */
+    VCELL_SET_ALL(v_desc, row, col, wch[0], v_desc->curattr,
+        v_desc->colors);
 
     v_desc->ccol++;
 

@@ -34,6 +34,25 @@ int     vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
 int     vterm_buffer_history_append(vterm_t *vterm, int src_idx,
             int src_row);
 
+struct _vterm_desc_s;
+
+/*
+    fill a horizontal span (col_start..col_end inclusive) of one row
+    with a template cell and mark the span dirty in one pass.  the
+    erase-family handlers all funnel here; flavor (which attr, which
+    colors) is the caller's explicit choice.  colors == -1 preserves
+    each cell's existing colors (the erase_row(reset_colors == FALSE)
+    flavor used by alt-screen scrolling) while wch and attr are still
+    overwritten.
+*/
+void    vterm_fill_span(struct _vterm_desc_s *v_desc, int row,
+            int col_start, int col_end, wchar_t ch, attr_t attr,
+            int colors);
+
+// set dirty bits col_start..col_end (inclusive) of one row
+void    vterm_dirty_set_span(struct _vterm_desc_s *v_desc, int row,
+            int col_start, int col_end);
+
 
 /*
     dirty-bit primitives.  dirty state lives in a side-table bitmap
@@ -63,13 +82,6 @@ int     vterm_buffer_history_append(vterm_t *vterm, int src_idx,
             memset((_desc)->dirty_bits[(_r)], 0x00, \
                 VCELL_DIRTY_ROW_BYTES((_desc)->cols))
 
-#define VCELL_DIRTY_SET_RANGE(_desc, _r, _start, _count) \
-            { \
-                int _i; \
-                for(_i = 0; _i < (_count); _i++) \
-                    VCELL_DIRTY_SET((_desc), (_r), (_start) + _i); \
-            }
-
 /*
     the dirty bitmap is one contiguous block with rows
     VCELL_DIRTY_ROW_BYTES(max_cols) apart (alloc/realloc size it from
@@ -93,10 +105,21 @@ int     vterm_buffer_history_append(vterm_t *vterm, int src_idx,
     can update the bitmap at the same site.
 */
 
-#define VCELL_ZERO_ALL(_desc, _r, _c) \
+/*
+    whole-cell store: one address computation and ONE dirty-bit RMW.
+    the single-field macros below each redo the cells[r][c] walk and
+    the dirty update -- and because the dirty store goes through a
+    uint8_t (character type), it may legally alias the row-pointer
+    arrays, forcing the compiler to reload them between consecutive
+    macros.  use this on per-glyph paths.
+*/
+#define VCELL_SET_ALL(_desc, _r, _c, _ch, _attr, _colors) \
             { \
-                memset(&(_desc)->cells[(_r)][(_c)], 0, \
-                    sizeof((_desc)->cells[(_r)][(_c)])); \
+                vterm_cell_t *_vcell = &(_desc)->cells[(_r)][(_c)]; \
+                _vcell->wch[0] = (_ch); \
+                _vcell->wch[1] = L'\0'; \
+                _vcell->attr = (_attr); \
+                _vcell->colors = (_colors); \
                 VCELL_DIRTY_SET((_desc), (_r), (_c)); \
             }
 
@@ -107,21 +130,9 @@ int     vterm_buffer_history_append(vterm_t *vterm, int src_idx,
                 VCELL_DIRTY_SET((_desc), (_r), (_c)); \
             }
 
-#define VCELL_SET_ATTR(_desc, _r, _c, _attr) \
-            { \
-                (_desc)->cells[(_r)][(_c)].attr = (_attr); \
-                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
-            }
-
 #define VCELL_SET_COLORS(_desc, _r, _c) \
             { \
                 (_desc)->cells[(_r)][(_c)].colors = (_desc)->colors; \
-                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
-            }
-
-#define VCELL_SET_DEFAULT_COLORS(_desc, _r, _c) \
-            { \
-                (_desc)->cells[(_r)][(_c)].colors = (_desc)->default_colors; \
                 VCELL_DIRTY_SET((_desc), (_r), (_c)); \
             }
 

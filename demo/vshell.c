@@ -477,8 +477,14 @@ vshell_handle_key(vshell_t *vshell, int32_t keystroke)
         return;
     }
 
-    // alt H
-    if(keystroke == 0x1b48)
+    /*
+        alt ?  (alt H kept as a quiet alias -- GTK terminals like
+        xfce4-terminal grab Alt+H for their Help menu mnemonic, but
+        it still works on terminals that pass it through.  Alt+/ is
+        deliberately NOT an alias: it would shadow bash's M-/
+        complete-filename binding inside every pane)
+    */
+    if(keystroke == 0x1b3f || keystroke == 0x1b48)
     {
         if(vshell->vshell_flags & VSHELL_FLAG_HELP)
             vshell->vshell_flags &= ~VSHELL_FLAG_HELP;
@@ -525,6 +531,15 @@ vshell_handle_key(vshell_t *vshell, int32_t keystroke)
     if(keystroke == 0x1b2d)
     {
         vshell_destroy_pane(vshell, vshell->active_pane);
+
+        /*
+            closing the last pane ends the session: the main loops
+            exit when pane_count reaches 0, same as when the last
+            child exits on its own.  without this check the re-fetch
+            below returns NULL and dereferencing it segfaults.
+        */
+        if(vshell->pane_count == 0) return;
+
         vpane = vshell_get_pane(vshell, vshell->active_pane);
         vpane->state |= TERM_STATE_DIRTY;
         vshell_resize(vshell);
@@ -781,13 +796,13 @@ vshell_update_canvas(vshell_t *vshell, int flags)
                 history_sz = vterm_get_history_size(vpane->vterm);
 
                 len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s | %04d / %04d | Help = < Alt H > ]", mode,
+                    L"[ Active | %s | %04d / %04d | Help = < Alt ? > ]", mode,
                     vpane->cursor_pos + vpane->height, history_sz);
             }
             else
             {
                 len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s | Help < Alt H > ]", mode);
+                    L"[ Active | %s | Help < Alt ? > ]", mode);
             }
 
             wattron(vshell->canvas, WA_BOLD);
@@ -1350,7 +1365,7 @@ vshell_help_init(vshell_t *vshell)
                             L"",
                             L"",
                             L"",
-                            L"Alt H     Show / hide help"   };
+                            L"Alt ?     Show / hide help"   };
 
 
     wchar_t         wbuf[WBUF_MAX];

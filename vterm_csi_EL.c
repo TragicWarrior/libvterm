@@ -31,9 +31,8 @@ void
 interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             erase_start, erase_end, c;
+    int             erase_start, erase_end;
     int             cmd = 0;
-    int             row;
 
     // set the vterm description buffer selector
     v_desc = vterm->v_desc_active;
@@ -65,14 +64,8 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
         }
     }
 
-    row = v_desc->crow;
-
-    for(c = erase_start; c <= erase_end; c++)
-    {
-        VCELL_SET_CHAR(v_desc, row, c, ' ');
-        VCELL_SET_ATTR(v_desc, row, c, v_desc->curattr);
-        VCELL_SET_COLORS(v_desc, row, c);
-    }
+    vterm_fill_span(v_desc, v_desc->crow, erase_start, erase_end, L' ',
+        v_desc->curattr, v_desc->colors);
 
     return;
 }

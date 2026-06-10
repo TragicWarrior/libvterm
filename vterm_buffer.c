@@ -119,7 +119,7 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     int             new_dbytes;
     int             copy_rows;
     int             copy_cell_bytes;
-    int             r, c;
+    int             r;
 
     if(vterm == NULL) return;
 
@@ -206,21 +206,15 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
 
     // blank brand-new rows entirely (space-fill marks each cell dirty)
     for(r = copy_rows; r < height; r++)
-    {
-        for(c = 0; c < new_stride; c++)
-            VCELL_SET_CHAR(v_desc, r, c, ' ');
-    }
+        vterm_fill_span(v_desc, r, 0, new_stride - 1, L' ', A_NORMAL, 0);
 
     // blank newly-added columns on surviving rows when the stride grew
     if(new_stride > max_cols_old)
     {
         for(r = 0; r < copy_rows; r++)
         {
-            for(c = max_cols_old; c < new_stride; c++)
-            {
-                VCELL_ZERO_ALL(v_desc, r, c);
-                VCELL_SET_CHAR(v_desc, r, c, ' ');
-            }
+            vterm_fill_span(v_desc, r, max_cols_old, new_stride - 1,
+                L' ', A_NORMAL, 0);
         }
     }
 
@@ -596,6 +590,70 @@ vterm_buffer_history_append(vterm_t *vterm, int src_idx, int src_row)
     return 0;
 }
 
+void
+vterm_dirty_set_span(vterm_desc_t *v_desc, int row, int col_start,
+    int col_end)
+{
+    uint8_t     *bytes = v_desc->dirty_bits[row];
+    int         first = col_start >> 3;
+    int         last = col_end >> 3;
+    uint8_t     first_mask = (uint8_t)(0xFFu << (col_start & 7));
+    uint8_t     last_mask = (uint8_t)(0xFFu >> (7 - (col_end & 7)));
+
+    if(first == last)
+    {
+        bytes[first] |= (uint8_t)(first_mask & last_mask);
+        return;
+    }
+
+    bytes[first] |= first_mask;
+    bytes[last] |= last_mask;
+
+    if(last - first > 1)
+        memset(&bytes[first + 1], 0xFF, (size_t)(last - first - 1));
+
+    return;
+}
+
+void
+vterm_fill_span(vterm_desc_t *v_desc, int row, int col_start,
+    int col_end, wchar_t ch, attr_t attr, int colors)
+{
+    vterm_cell_t    template;
+    vterm_cell_t    *vcell;
+    int             c;
+
+    if(col_end < col_start) return;
+
+    vcell = &v_desc->cells[row][col_start];
+
+    if(colors == -1)
+    {
+        // preserve flavor: blank the glyph and attr, keep cell colors
+        for(c = col_start; c <= col_end; c++)
+        {
+            vcell->wch[0] = ch;
+            vcell->wch[1] = L'\0';
+            vcell->attr = attr;
+            vcell++;
+        }
+    }
+    else
+    {
+        template.wch[0] = ch;
+        template.wch[1] = L'\0';
+        template.attr = attr;
+        template.colors = colors;
+
+        for(c = col_start; c <= col_end; c++)
+            *vcell++ = template;
+    }
+
+    vterm_dirty_set_span(v_desc, row, col_start, col_end);
+
+    return;
+}
+
 /*
     no internal callers since the history ring replaced the
     shift+clone capture path; exported, kept for ABI.
@@ -629,7 +687,7 @@ vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
         memcpy(*vcell_dst, *vcell_src, col_mem);
 
         // mark the cloned cells dirty in the destination's bitmap
-        VCELL_DIRTY_SET_RANGE(v_desc_dst, dst_offset + r, 0, stride);
+        vterm_dirty_set_span(v_desc_dst, dst_offset + r, 0, stride - 1);
 
         vcell_src++;
         vcell_dst++;
