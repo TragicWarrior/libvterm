@@ -34,6 +34,7 @@
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_buffer.h"
+#include "color_cache.h"
 
 static int failures = 0;
 
@@ -63,12 +64,20 @@ make_vterm(int width, int height)
     vterm_erase(vt, VTERM_BUF_STANDARD, 0);
     vterm_erase(vt, VTERM_BUF_HISTORY, '-');
 
+    /*
+        headless, tigetnum() fails so the cache initializes EMPTY --
+        split/find walk nothing and report misses.  that makes the
+        SGR 0 failure branch reachable without curses.
+    */
+    color_cache_init();
+
     return vt;
 }
 
 static void
 destroy_vterm(vterm_t *vt)
 {
+    color_cache_release();
     vterm_buffer_dealloc(vt, VTERM_BUF_STANDARD);
     vterm_buffer_dealloc(vt, VTERM_BUF_HISTORY);
     free(vt);
@@ -220,6 +229,27 @@ main(int argc, char **argv)
     CHECK(CELL(vt, 3, 1).wch[0] == L'V', "wrap: second col of row 3");
     CHECK(std->crow == 3 && std->ccol == 2, "wrap: cursor %d,%d",
         std->ccol, std->crow);
+
+    /* ---- SGR 0: attr reset + implicit color reset ----
+       with the headless-empty cache the default-pair split fails, so
+       the contract here is the failure branch: attrs drop to
+       A_NORMAL, the pair falls back to 0, fg/bg untouched.  (the
+       populated-cache branch -- colors = default_colors -- needs live
+       curses; covered interactively via ls --color in vshell.) */
+    std->colors = 5;
+    R(vt, "\033[7m\033[0mZ");
+
+    CHECK(CELL(vt, 3, 2).wch[0] == L'Z', "sgr0: glyph");
+    CHECK(CELL(vt, 3, 2).attr == A_NORMAL, "sgr0: attrs dropped");
+    CHECK(CELL(vt, 3, 2).colors == 0, "sgr0: pair fell back to 0 (%d)",
+        CELL(vt, 3, 2).colors);
+    CHECK(std->colors == 0, "sgr0: desc colors (%d)", std->colors);
+
+    /* bare \e[m is SGR 0 too */
+    std->colors = 5;
+    R(vt, "\033[7m\033[mZ");
+    CHECK(std->colors == 0 && CELL(vt, 3, 3).attr == A_NORMAL,
+        "sgr0: bare \\e[m form");
 
     /*
         ==== erase / fill flavor contract ====

@@ -229,8 +229,34 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             // reset attributes
             v_desc->curattr = A_NORMAL;
 
-            // attribute reset is an implicit color reset too so we'll
-            // fall-through to reset_fg and reset_bg
+            /*
+                SGR 0 is an implicit color reset too.  the default
+                pair's components are re-read from the cache on EVERY
+                reset on purpose: default_colors is a pair NUMBER into
+                the shared table, and sibling instances can recycle
+                and rebind its contents -- snapshotting fg/bg at
+                set-time is the f0b705c failure family.  but the
+                resulting pair IS default_colors by construction, so
+                the old fall-through into RESET_FG + RESET_BG (a
+                second split, two find_pair walks, and a possible
+                phantom add_pair for the intermediate fg/old-bg
+                combination) collapses to this single split.
+            */
+            retval = color_cache_split_pair(v_desc->default_colors,
+                &fg, &bg);
+
+            if(retval != -1)
+            {
+                v_desc->fg = fg;
+                v_desc->bg = bg;
+                v_desc->colors = v_desc->default_colors;
+            }
+            else
+            {
+                v_desc->colors = 0;
+            }
+
+            continue;
 
         csi_sgr_RESET_FG:
             // code 39
@@ -242,8 +268,7 @@ interpret_csi_SGR(vterm_t *vterm, int param[], int pcount)
             _vterm_set_color_pair_safe(v_desc, vterm, retval != -1 ? -1 : 0,
                 v_desc->fg, v_desc->bg);
 
-            // if param[i] == 0 then we fall through to resetting BG as well
-            if(param[i] != 0) continue;
+            continue;
 
         csi_sgr_RESET_BG:
             // code 49
