@@ -100,6 +100,24 @@ int     vterm_buffer_history_append(vterm_t *vterm, int src_idx,
                 VCELL_DIRTY_SET((_desc), (_r), (_c)); \
             }
 
+/*
+    whole-cell store: one address computation and ONE dirty-bit RMW.
+    the single-field macros below each redo the cells[r][c] walk and
+    the dirty update -- and because the dirty store goes through a
+    uint8_t (character type), it may legally alias the row-pointer
+    arrays, forcing the compiler to reload them between consecutive
+    macros.  use this on per-glyph paths.
+*/
+#define VCELL_SET_ALL(_desc, _r, _c, _ch, _attr, _colors) \
+            { \
+                vterm_cell_t *_vcell = &(_desc)->cells[(_r)][(_c)]; \
+                _vcell->wch[0] = (_ch); \
+                _vcell->wch[1] = L'\0'; \
+                _vcell->attr = (_attr); \
+                _vcell->colors = (_colors); \
+                VCELL_DIRTY_SET((_desc), (_r), (_c)); \
+            }
+
 #define VCELL_SET_CHAR(_desc, _r, _c, _ch) \
             { \
                 (_desc)->cells[(_r)][(_c)].wch[0] = (_ch); \
