@@ -50,12 +50,8 @@ interpret_csi_ICH(vterm_t *vterm, int param[], int pcount)
         vcell_old--;
     }
 
-    for(c = v_desc->ccol; c < max_col; c++)
-    {
-        VCELL_SET_CHAR(v_desc, v_desc->crow, c, ' ');
-        VCELL_SET_ATTR(v_desc, v_desc->crow, c, v_desc->curattr);
-        VCELL_SET_COLORS(v_desc, v_desc->crow, c);
-    }
+    vterm_fill_span(v_desc, v_desc->crow, v_desc->ccol, max_col - 1,
+        L' ', v_desc->curattr, v_desc->colors);
 
     return;
 }

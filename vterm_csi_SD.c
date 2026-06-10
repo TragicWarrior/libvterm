@@ -24,7 +24,6 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
     int             bottom_row;
     int             top_row;
     int             stride;
-    int             c;
 
     // set selector for buffer description
     v_desc = vterm->v_desc_active;
@@ -62,12 +61,8 @@ interpret_csi_SD(vterm_t *vterm, int param[], int pcount)
 
     for(r = top_row; r < bottom_row + 1; r++)
     {
-        for(c = 0; c < v_desc->cols; c++)
-        {
-            VCELL_SET_CHAR(v_desc, r, c, ' ');
-            VCELL_SET_ATTR(v_desc, r, c, v_desc->curattr);
-            VCELL_SET_COLORS(v_desc, r, c);
-        }
+        vterm_fill_span(v_desc, r, 0, v_desc->cols - 1, L' ',
+            v_desc->curattr, v_desc->colors);
     }
 
     return;

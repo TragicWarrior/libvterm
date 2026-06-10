@@ -26,7 +26,7 @@ void
 interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             r, c;
+    int             r;
     int             start_row, start_col, end_row, end_col;
 
     unsigned int    p;
@@ -79,11 +79,7 @@ interpret_csi_ED(vterm_t *vterm, int param[], int pcount)
     /* clean range */
     for(r = start_row; r <= end_row; r++)
     {
-        for(c = start_col; c <= end_col; c++)
-        {
-            VCELL_SET_CHAR(v_desc, r, c, ' ');
-            VCELL_SET_ATTR(v_desc, r, c, v_desc->curattr);
-            VCELL_SET_COLORS(v_desc, r, c);
-        }
+        vterm_fill_span(v_desc, r, start_col, end_col, L' ',
+            v_desc->curattr, v_desc->colors);
     }
 }

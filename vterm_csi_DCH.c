@@ -43,7 +43,12 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
         vcell_dst++;
     }
 
-    // zero out cells created by the void
+    /*
+        zero out cells created by the void.  deliberately NOT
+        vterm_fill_span: DCH's researched behavior (see the comment
+        above) blanks the glyph and colors but leaves attr untouched
+        -- a fourth flavor with exactly one user.
+    */
     for(c = 0; c < n; c++)
     {
         VCELL_SET_CHAR(v_desc, v_desc->crow, v_desc->ccol + stride + c, ' ');

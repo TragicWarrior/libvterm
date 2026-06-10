@@ -9,7 +9,6 @@ void
 interpret_csi_ECH(vterm_t *vterm, int param[], int pcount)
 {
     vterm_desc_t    *v_desc = NULL;
-    int             c;
     int             n = 1;
     int             max_col;
 
@@ -19,15 +18,10 @@ interpret_csi_ECH(vterm_t *vterm, int param[], int pcount)
     if(pcount && param[0] > 0) n = param[0];
 
     max_col = v_desc->ccol + n;
+    if(max_col > v_desc->cols) max_col = v_desc->cols;
 
-    for(c = v_desc->ccol; c < max_col; c++)
-    {
-        if(c >= v_desc->cols) break;
-
-        VCELL_SET_CHAR(v_desc, v_desc->crow, c, ' ');
-        VCELL_SET_ATTR(v_desc, v_desc->crow, c, v_desc->curattr);
-        VCELL_SET_COLORS(v_desc, v_desc->crow, c);
-    }
+    vterm_fill_span(v_desc, v_desc->crow, v_desc->ccol, max_col - 1,
+        L' ', v_desc->curattr, v_desc->colors);
 
     return;
 }
