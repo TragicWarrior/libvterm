@@ -66,7 +66,8 @@ cache (typically `ldconfig`).
 `vshell` is the canonical demo: it embeds libvterm into a tmux-like
 front end and exposes the major API surfaces (scrollback, mouse,
 title, resize, color modes).  Useful flags include `--truecolor`,
-`--c16`, `--no-utf8`, `--vt100`, and `--exec <program>`.
+`--c16`, `--no-utf8`, `--vt100`, `--scrollback <lines>` (64 - 512),
+and `--exec <program>`.
 
 ## FreeBSD ##
 
