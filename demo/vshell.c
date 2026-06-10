@@ -145,6 +145,14 @@ struct _vpane_s
     pt_ctx_t        pt_ctx;         // protothread context
 };
 
+/*
+    bounds for the user-specified scrollback size (--scrollback and the
+    runtime +/- keys).  libvterm itself accepts any depth >= 1; these
+    are vshell policy.
+*/
+#define VSHELL_SCROLLBACK_MIN   64
+#define VSHELL_SCROLLBACK_MAX   512
+
 // global struct
 struct _vshell_s
 {
@@ -153,6 +161,13 @@ struct _vshell_s
 
     char            *exec_path;
     char            **exec_argv;
+
+    int             scrollback_sz;      /*
+                                            lines of scrollback requested
+                                            via --scrollback; 0 means use
+                                            the libvterm default (4x the
+                                            terminal height).
+                                        */
 
     unsigned int    vshell_flags;
 
@@ -583,6 +598,11 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
 
     vterm_init(vpane->vterm, vpane->width - 2, vpane->height - 2,
         vshell->vterm_flags);
+
+    // apply the user-requested scrollback depth (0 = keep the default)
+    if(vshell->scrollback_sz > 0)
+        vterm_set_history_size(vpane->vterm, vshell->scrollback_sz);
+
     vterm_set_userptr(vpane->vterm, (void *)vshell);
 
     vterm_set_colors(vpane->vterm, COLOR_WHITE, COLOR_BLACK);
@@ -1078,8 +1098,13 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == '-')
     {
         history_sz = vterm_get_history_size(vpane->vterm);
-        history_sz--;
-        vterm_set_history_size(vpane->vterm, history_sz);
+
+        // shrink, but never below the vshell floor
+        if(history_sz > VSHELL_SCROLLBACK_MIN)
+        {
+            history_sz--;
+            vterm_set_history_size(vpane->vterm, history_sz);
+        }
 
         vpane->render(vpane, 0);
 
@@ -1089,8 +1114,13 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == '+')
     {
         history_sz = vterm_get_history_size(vpane->vterm);
-        history_sz++;
-        vterm_set_history_size(vpane->vterm, history_sz);
+
+        // grow, but never past the vshell ceiling
+        if(history_sz < VSHELL_SCROLLBACK_MAX)
+        {
+            history_sz++;
+            vterm_set_history_size(vpane->vterm, history_sz);
+        }
 
         vpane->render(vpane, 0);
 
@@ -1250,6 +1280,24 @@ vshell_parse_cmdline(vshell_t *vshell)
                 continue;
             }
 #endif
+            if (strncmp(vshell->argv[i], "--scrollback",
+                strlen("--scrollback")) == 0)
+            {
+                i++;
+                if (i < vshell->argc)
+                {
+                    vshell->scrollback_sz = atoi(vshell->argv[i]);
+
+                    if (vshell->scrollback_sz < VSHELL_SCROLLBACK_MIN)
+                        vshell->scrollback_sz = VSHELL_SCROLLBACK_MIN;
+
+                    if (vshell->scrollback_sz > VSHELL_SCROLLBACK_MAX)
+                        vshell->scrollback_sz = VSHELL_SCROLLBACK_MAX;
+                }
+
+                continue;
+            }
+
             if (strncmp(vshell->argv[i], "--exec", strlen("--exec")) == 0)
             {
                 // must have at least exec path
@@ -1364,6 +1412,10 @@ vshell_print_help(void)
                 "               libvterm palette instead.\n\r"
                 "--truecolor    Set COLORTERM to truecolor for\n\r"
                 "               24-bit color support.\n\r"
+                "--scrollback <lines>\n\r"
+                "               Lines of scrollback to keep per pane\n\r"
+                "               (clamped to 64 - 512; default is 4x the\n\r"
+                "               terminal height).\n\r"
                 "--exec <prg>   Launch program at start up.\n\r";
 
     printf("\n\rLibvterm version: %s\n\r\n\r%s\n\r",

@@ -96,6 +96,7 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
     v_desc->rows = height;
     v_desc->cols = width;
     v_desc->max_cols = width;
+    v_desc->head = 0;
 
     v_desc->scroll_min = 0;
     v_desc->scroll_max = height - 1;
@@ -167,15 +168,22 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
         return;
     }
 
-    // copy surviving rows -- content and dirty bits -- from old to new.
-    // stride only ever grows, so an old row always fits in a new row.
+    /*
+        copy surviving rows -- content and dirty bits -- from old to new
+        in LOGICAL order (the source may be ring-rotated; the translator
+        is the identity when head == 0).  the new buffer is therefore
+        always linear.  stride only ever grows, so an old row always
+        fits in a new row.
+    */
     copy_rows = (old_rows < height) ? old_rows : height;
     copy_cell_bytes = max_cols_old * (int)sizeof(vterm_cell_t);
 
     for(r = 0; r < copy_rows; r++)
     {
-        memcpy(new_cells[r], old_cells[r], (size_t)copy_cell_bytes);
-        memcpy(new_dirty[r], old_dirty[r], (size_t)old_dbytes);
+        int prow = vterm_desc_row_phys(v_desc, r);
+
+        memcpy(new_cells[r], old_cells[prow], (size_t)copy_cell_bytes);
+        memcpy(new_dirty[r], old_dirty[prow], (size_t)old_dbytes);
     }
 
     // release the old blocks (cells[0]/dirty_bits[0] are the block bases)
@@ -194,6 +202,7 @@ vterm_buffer_realloc(vterm_t *vterm, int idx, int width, int height)
     v_desc->rows       = height;
     v_desc->cols       = width;
     v_desc->max_cols   = new_stride;
+    v_desc->head       = 0;            // content was relinearized above
 
     // blank brand-new rows entirely (space-fill marks each cell dirty)
     for(r = copy_rows; r < height; r++)
@@ -266,6 +275,8 @@ vterm_buffer_dealloc(vterm_t *vterm, int idx)
         v_desc->dirty_bits = NULL;
     }
 
+    v_desc->head = 0;
+
     return;
 }
 
@@ -279,6 +290,7 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
     int             height;
     int             std_width, std_height;
     int             curr_width, curr_height;
+    int             r;
 
     if(vterm == NULL) return -1;
     if(idx != VTERM_BUF_STANDARD && idx != VTERM_BUF_ALTERNATE) return -1;
@@ -344,12 +356,12 @@ vterm_buffer_set_active(vterm_t *vterm, int idx)
                 }
             }
 
-            vterm_buffer_shift_up(vterm, VTERM_BUF_HISTORY,
-                -1, -1, curr_height);
-            vterm_buffer_clone(vterm,
-                VTERM_BUF_ALTERNATE, VTERM_BUF_HISTORY, 0,
-                vterm->vterm_desc[VTERM_BUF_HISTORY].rows - curr_height,
-                curr_height);
+            // capture the departing alt screen into scrollback, top down
+            for(r = 0; r < curr_height; r++)
+            {
+                vterm_buffer_history_append(vterm,
+                    VTERM_BUF_ALTERNATE, r);
+            }
 
             // destroy the old buffer
             vterm_buffer_dealloc(vterm, VTERM_BUF_ALTERNATE);
@@ -406,6 +418,11 @@ vterm_buffer_get_active(vterm_t *vterm)
     return vterm->vterm_desc_idx;
 }
 
+/*
+    shift_up/shift_down operate on the PHYSICAL row space -- callers
+    must not use them on a ring-rotated buffer (head != 0).  since the
+    history ring landed, nothing shifts VTERM_BUF_HISTORY anymore.
+*/
 int
 vterm_buffer_shift_up(vterm_t *vterm, int idx,
     int top_row, int bottom_row, int stride)
@@ -540,6 +557,49 @@ vterm_buffer_shift_down(vterm_t *vterm, int idx,
     return 0;
 }
 
+/*
+    capture one row of src_idx into the scrollback ring.  the copy lands
+    on the OLDEST history row (the current head) and the head advances;
+    O(one row) where the legacy path shifted the whole history buffer.
+    copy width follows the old clone behavior: min() of the physical
+    strides, which always covers the visible width.
+*/
+int
+vterm_buffer_history_append(vterm_t *vterm, int src_idx, int src_row)
+{
+    vterm_desc_t    *v_src;
+    vterm_desc_t    *v_hist;
+    int             stride;
+    int             phys;
+
+    if(vterm == NULL) return -1;
+
+    v_src = &vterm->vterm_desc[src_idx];
+    v_hist = &vterm->vterm_desc[VTERM_BUF_HISTORY];
+
+    if(v_hist->cells == NULL || v_hist->rows < 1) return -1;
+
+    phys = v_hist->head;
+
+    stride = USE_MIN(v_src->max_cols, v_hist->max_cols);
+
+    memcpy(v_hist->cells[phys], v_src->cells[src_row],
+        (size_t)stride * sizeof(vterm_cell_t));
+
+    // appended cells arrive dirty, matching the legacy clone behavior
+    memset(v_hist->dirty_bits[phys], 0xFF,
+        (size_t)VCELL_DIRTY_ROW_BYTES(stride));
+
+    v_hist->head++;
+    if(v_hist->head == v_hist->rows) v_hist->head = 0;
+
+    return 0;
+}
+
+/*
+    no internal callers since the history ring replaced the
+    shift+clone capture path; exported, kept for ABI.
+*/
 int
 vterm_buffer_clone(vterm_t *vterm, int src_idx, int dst_idx,
      int src_offset, int dst_offset, int rows)

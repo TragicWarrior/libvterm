@@ -73,15 +73,21 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
 
     for(r = 0; r < height; r++)
     {
+        /*
+            logical -> physical row mapping; identity for STD / ALT
+            (head is 0), rotation-aware for the HISTORY ring.
+        */
+        int prow = vterm_desc_row_phys(v_desc, r + offset);
+
         for(c = 0; c < v_desc->cols; c++)
         {
-            if(!VCELL_DIRTY_TEST(v_desc, r + offset, c)
+            if(!VCELL_DIRTY_TEST(v_desc, prow, c)
                 && !(flags & VTERM_WND_RENDER_ALL))
             {
                 continue;
             }
 
-            vcell = &v_desc->cells[r + offset][c];
+            vcell = &v_desc->cells[prow][c];
 
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
@@ -93,7 +99,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
             */
             if(setcchar(&uch, vcell->wch, attrs, colors, NULL) == ERR)
             {
-                VCELL_SET_CHAR(v_desc, r + offset, c, ' ');
+                VCELL_SET_CHAR(v_desc, prow, c, ' ');
             }
 
             wattr_set(vterm->window, attrs, colors, NULL);
@@ -101,7 +107,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
 
             if(!(flags & VTERM_WND_LEAVE_DIRTY))
             {
-                VCELL_DIRTY_CLEAR(v_desc, r + offset, c);
+                VCELL_DIRTY_CLEAR(v_desc, prow, c);
             }
         }
     }

@@ -74,6 +74,17 @@
 struct _vterm_desc_s
 {
     int             rows, cols;                 // buffer height & width
+    int             head;                       /*
+                                                    ring rotation of the row
+                                                    space:  logical row r
+                                                    lives at physical row
+                                                    (r + head) % rows.  only
+                                                    ever nonzero for
+                                                    VTERM_BUF_HISTORY; always
+                                                    0 for STD / ALT and for a
+                                                    freshly (re)allocated
+                                                    buffer.
+                                                */
     vterm_cell_t    **cells;
     uint8_t         **dirty_bits;               /*
                                                     side-table dirty bitmap;
@@ -109,6 +120,23 @@ struct _vterm_desc_s
 };
 
 typedef struct _vterm_desc_s    vterm_desc_t;
+
+/*
+    logical -> physical row mapping for the ring-rotated row space.
+    same index math as uthash's utringbuffer (_utringbuffer_real_idx);
+    implemented in place because the storage must remain the descriptor's
+    own contiguous block (cells[0]-is-base dealloc contract, parallel
+    dirty_bits array, realloc relinearization).  callers must pass
+    row < rows (single-wrap subtraction, no modulo).
+*/
+static inline int
+vterm_desc_row_phys(const vterm_desc_t *d, int row)
+{
+    row += d->head;
+    if(row >= d->rows) row -= d->rows;
+
+    return row;
+}
 
 struct _vterm_s
 {
