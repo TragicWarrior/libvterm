@@ -45,6 +45,7 @@ void    interpret_csi_RESTORECUR(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_CBT(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_SU(vterm_t *vterm, int param[], int pcount);
 void    interpret_csi_SD(vterm_t *vterm, int param[], int pcount);
+void    interpret_csi_DSR(vterm_t *vterm, int param[], int pcount);
 
 int     interpret_csi_RS1_rxvt(vterm_t *vterm, char *data);
 int     interpret_csi_RS1_xterm(vterm_t *vterm, char *data);

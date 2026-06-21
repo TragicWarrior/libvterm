@@ -54,6 +54,7 @@ vterm_interpret_csi(vterm_t *vterm)
                         ['Z'] = &&csi_char_Z,
                         ['S'] = &&csi_SU,
                         ['p'] = &&csi_char_p,
+                        ['n'] = &&csi_DSR,
                     };
 
     p = vterm->esbuf + 1;
@@ -219,6 +220,13 @@ vterm_interpret_csi(vterm_t *vterm)
     csi_SU:
         // interpret_csi_SD(vterm, csiparam, param_count);
         interpret_csi_SU(vterm, csiparam, param_count);
+        return 0;
+
+    csi_DSR:
+        // device status / cursor position report; standard (non-DEC) form
+        // only -- DEC's CSI ? 6 n (DECXCPR) is left for the unknown trap
+        if(dec_sequence == FALSE)
+            interpret_csi_DSR(vterm, csiparam, param_count);
         return 0;
 
     csi_EWMH:
