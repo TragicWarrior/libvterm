@@ -41,9 +41,10 @@ struct _vterm_desc_s;
     with a template cell and mark the span dirty in one pass.  the
     erase-family handlers all funnel here; flavor (which attr, which
     colors) is the caller's explicit choice.  colors == -1 preserves
-    each cell's existing colors (the erase_row(reset_colors == FALSE)
-    flavor used by alt-screen scrolling) while wch and attr are still
-    overwritten.
+    each cell's existing colors while wch and attr are still
+    overwritten (no caller currently uses this flavor: erase_row now
+    passes a real pair for both reset_colors flavors so a recycled
+    row never inherits a prior occupant's background).
 */
 void    vterm_fill_span(struct _vterm_desc_s *v_desc, int row,
             int col_start, int col_end, wchar_t ch, attr_t attr,
