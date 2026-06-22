@@ -58,10 +58,19 @@ vterm_erase_row(vterm_t *vterm, int row, bool reset_colors, char fill_char)
 
     if(row == -1) row = v_desc->crow;
 
-    // colors == -1 preserves each cell's existing colors
+    /*
+        reset_colors TRUE  -> blank with the default pair (NEL / RI).
+        reset_colors FALSE -> blank with the CURRENT pair (BCE), matching
+        EL/ED/ECH/SU/SD/IL/DL and xterm.  This path clears the row a
+        newline-scroll just recycled; using -1 (preserve each cell's old
+        colors) left the stale background of whatever previously occupied
+        that row -- e.g. an inline-code span's gray bg -- and apps that
+        rely on the scrolled-in line being clean (glow, which emits no
+        \e[K after redrawing) showed it bleeding down the screen.
+    */
     vterm_fill_span(v_desc, row, 0, v_desc->cols - 1,
         (wchar_t)fill_char, A_NORMAL,
-        reset_colors == TRUE ? v_desc->default_colors : -1);
+        reset_colors == TRUE ? v_desc->default_colors : v_desc->colors);
 
     return;
 }
