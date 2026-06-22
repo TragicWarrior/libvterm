@@ -67,7 +67,8 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
         if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\033OA");
         else
-            sprintf((char *)buf, "\033[<%d;%d;%dM", button + 64 + 4, x, y);
+            // SGR wheel-up is button 64 (+ modifier bits)
+            sprintf((char *)buf, "\033[<%d;%d;%dM", button + 64, x, y);
 
         retval = strlen((char *)buf);
 
@@ -79,7 +80,8 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
         if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\033OB");
         else
-            sprintf((char *)buf, "\033[<%d;%d;%dM", button + 64 + 5, x, y);
+            // SGR wheel-down is button 65 (+ modifier bits)
+            sprintf((char *)buf, "\033[<%d;%d;%dM", button + 65, x, y);
 
         retval = strlen((char *)buf);
 
