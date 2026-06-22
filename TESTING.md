@@ -61,6 +61,7 @@ Centos 7.8
 5 - yetris
 5 - nsnake
 4 - claude code
+5 - glow (see notes)
 ```
 
 ### Mac OS Testing ###
@@ -170,3 +171,15 @@ playback will cause libvte based emulators (xfce terminal, gnome terminal)
 to crash because of CSI SU sequences which are out of bounds.  A safety
 check makes libvterm less susceptible to it.  Both xterm and the KDE
 konsole emulator also seem to be resistant to the bug.
+
+
+### glow ###
+
+Notes:
+
+glow is a Charm / Bubble Tea markdown reader.  Use `glow --tui` for the
+pager and add `--mouse` to enable wheel scrolling.  It is a good stress
+test of the termenv startup handshake (OSC 10/11 colour queries each
+terminated by a CPR/DSR request), SGR mouse wheel encoding, and
+alternate-screen scroll-region (DECSTBM) repainting -- areas addressed
+by the CPR/DSR, SGR wheel-code, and scroll background-color-erase fixes.
