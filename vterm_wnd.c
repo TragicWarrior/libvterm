@@ -1,4 +1,7 @@
 
+/* expose wcwidth(3) (XSI) under -std=c99; must precede all includes. */
+#define _XOPEN_SOURCE 700
+
 #include <stdio.h>
 #include <wchar.h>
 
@@ -78,16 +81,39 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
             (head is 0), rotation-aware for the HISTORY ring.
         */
         int prow = vterm_desc_row_phys(v_desc, r + offset);
+        int skip_next = 0;
 
         for(c = 0; c < v_desc->cols; c++)
         {
+            if(skip_next)
+            {
+                /*
+                    right half of a wide glyph: the wide cell's
+                    mvwadd_wch already painted here.  drop the dirty bit
+                    and move on so we don't overwrite it.
+                */
+                skip_next = 0;
+                if(!(flags & VTERM_WND_LEAVE_DIRTY))
+                    VCELL_DIRTY_CLEAR(v_desc, prow, c);
+                continue;
+            }
+
+            vcell = &v_desc->cells[prow][c];
+
+            /*
+                a double-width glyph claims the next cell too; mark it to
+                be skipped on the next pass.  done before the dirty gate
+                so a clean (non-dirty) wide cell still protects its right
+                half.  the > 0x7F guard keeps wcwidth() off the ASCII path.
+            */
+            if(vcell->wch[0] > 0x7F && wcwidth(vcell->wch[0]) == 2)
+                skip_next = 1;
+
             if(!VCELL_DIRTY_TEST(v_desc, prow, c)
                 && !(flags & VTERM_WND_RENDER_ALL))
             {
                 continue;
             }
-
-            vcell = &v_desc->cells[prow][c];
 
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
