@@ -1,7 +1,14 @@
+/* expose wcwidth(3) (XSI): the project compiles -std=c99, under which
+   glibc hides it without an explicit _XOPEN_SOURCE.  must precede all
+   includes.  (700 implies _POSIX_C_SOURCE 200809L, already set by the
+   build, so there is no conflict.) */
+#define _XOPEN_SOURCE 700
+
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>      // wcwidth() for double-width handling in vterm_put_char
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -207,6 +214,8 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     int             row, col;
+    int             width;
+    wchar_t         glyph;
 
     // set vterm desc buffer selector
     v_desc = vterm->v_desc_active;
@@ -239,14 +248,53 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     }
 
     /*
-        handle wide character.  the decoder terminates at wch[1], so
-        storing wch[0] through the whole-cell macro is byte-identical
-        to copying the pair.
-    */
-    VCELL_SET_ALL(v_desc, row, col, wch[0], v_desc->curattr,
-        v_desc->colors);
+        store a decoded (multibyte) glyph with double-width support.  a
+        glyph whose display width is 2 (emoji, CJK, ...) occupies two
+        cells: the glyph in `col` and a blank continuation in `col + 1`
+        that the renderer (vterm_wnd_update) skips.  keeping the buffer's
+        column accounting equal to the on-screen footprint is what stops
+        ncurses' wide-char bookkeeping from desyncing during the host's
+        copywin()/overwrite() composite.  width 1 (and the width < 0
+        non-printable fallback) advance one column, as before.
 
-    v_desc->ccol++;
+        (the decoder terminates at wch[1], so wch[0] is the whole glyph.)
+    */
+    glyph = wch[0];
+    width = wcwidth(glyph);
+    if(width < 0) width = 1;
+
+    if(width == 2 && col == v_desc->cols - 1)
+    {
+        /*
+            a double-width glyph cannot straddle the right margin: blank
+            the last cell and wrap, then place the pair at the start of
+            the next line (DEC auto-wrap of wide characters).
+        */
+        VCELL_SET_ALL(v_desc, row, col, ' ', v_desc->curattr, v_desc->colors);
+        v_desc->ccol = 0;
+        if((v_desc->buffer_state & STATE_NO_WRAP) == FALSE)
+            vterm_scroll_up(vterm, FALSE);
+        row = v_desc->crow;
+        col = v_desc->ccol;
+    }
+
+    VCELL_SET_ALL(v_desc, row, col, glyph, v_desc->curattr, v_desc->colors);
+
+    if(width == 2)
+    {
+        /*
+            blank continuation cell.  the renderer skips it (the wide
+            glyph's mvwadd_wch paints both halves), and storing a space
+            keeps it clean if either half is later erased.
+        */
+        VCELL_SET_ALL(v_desc, row, col + 1, ' ', v_desc->curattr,
+            v_desc->colors);
+        v_desc->ccol += 2;
+    }
+    else
+    {
+        v_desc->ccol += 1;
+    }
 
     return;
 }
