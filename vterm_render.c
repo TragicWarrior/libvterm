@@ -1,7 +1,14 @@
+/* expose wcwidth(3) (XSI): the project compiles -std=c99, under which
+   glibc hides it without an explicit _XOPEN_SOURCE.  must precede all
+   includes.  (700 implies _POSIX_C_SOURCE 200809L, already set by the
+   build, so there is no conflict.) */
+#define _XOPEN_SOURCE 700
+
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>      // wcwidth() for the wide-glyph clamp in vterm_put_char
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -207,6 +214,7 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
 {
     vterm_desc_t    *v_desc = NULL;
     int             row, col;
+    wchar_t         glyph;
 
     // set vterm desc buffer selector
     v_desc = vterm->v_desc_active;
@@ -239,11 +247,29 @@ vterm_put_char(vterm_t *vterm, chtype c, wchar_t *wch)
     }
 
     /*
-        handle wide character.  the decoder terminates at wch[1], so
-        storing wch[0] through the whole-cell macro is byte-identical
-        to copying the pair.
+        store a decoded (multibyte) glyph.  libvterm has no double-width
+        cell model: one glyph per column, the cursor advances by one.  A
+        glyph whose display width is 2 (emoji, CJK, ...) would desync
+        ncurses' wide-char bookkeeping when libviper composites the
+        canvas with copywin()/overwrite(), shoving every cell to its
+        right -- including the host window's border -- one column over
+        (the "broken border" artifact).  Until real double-width support
+        lands, clamp anything wider than one column to a narrow
+        placeholder so the row stays aligned.  Narrow multibyte glyphs
+        (accents, box-drawing, arrows, bullets, ...) pass through intact,
+        and the +1 advance below is unchanged -- this only swaps the
+        stored glyph, never the column accounting.
+
+        (the decoder terminates at wch[1], so wch[0] is the whole glyph.)
     */
-    VCELL_SET_ALL(v_desc, row, col, wch[0], v_desc->curattr,
+    glyph = wch[0];
+    if(wcwidth(glyph) > 1)
+    {
+        glyph = 0xFFFD;                         /* U+FFFD replacement char */
+        if(wcwidth(glyph) != 1) glyph = L'?';   /* CJK-ambiguous fallback */
+    }
+
+    VCELL_SET_ALL(v_desc, row, col, glyph, v_desc->curattr,
         v_desc->colors);
 
     v_desc->ccol++;
