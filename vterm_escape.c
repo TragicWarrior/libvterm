@@ -50,6 +50,17 @@ check_suffix_osc(vterm_t *vterm)
         }
     }
 
+    /*
+        the bare C1 String Terminator (0x9C) is also a UTF-8 continuation
+        byte, so in UTF-8 mode an OSC payload carrying a multibyte glyph --
+        e.g. a window title beginning with U+2733 (E2 9C B3) -- would
+        terminate mid-character and spill the remainder onto the screen at
+        the cursor.  honor 0x9C as ST only in 8-bit mode; UTF-8 apps close
+        OSC with BEL (0x07) or ESC backslash.
+    */
+    if((unsigned char)*lastchar == 0x9c && !(vterm->flags & VTERM_FLAG_NOUTF8))
+        return FALSE;
+
     return validate_xterm_escape_suffix(lastchar);
 }
 

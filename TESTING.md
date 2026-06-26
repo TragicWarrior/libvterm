@@ -60,7 +60,7 @@ Centos 7.8
 5 - test-colorcube (ncurses test)
 5 - yetris
 5 - nsnake
-4 - claude code
+5 - claude code (see notes)
 5 - glow (see notes)
 ```
 
@@ -183,3 +183,18 @@ test of the termenv startup handshake (OSC 10/11 colour queries each
 terminated by a CPR/DSR request), SGR mouse wheel encoding, and
 alternate-screen scroll-region (DECSTBM) repainting -- areas addressed
 by the CPR/DSR, SGR wheel-code, and scroll background-color-erase fixes.
+
+
+### Claude Code ###
+
+Notes:
+
+Claude Code (Anthropic's agentic CLI) animates its terminal window title
+via OSC using UTF-8 glyphs (a braille spinner and an asterisk).  Two bugs
+surfaced from that: libvterm decoded the in-OSC UTF-8 bytes and printed
+them at the cursor (a visible jitter), and it honored a bare C1 String
+Terminator (0x9C) -- itself a UTF-8 continuation byte -- as an OSC
+terminator, so a title glyph beginning U+2733 (E2 9C B3) closed the OSC
+mid-character and spilled "3 Claude Code" onto the screen.  Both are
+fixed at the vterm layer (the host stays oblivious); rendering is now
+clean (5).
