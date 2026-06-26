@@ -1,3 +1,20 @@
+10.2
+
+Parser / OSC
+* [Bryan Christ] Don't assemble UTF-8 while inside an escape/OSC
+  sequence.  A multibyte glyph carried in an OSC payload (e.g. an xterm
+  window title) was decoded and printed at the cursor instead of
+  accumulating into the escape buffer -- surfacing as stray title-spinner
+  glyphs jittering at the cursor while an app animated its title
+  (Claude Code).
+* [Bryan Christ] Don't treat a bare C1 String Terminator (0x9C) as an
+  OSC terminator in UTF-8 mode.  0x9C is also a UTF-8 continuation byte,
+  so an OSC payload carrying a multibyte glyph -- e.g. a title beginning
+  U+2733 (E2 9C B3) -- terminated mid-character and spilled the remainder
+  onto the screen.  In UTF-8 mode OSC closes only on BEL or ESC-backslash.
+* [Bryan Christ] Claude Code now renders at full fidelity (TESTING.md
+  5/5); both fixes above were surfaced by its UTF-8 title animation.
+
 10.1
 
 Mouse
