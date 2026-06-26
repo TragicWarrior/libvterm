@@ -96,7 +96,15 @@ vterm_render(vterm_t *vterm, char *data, int len)
         }
 
 #ifndef NOUTF8
-        if(!(vterm->flags & VTERM_FLAG_NOUTF8))
+        /*
+            assemble UTF-8 only when NOT inside an escape/OSC sequence.  an
+            OSC string (e.g. an xterm window title) can legitimately carry
+            UTF-8; those bytes must accumulate into esbuf and be consumed by
+            the OSC handler below -- not get decoded and PRINTED at the
+            cursor.  this leak put an app's UTF-8 title-spinner glyphs on
+            screen at the cursor position.
+        */
+        if(!(vterm->flags & VTERM_FLAG_NOUTF8) && !IS_MODE_ESCAPED(vterm))
         {
             // UTF-8 encoding is indicated by a bit at 0x80
             if((unsigned int)*data > 0x7F && !IS_MODE_UTF8(vterm)
