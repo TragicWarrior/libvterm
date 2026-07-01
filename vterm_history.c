@@ -34,6 +34,9 @@ vterm_set_history_size(vterm_t *vterm, int rows)
 
         vterm_buffer_realloc(vterm, VTERM_BUF_HISTORY, -1, rows);
 
+        // dropped the oldest rows; never report more filled than we can hold
+        if(v_desc->fill > rows) v_desc->fill = rows;
+
         return;
     }
 
@@ -59,4 +62,16 @@ vterm_get_history_size(vterm_t *vterm)
     v_desc = &vterm->vterm_desc[VTERM_BUF_HISTORY];
 
     return v_desc->rows;
+}
+
+int
+vterm_get_history_used(vterm_t *vterm)
+{
+    vterm_desc_t    *v_desc;
+
+    if(vterm == NULL) return -1;
+
+    v_desc = &vterm->vterm_desc[VTERM_BUF_HISTORY];
+
+    return v_desc->fill;
 }

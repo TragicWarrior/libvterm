@@ -85,6 +85,16 @@ struct _vterm_desc_s
                                                     freshly (re)allocated
                                                     buffer.
                                                 */
+    int             fill;                       /*
+                                                    number of populated rows.
+                                                    only meaningful for
+                                                    VTERM_BUF_HISTORY: how many
+                                                    rows have actually been
+                                                    written (0..rows), so
+                                                    callers can tell real
+                                                    scrollback from unused ring
+                                                    capacity.
+                                                */
     vterm_cell_t    **cells;
     uint8_t         **dirty_bits;               /*
                                                     side-table dirty bitmap;

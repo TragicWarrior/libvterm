@@ -97,6 +97,7 @@ vterm_buffer_alloc(vterm_t *vterm, int idx, int width, int height)
     v_desc->cols = width;
     v_desc->max_cols = width;
     v_desc->head = 0;
+    v_desc->fill = 0;
 
     v_desc->scroll_min = 0;
     v_desc->scroll_max = height - 1;
@@ -587,7 +588,18 @@ vterm_buffer_history_append(vterm_t *vterm, int src_idx, int src_row)
     v_hist->head++;
     if(v_hist->head == v_hist->rows) v_hist->head = 0;
 
+    // track how many rows are actually populated (saturates at capacity)
+    if(v_hist->fill < v_hist->rows) v_hist->fill++;
+
     return 0;
+}
+
+int
+vterm_get_active_buffer(vterm_t *vterm)
+{
+    if(vterm == NULL) return -1;
+
+    return vterm->vterm_desc_idx;
 }
 
 void
