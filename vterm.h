@@ -28,7 +28,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTERM_VERSION        "10.3"
+#define LIBVTERM_VERSION        "10.4"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
@@ -517,6 +517,23 @@ void            vterm_wnd_size(vterm_t *vterm, int *width, int *height);
 */
 int             vterm_wnd_update(vterm_t *vterm, int idx, int offset,
                         uint8_t flags);
+
+/*
+    Render a scrollback view into the attached window: the newest `nlines`
+    evicted history rows composed above the head of the live standard screen,
+    the way a hardware terminal scrolls back.  nlines == 0 renders the live
+    screen; each additional line slides one evicted row in at the top and
+    pushes the live screen down one row.  Unlike vterm_wnd_update() with
+    VTERM_BUF_HISTORY -- which can only show whole screens of evicted rows --
+    this reveals fewer-than-one-screen of history against the live buffer.
+
+    @param vterm:       the vterm instance.
+    @param nlines:      scroll-back distance in rows; clamp to
+                        0 .. vterm_get_history_used().
+    @param flags:       reserved (the whole window is repainted).
+    @return:            0 on success, -1 on error.
+*/
+int             vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags);
 #endif
 
 /*

@@ -1,3 +1,13 @@
+10.4
+
+Scrollback API
+* [Bryan Christ] Add vterm_wnd_scrollback() -- render a scrollback view that
+  composes the newest N evicted history rows above the head of the live
+  standard screen, the way a hardware terminal scrolls back.  Unlike
+  vterm_wnd_update(VTERM_BUF_HISTORY), which can only show whole screens of
+  evicted rows, this reveals fewer-than-one-screen of history against the
+  live buffer.  Additive and ABI-compatible.
+
 10.3
 
 Scrollback API
