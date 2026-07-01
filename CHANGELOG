@@ -1,3 +1,14 @@
+10.3
+
+Scrollback API
+* [Bryan Christ] Add vterm_get_history_used() -- the count of history rows
+  actually written (0..capacity), distinct from the ring capacity reported
+  by vterm_get_history_size().  Tracked with a new per-descriptor fill
+  counter; additive and ABI-compatible.
+* [Bryan Christ] Add vterm_get_active_buffer() -- returns VTERM_BUF_STANDARD
+  or VTERM_BUF_ALTERNATE, so a caller can tell when the child has switched
+  to the alternate screen (which has no scrollback).
+
 10.2
 
 Parser / OSC
