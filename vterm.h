@@ -28,7 +28,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTERM_VERSION        "10.2"
+#define LIBVTERM_VERSION        "10.3"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
@@ -220,6 +220,29 @@ void            vterm_set_history_size(vterm_t *vterm, int rows);
     @return:            the number of lines preserved by the history buffer.
 */
 int            vterm_get_history_size(vterm_t *vterm);
+
+/*
+    get the number of history rows actually populated, as opposed to the
+    ring's total capacity reported by vterm_get_history_size.
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+
+    @return:            the number of scrollback rows written so far, in the
+                        range 0 .. vterm_get_history_size().
+*/
+int            vterm_get_history_used(vterm_t *vterm);
+
+/*
+    get the index of the currently active buffer.  full-screen apps (vim,
+    less, myman, ...) switch to the alternate buffer, which has no scrollback.
+
+    @params:
+        vterm           handle an already alloc'd vterm object
+
+    @return:            VTERM_BUF_STANDARD or VTERM_BUF_ALTERNATE.
+*/
+int            vterm_get_active_buffer(vterm_t *vterm);
 
 /*
     convenience macro for alloc-ing a ready to use terminal object.
