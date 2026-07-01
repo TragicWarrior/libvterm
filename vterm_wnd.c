@@ -152,5 +152,100 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
     return -1;
 }
 
+/*
+    Render a scrollback view that composes the newest `nlines` evicted history
+    rows above the head of the live standard screen -- the way a hardware
+    terminal scrolls back.  At nlines == 0 the window is exactly the live
+    screen; each extra line slides one evicted row in at the top and pushes
+    the live screen down by one.  This reveals fewer-than-one-screen of
+    history against the live buffer, which vterm_wnd_update(VTERM_BUF_HISTORY)
+    cannot -- HISTORY holds only evicted rows, never the live screen.
+
+    `nlines` is the scroll-back distance; the caller clamps it to
+    0 .. vterm_get_history_used().  No cursor is drawn (a frozen view).
+*/
+int
+vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
+{
+    vterm_cell_t    *vcell;
+    vterm_desc_t    *hist;
+    vterm_desc_t    *live;
+    vterm_desc_t    *v_desc;
+    int             width, height;
+    int             capacity;
+    int             r, c, lrow, prow;
+    attr_t          attrs;
+    short           colors;
+    cchar_t         uch;
+
+    if(vterm == NULL) return -1;
+    if(vterm->window == NULL) return -1;
+
+    hist = &vterm->vterm_desc[VTERM_BUF_HISTORY];
+    live = &vterm->vterm_desc[VTERM_BUF_STANDARD];
+    capacity = hist->rows;
+
+    if(nlines < 0) nlines = 0;
+
+    getmaxyx(vterm->window, height, width);
+    VAR_UNUSED(width);
+    VAR_UNUSED(flags);
+
+    height = USE_MIN(height, live->rows);
+
+    for(r = 0; r < height; r++)
+    {
+        int skip_next = 0;
+
+        /*
+            top `lines` rows come from the tail of the history ring (newest
+            evicted first); the rest is the live screen shifted down by
+            `lines`.  history rows are right-aligned in the ring, so the
+            newest evicted row is at capacity-1.
+        */
+        if(r < nlines)
+        {
+            v_desc = hist;
+            lrow = capacity - nlines + r;
+        }
+        else
+        {
+            v_desc = live;
+            lrow = r - nlines;
+        }
+
+        if(lrow < 0 || lrow >= v_desc->rows) continue;
+        prow = vterm_desc_row_phys(v_desc, lrow);
+
+        for(c = 0; c < v_desc->cols; c++)
+        {
+            if(skip_next)
+            {
+                skip_next = 0;
+                continue;
+            }
+
+            vcell = &v_desc->cells[prow][c];
+
+            if(vcell->wch[0] > 0x7F && wcwidth(vcell->wch[0]) == 2)
+                skip_next = 1;
+
+            VCELL_GET_COLORS((*vcell), &colors);
+            VCELL_GET_ATTR((*vcell), &attrs);
+
+            if(setcchar(&uch, vcell->wch, attrs, colors, NULL) == ERR)
+            {
+                wchar_t blank[2] = { L' ', L'\0' };
+                setcchar(&uch, blank, attrs, colors, NULL);
+            }
+
+            wattr_set(vterm->window, attrs, colors, NULL);
+            mvwadd_wch(vterm->window, r, c, &uch);
+        }
+    }
+
+    return 0;
+}
+
 #endif
 
