@@ -142,10 +142,24 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
     {
         if(!(v_desc->buffer_state & STATE_CURSOR_INVIS))
         {
-            mvwchgat(vterm->window, v_desc->crow, v_desc->ccol, 1, A_REVERSE,
+            /*
+                at DEC pending-wrap the cursor rests at ccol == cols (a
+                last-column glyph advances ccol past the margin and the wrap
+                is deferred to the next glyph).  Draw + dirty the last real
+                column instead: VCELL_DIRTY_SET(crow, cols) would index
+                dirty_bits[crow][cols>>3], one byte past the row's
+                VCELL_DIRTY_ROW_BYTES(cols) when cols is a multiple of 8 (the
+                common 80-column case) -- a heap write off the end of the
+                dirty block on the bottom row.
+            */
+            int cur_col = v_desc->ccol;
+            if(cur_col >= v_desc->cols) cur_col = v_desc->cols - 1;
+            if(cur_col < 0) cur_col = 0;
+
+            mvwchgat(vterm->window, v_desc->crow, cur_col, 1, A_REVERSE,
                 v_desc->default_colors, NULL);
 
-            VCELL_DIRTY_SET(v_desc, v_desc->crow, v_desc->ccol);
+            VCELL_DIRTY_SET(v_desc, v_desc->crow, cur_col);
         }
     }
 
