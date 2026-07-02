@@ -1,3 +1,15 @@
+10.6
+
+Interpreter cursor / erase fixes
+* [Bryan Christ] Single-parameter CUP/HVP (ESC[nH -- row given, column omitted)
+  now defaults the column to 1.  param[] is the shared static csiparam[], whose
+  unparsed slots keep their previous value, so the omitted column was read as the
+  column from an earlier ESC[r;cH -- placing the cursor at a stale column.
+* [Bryan Christ] EL 1 (erase-to-cursor) now clamps its end column to the last
+  real column.  At DEC pending-wrap (ccol == cols) it asked vterm_fill_span to
+  write cells[crow][cols], one cell past the row -- a heap write off the end of
+  the cell block on the bottom row.  (Sibling of the 10.5 cursor dirty-set fix.)
+
 10.5
 
 Interpreter bounds fixes (heap corruption from untrusted child output)

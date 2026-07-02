@@ -64,6 +64,14 @@ interpret_csi_EL(vterm_t *vterm, int param[], int pcount)
         }
     }
 
+    /*
+        at DEC pending-wrap ccol == cols, so EL 1 (erase_end = ccol) would ask
+        vterm_fill_span to write cells[crow][cols] -- one cell past the row
+        (fill_span only guards col_end < col_start).  Clamp to the last real
+        column; the whole visible line is still erased.
+    */
+    if(erase_end >= v_desc->cols) erase_end = v_desc->cols - 1;
+
     vterm_fill_span(v_desc, v_desc->crow, erase_start, erase_end, L' ',
         v_desc->curattr, v_desc->colors);
 

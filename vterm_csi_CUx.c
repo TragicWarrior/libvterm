@@ -129,7 +129,15 @@ interpret_csi_CUx(vterm_t *vterm, char verb, int param[], int pcount)
             goto csi_DEFAULT;
         }
         v_desc->crow = param[0] - 1;
-        v_desc->ccol = param[1] - 1;
+        /*
+            a one-parameter CUP/HVP (ESC[nH -- row given, column omitted) must
+            default the column to 1.  param[] is the shared static csiparam[];
+            only the parsed slots are zeroed, so reading param[1] here with
+            pcount==1 returns the column left over from a previous multi-param
+            CSI.  Default to column 0 (1-based 1) unless a second parameter was
+            actually supplied.
+        */
+        v_desc->ccol = (pcount >= 2) ? param[1] - 1 : 0;
 
 
 // all calls above jump here
