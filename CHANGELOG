@@ -1,3 +1,16 @@
+10.5
+
+Interpreter bounds fixes (heap corruption from untrusted child output)
+* [Bryan Christ] DCH (CSI P) now clamps the delete count to the cells from the
+  cursor to the right margin.  An unclamped count > (cols - ccol) drove a
+  negative-index write in the blank-fill loop -- e.g. CSI 999 P on an 80-column
+  screen wrote hundreds of cells before the row buffer.
+* [Bryan Christ] The wnd_update cursor highlight now clamps to the last real
+  column at DEC pending-wrap (ccol == cols).  VCELL_DIRTY_SET(crow, cols)
+  indexed one byte past the row's dirty bitmap for widths that are a multiple
+  of 8 (the common 80-column case) -- a heap write off the end of the dirty
+  block on the bottom row.  The callerless vterm_erase_col got the same guard.
+
 10.4
 
 Scrollback API

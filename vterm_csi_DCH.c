@@ -21,6 +21,16 @@ interpret_csi_DCH(vterm_t *vterm, int param[], int pcount)
     // select the correct desc
     v_desc = vterm->v_desc_active;
 
+    /*
+        clamp the delete count to the cells from the cursor to the right
+        margin.  Without this, CSI <n> P with n > (cols - ccol) drives
+        `stride` negative and the blank-fill loop below writes
+        cells[crow][cols - n + c] at negative indices -- a heap write before
+        the row buffer for n > cols (e.g. ESC[999P on an 80-column screen).
+    */
+    if(n > v_desc->cols - v_desc->ccol)
+        n = v_desc->cols - v_desc->ccol;
+
     stride = v_desc->cols - v_desc->ccol;
     stride -= n;
 

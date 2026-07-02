@@ -112,6 +112,11 @@ vterm_erase_col(vterm_t *vterm, int col, char fill_char)
 
     if(col == -1) col = v_desc->ccol;
 
+    /* same pending-wrap guard as the cursor draw in vterm_wnd.c: ccol can
+       rest at cols, and an out-of-range col would store past each row */
+    if(col >= v_desc->cols) col = v_desc->cols - 1;
+    if(col < 0) col = 0;
+
     // a vertical 1-wide span: one whole-cell store per row
     for(r = 0; r < v_desc->rows; r++)
     {
