@@ -1,3 +1,13 @@
+10.7
+
+Scrollback-view cell copy
+* [Bryan Christ] Add vterm_copy_scrollback(vterm, nlines, &rows, &cols): the
+  copy-buffer counterpart to vterm_wnd_scrollback, composing the newest nlines
+  evicted history rows above the live screen into a freshly allocated cell
+  matrix (nlines == 0 is the live buffer, identical to vterm_copy_buffer).
+  Lets a caller copy text from a scrolled-back view, not just the live screen;
+  freed per row by the caller like vterm_copy_buffer.  Additive.
+
 10.6
 
 Interpreter cursor / erase fixes

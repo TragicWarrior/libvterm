@@ -28,7 +28,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTERM_VERSION        "10.6"
+#define LIBVTERM_VERSION        "10.7"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
@@ -795,6 +795,18 @@ void                vterm_get_size(vterm_t *vterm, int *width, int *height);
 
 */
 vterm_cell_t**      vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols);
+
+/*
+    vterm_copy_scrollback
+
+    Like vterm_copy_buffer, but returns the SCROLLBACK view: the newest
+    `nlines` evicted history rows composed above the live screen -- the
+    copy-buffer counterpart to vterm_wnd_scrollback.  nlines == 0 yields the
+    live buffer.  The returned matrix is freed per row by the caller, exactly
+    like vterm_copy_buffer.
+*/
+vterm_cell_t**      vterm_copy_scrollback(vterm_t *vterm, int nlines,
+                        int *rows, int *cols);
 
 #endif
 

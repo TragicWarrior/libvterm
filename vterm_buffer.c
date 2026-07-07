@@ -736,6 +736,66 @@ vterm_copy_buffer(vterm_t *vterm, int *rows, int *cols)
     return buffer;
 }
 
+/*
+    Compose the scrollback view -- the newest `nlines` evicted history rows
+    above the head of the live standard screen -- into a freshly allocated cell
+    matrix: the copy-buffer counterpart to vterm_wnd_scrollback's on-screen
+    render.  At nlines == 0 this is exactly the live buffer (like
+    vterm_copy_buffer).  *rows / *cols report the matrix size; the caller frees
+    it per row, same contract as vterm_copy_buffer.  `nlines` is clamped to
+    >= 0 (the caller bounds it to vterm_get_history_used()).
+*/
+vterm_cell_t**
+vterm_copy_scrollback(vterm_t *vterm, int nlines, int *rows, int *cols)
+{
+    vterm_desc_t    *hist;
+    vterm_desc_t    *live;
+    vterm_desc_t    *v_desc;
+    vterm_cell_t    **buffer;
+    int             capacity, height, r, lrow, prow;
+
+    if(vterm == NULL) return NULL;
+    if(rows == NULL || cols == NULL) return NULL;
+
+    hist = &vterm->vterm_desc[VTERM_BUF_HISTORY];
+    live = &vterm->vterm_desc[VTERM_BUF_STANDARD];
+    capacity = hist->rows;
+
+    if(nlines < 0) nlines = 0;
+
+    height = live->rows;
+    *rows  = height;
+    *cols  = live->max_cols;
+
+    buffer = _vterm_buffer_alloc_raw(*rows, *cols);
+    if(buffer == NULL) return NULL;
+
+    /* mirror vterm_wnd_scrollback: the top `nlines` rows come from the tail of
+       the history ring (newest evicted first, right-aligned at capacity-1);
+       the rest is the live screen shifted down by `nlines`. */
+    for(r = 0; r < height; r++)
+    {
+        if(r < nlines)
+        {
+            v_desc = hist;
+            lrow   = capacity - nlines + r;
+        }
+        else
+        {
+            v_desc = live;
+            lrow   = r - nlines;
+        }
+
+        if(lrow < 0 || lrow >= v_desc->rows) continue;   /* leave row blank */
+        prow = vterm_desc_row_phys(v_desc, lrow);
+
+        memcpy(&buffer[r][0], &v_desc->cells[prow][0],
+            (size_t)v_desc->cols * sizeof(vterm_cell_t));
+    }
+
+    return buffer;
+}
+
 vterm_cell_t **
 _vterm_buffer_alloc_raw(int rows, int cols)
 {
