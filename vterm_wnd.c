@@ -3,6 +3,7 @@
 #define _XOPEN_SOURCE 700
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <wchar.h>
 
 #ifdef __FreeBSD__
@@ -16,6 +17,26 @@
 #include "color_cache.h"
 
 #ifndef NOCURSES
+
+/*
+    emit a contiguous run of pre-built cchar_t cells.  wattr_set once
+    with the span's first style keeps the window attr state in sync for
+    Mac OS (where cchar attrs can otherwise diverge from the window);
+    remaining cells in a mixed-color span rely on the attrs packed into
+    each cchar by setcchar.
+*/
+static void
+_wnd_flush_span(WINDOW *win, int row, int col,
+                cchar_t *buf, int n, attr_t attrs, short colors)
+{
+    if(n <= 0) return;
+
+    wattr_set(win, attrs, colors, NULL);
+    mvwadd_wchnstr(win, row, col, buf, n);
+
+    return;
+}
+
 void
 vterm_wnd_set(vterm_t *vterm,WINDOW *window)
 {
@@ -48,12 +69,12 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
 {
     vterm_cell_t    *vcell;
     vterm_desc_t    *v_desc = NULL;
+    cchar_t         *row_buf = NULL;
     int             width;
     int             height;
     int             r, c;
     attr_t          attrs;
     short           colors;
-    cchar_t         uch;
 
     if(vterm == NULL) return -1;
     if(vterm->window == NULL) return -1;
@@ -74,34 +95,39 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
 
     height = USE_MIN(height, v_desc->rows);
 
+    /*
+        one cchar buffer reused every row: dirty spans are packed then
+        emitted with a single mvwadd_wchnstr (phase 2 of the paint
+        hot-path work -- replaces per-cell mvwadd_wch).
+    */
+    if(v_desc->cols > 0)
+    {
+        row_buf = (cchar_t *)malloc(sizeof(cchar_t) * (size_t)v_desc->cols);
+        if(row_buf == NULL) return -1;
+    }
+
     for(r = 0; r < height; r++)
     {
         /*
             logical -> physical row mapping; identity for STD / ALT
             (head is 0), rotation-aware for the HISTORY ring.
         */
-        int prow = vterm_desc_row_phys(v_desc, r + offset);
-        int skip_next = 0;
-        /*
-            terminal content is run-heavy: skip wattr_set when the
-            previous painted cell in this row already had the same
-            attrs+colors.  reset at row start and after a clean-cell
-            skip so a dirty gap never inherits a broken run; wide
-            right-halves keep the run (left half already set style).
-        */
-        attr_t  last_attrs = (attr_t)-1;
-        short   last_colors = -1;
-        int     have_last = 0;
+        int     prow = vterm_desc_row_phys(v_desc, r + offset);
+        int     skip_next = 0;
+        int     span_start = 0;
+        int     span_n = 0;
+        attr_t  span_attrs = 0;
+        short   span_colors = 0;
 
         for(c = 0; c < v_desc->cols; c++)
         {
             if(skip_next)
             {
                 /*
-                    right half of a wide glyph: the wide cell's
-                    mvwadd_wch already painted here.  drop the dirty bit
-                    and move on so we don't overwrite it.  keep the
-                    attr run -- window style is still from the left half.
+                    right half of a wide glyph: the left half's wide
+                    cchar already claims this column when the span is
+                    flushed.  drop the dirty bit and keep the span open
+                    so the next dirty cell appends after the wide glyph.
                 */
                 skip_next = 0;
                 if(!(flags & VTERM_WND_LEAVE_DIRTY))
@@ -123,38 +149,52 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
             if(!VCELL_DIRTY_TEST(v_desc, prow, c)
                 && !(flags & VTERM_WND_RENDER_ALL))
             {
-                have_last = 0;
+                /*
+                    clean cell breaks the span -- flush what we have so
+                    we never overwrite a clean column with a bulk write.
+                */
+                _wnd_flush_span(vterm->window, r, span_start, row_buf,
+                    span_n, span_attrs, span_colors);
+                span_n = 0;
                 continue;
             }
 
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
 
+            if(span_n == 0)
+            {
+                span_start = c;
+                span_attrs = attrs;
+                span_colors = colors;
+            }
+
             /*
                 on Mac OS, the color and ACS attributes stored
                 in the cchar_t will trump what's set by
                 wattr_set() so we have to explicitly sync them
             */
-            if(setcchar(&uch, vcell->wch, attrs, colors, NULL) == ERR)
+            if(setcchar(&row_buf[span_n], vcell->wch, attrs, colors, NULL)
+                == ERR)
             {
-                VCELL_SET_CHAR(v_desc, prow, c, ' ');
-            }
+                wchar_t blank[2] = { L' ', L'\0' };
 
-            if(!have_last || attrs != last_attrs || colors != last_colors)
-            {
-                wattr_set(vterm->window, attrs, colors, NULL);
-                last_attrs = attrs;
-                last_colors = colors;
-                have_last = 1;
+                VCELL_SET_CHAR(v_desc, prow, c, ' ');
+                setcchar(&row_buf[span_n], blank, attrs, colors, NULL);
             }
-            mvwadd_wch(vterm->window, r, c, &uch);
+            span_n++;
 
             if(!(flags & VTERM_WND_LEAVE_DIRTY))
             {
                 VCELL_DIRTY_CLEAR(v_desc, prow, c);
             }
         }
+
+        _wnd_flush_span(vterm->window, r, span_start, row_buf,
+            span_n, span_attrs, span_colors);
     }
+
+    free(row_buf);
 
     if(idx != VTERM_BUF_HISTORY)
     {
@@ -162,13 +202,13 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
         {
             /*
                 at DEC pending-wrap the cursor rests at ccol == cols (a
-                last-column glyph advances ccol past the margin and the wrap
-                is deferred to the next glyph).  Draw + dirty the last real
-                column instead: VCELL_DIRTY_SET(crow, cols) would index
-                dirty_bits[crow][cols>>3], one byte past the row's
-                VCELL_DIRTY_ROW_BYTES(cols) when cols is a multiple of 8 (the
-                common 80-column case) -- a heap write off the end of the
-                dirty block on the bottom row.
+                last-column glyph advances ccol past the margin and the
+                wrap is deferred to the next glyph).  Draw + dirty the
+                last real column instead: VCELL_DIRTY_SET(crow, cols)
+                would index dirty_bits[crow][cols>>3], one byte past the
+                row's VCELL_DIRTY_ROW_BYTES(cols) when cols is a multiple
+                of 8 (the common 80-column case) -- a heap write off the
+                end of the dirty block on the bottom row.
             */
             int cur_col = v_desc->ccol;
             if(cur_col >= v_desc->cols) cur_col = v_desc->cols - 1;
@@ -203,12 +243,13 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
     vterm_desc_t    *hist;
     vterm_desc_t    *live;
     vterm_desc_t    *v_desc;
+    cchar_t         *row_buf = NULL;
     int             width, height;
     int             capacity;
     int             r, c, lrow, prow;
+    int             max_cols;
     attr_t          attrs;
     short           colors;
-    cchar_t         uch;
 
     if(vterm == NULL) return -1;
     if(vterm->window == NULL) return -1;
@@ -225,12 +266,25 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
 
     height = USE_MIN(height, live->rows);
 
+    /*
+        history and live share geometry; size the row buffer once for
+        the wider of the two (they should match).
+    */
+    max_cols = live->cols;
+    if(hist->cols > max_cols) max_cols = hist->cols;
+
+    if(max_cols > 0)
+    {
+        row_buf = (cchar_t *)malloc(sizeof(cchar_t) * (size_t)max_cols);
+        if(row_buf == NULL) return -1;
+    }
+
     for(r = 0; r < height; r++)
     {
-        int skip_next = 0;
-        attr_t  last_attrs = (attr_t)-1;
-        short   last_colors = -1;
-        int     have_last = 0;
+        int     skip_next = 0;
+        int     span_n = 0;
+        attr_t  span_attrs = 0;
+        short   span_colors = 0;
 
         /*
             top `lines` rows come from the tail of the history ring (newest
@@ -268,25 +322,29 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
 
-            if(setcchar(&uch, vcell->wch, attrs, colors, NULL) == ERR)
+            if(span_n == 0)
             {
-                wchar_t blank[2] = { L' ', L'\0' };
-                setcchar(&uch, blank, attrs, colors, NULL);
+                span_attrs = attrs;
+                span_colors = colors;
             }
 
-            if(!have_last || attrs != last_attrs || colors != last_colors)
+            if(setcchar(&row_buf[span_n], vcell->wch, attrs, colors, NULL)
+                == ERR)
             {
-                wattr_set(vterm->window, attrs, colors, NULL);
-                last_attrs = attrs;
-                last_colors = colors;
-                have_last = 1;
+                wchar_t blank[2] = { L' ', L'\0' };
+                setcchar(&row_buf[span_n], blank, attrs, colors, NULL);
             }
-            mvwadd_wch(vterm->window, r, c, &uch);
+            span_n++;
         }
+
+        /* full row is always dirty in scrollback -- one bulk write. */
+        _wnd_flush_span(vterm->window, r, 0, row_buf, span_n,
+            span_attrs, span_colors);
     }
+
+    free(row_buf);
 
     return 0;
 }
 
 #endif
-
