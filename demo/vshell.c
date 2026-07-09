@@ -1280,6 +1280,13 @@ vshell_parse_cmdline(vshell_t *vshell)
                 continue;
             }
 
+            if (strncmp(vshell->argv[i], "--start-home",
+                strlen("--start-home")) == 0)
+            {
+                vshell->vterm_flags |= VTERM_FLAG_START_HOME;
+                continue;
+            }
+
 #ifndef ASYNC_NOT_OKAY
             if (strncmp(vshell->argv[i], "--async", strlen("--async")) == 0)
             {
@@ -1431,6 +1438,9 @@ vshell_print_help(void)
                 "               Lines of scrollback to keep per pane\n\r"
                 "               (clamped to 64 - 512; default is 4x the\n\r"
                 "               terminal height).\n\r"
+                "--start-home   Start the child shell (or --exec program)\n\r"
+                "               in the user home directory instead of the\n\r"
+                "               current working directory.\n\r"
                 "--exec <prg>   Launch program at start up.\n\r";
 
     printf("\n\rLibvterm version: %s\n\r\n\r%s\n\r",

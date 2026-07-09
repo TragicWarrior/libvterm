@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <pwd.h>
 
 #include "vterm.h"
@@ -33,11 +34,41 @@ vterm_set_exec(vterm_t *vterm, char *path, char **exec_argv)
     return;
 }
 
+/*
+    child-side only (post-forkpty).  when VTERM_FLAG_START_HOME is set,
+    move into the user's home before exec so the shell or alternate
+    binary does not inherit the host process cwd.
+*/
+static void
+_vterm_chdir_home(void)
+{
+    const char      *home;
+    struct passwd   *pw;
+
+    home = getenv("HOME");
+    if(home == NULL || home[0] == '\0')
+    {
+        pw = getpwuid(getuid());
+        if(pw != NULL) home = pw->pw_dir;
+    }
+
+    if(home != NULL && home[0] != '\0')
+    {
+        if(chdir(home) == -1)
+            return;
+    }
+
+    return;
+}
+
 int
 vterm_exec_binary(vterm_t *vterm)
 {
     struct passwd   *user_profile;
     char            *user_shell = NULL;
+
+    if(vterm->flags & VTERM_FLAG_START_HOME)
+        _vterm_chdir_home();
 
     if(vterm->exec_path == NULL)
     {
