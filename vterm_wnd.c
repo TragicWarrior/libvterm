@@ -19,11 +19,12 @@
 #ifndef NOCURSES
 
 /*
-    emit a contiguous run of pre-built cchar_t cells.  wattr_set once
-    with the span's first style keeps the window attr state in sync for
-    Mac OS (where cchar attrs can otherwise diverge from the window);
-    remaining cells in a mixed-color span rely on the attrs packed into
-    each cchar by setcchar.
+    emit a homogeneous attr/color run of pre-built cchar_t cells.
+    callers flush and start a new span whenever attrs or colors change:
+    a single wattr_set for the whole span keeps window style in sync
+    with the cchar attrs (required on Mac OS; on Linux a mixed-style
+    bulk write let the first cell's wattr_set bleed -- e.g. green path
+    over a gray bash `$`).
 */
 static void
 _wnd_flush_span(WINDOW *win, int row, int col,
@@ -162,6 +163,18 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
 
+            /*
+                style change ends the current homogeneous span so the
+                next flush's wattr_set matches every cell in the batch.
+            */
+            if(span_n > 0
+                && (attrs != span_attrs || colors != span_colors))
+            {
+                _wnd_flush_span(vterm->window, r, span_start, row_buf,
+                    span_n, span_attrs, span_colors);
+                span_n = 0;
+            }
+
             if(span_n == 0)
             {
                 span_start = c;
@@ -282,6 +295,7 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
     for(r = 0; r < height; r++)
     {
         int     skip_next = 0;
+        int     span_start = 0;
         int     span_n = 0;
         attr_t  span_attrs = 0;
         short   span_colors = 0;
@@ -322,8 +336,17 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
             VCELL_GET_COLORS((*vcell), &colors);
             VCELL_GET_ATTR((*vcell), &attrs);
 
+            if(span_n > 0
+                && (attrs != span_attrs || colors != span_colors))
+            {
+                _wnd_flush_span(vterm->window, r, span_start, row_buf,
+                    span_n, span_attrs, span_colors);
+                span_n = 0;
+            }
+
             if(span_n == 0)
             {
+                span_start = c;
                 span_attrs = attrs;
                 span_colors = colors;
             }
@@ -337,8 +360,7 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
             span_n++;
         }
 
-        /* full row is always dirty in scrollback -- one bulk write. */
-        _wnd_flush_span(vterm->window, r, 0, row_buf, span_n,
+        _wnd_flush_span(vterm->window, r, span_start, row_buf, span_n,
             span_attrs, span_colors);
     }
 
