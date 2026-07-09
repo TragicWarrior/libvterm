@@ -57,6 +57,17 @@
                                                     whether mouse works.)
                                                 */
 
+#define VTERM_FLAG_START_HOME   (1UL << 6)      /*
+                                                    after forkpty, chdir the
+                                                    child into the user's home
+                                                    directory (HOME, else
+                                                    passwd pw_dir) before
+                                                    exec'ing the shell or
+                                                    alternate binary.  without
+                                                    this flag the child inherits
+                                                    the host process cwd.
+                                                */
+
 #define VTERM_FLAG_AIO          (1UL << 7)      //  async i/o
 #define VTERM_FLAG_NOPTY        (1UL << 8)      /*
                                                     skip all the fd and pty
