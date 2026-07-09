@@ -82,6 +82,16 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
         */
         int prow = vterm_desc_row_phys(v_desc, r + offset);
         int skip_next = 0;
+        /*
+            terminal content is run-heavy: skip wattr_set when the
+            previous painted cell in this row already had the same
+            attrs+colors.  reset at row start and after a clean-cell
+            skip so a dirty gap never inherits a broken run; wide
+            right-halves keep the run (left half already set style).
+        */
+        attr_t  last_attrs = (attr_t)-1;
+        short   last_colors = -1;
+        int     have_last = 0;
 
         for(c = 0; c < v_desc->cols; c++)
         {
@@ -90,7 +100,8 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
                 /*
                     right half of a wide glyph: the wide cell's
                     mvwadd_wch already painted here.  drop the dirty bit
-                    and move on so we don't overwrite it.
+                    and move on so we don't overwrite it.  keep the
+                    attr run -- window style is still from the left half.
                 */
                 skip_next = 0;
                 if(!(flags & VTERM_WND_LEAVE_DIRTY))
@@ -112,6 +123,7 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
             if(!VCELL_DIRTY_TEST(v_desc, prow, c)
                 && !(flags & VTERM_WND_RENDER_ALL))
             {
+                have_last = 0;
                 continue;
             }
 
@@ -128,7 +140,13 @@ vterm_wnd_update(vterm_t *vterm, int idx, int offset, uint8_t flags)
                 VCELL_SET_CHAR(v_desc, prow, c, ' ');
             }
 
-            wattr_set(vterm->window, attrs, colors, NULL);
+            if(!have_last || attrs != last_attrs || colors != last_colors)
+            {
+                wattr_set(vterm->window, attrs, colors, NULL);
+                last_attrs = attrs;
+                last_colors = colors;
+                have_last = 1;
+            }
             mvwadd_wch(vterm->window, r, c, &uch);
 
             if(!(flags & VTERM_WND_LEAVE_DIRTY))
@@ -210,6 +228,9 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
     for(r = 0; r < height; r++)
     {
         int skip_next = 0;
+        attr_t  last_attrs = (attr_t)-1;
+        short   last_colors = -1;
+        int     have_last = 0;
 
         /*
             top `lines` rows come from the tail of the history ring (newest
@@ -253,7 +274,13 @@ vterm_wnd_scrollback(vterm_t *vterm, int nlines, uint8_t flags)
                 setcchar(&uch, blank, attrs, colors, NULL);
             }
 
-            wattr_set(vterm->window, attrs, colors, NULL);
+            if(!have_last || attrs != last_attrs || colors != last_colors)
+            {
+                wattr_set(vterm->window, attrs, colors, NULL);
+                last_attrs = attrs;
+                last_colors = colors;
+                have_last = 1;
+            }
             mvwadd_wch(vterm->window, r, c, &uch);
         }
     }
