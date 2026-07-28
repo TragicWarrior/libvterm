@@ -174,11 +174,10 @@ interpret_dec_SM(vterm_t *vterm, int param[], int pcount)
             continue;
         }
 
-        // stub for enabling bracketed paste
+        // DECSET 2004 -- bracketed paste (wrap bulk pastes in ESC[200~..201~)
         if(param[i] == 2004)
         {
-            // todo
-
+            vterm->internal_state |= STATE_BRACKETED_PASTE;
             continue;
         }
     }

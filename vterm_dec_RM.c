@@ -146,10 +146,10 @@ interpret_dec_RM(vterm_t *vterm, int param[], int pcount)
             continue;
         }
 
-        // stub for turning off bracked paste
+        // DECRST 2004 -- bracketed paste off
         if(param[i] == 2004)
         {
-            // todo
+            vterm->internal_state &= ~STATE_BRACKETED_PASTE;
             continue;
         }
     }
