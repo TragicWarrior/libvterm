@@ -1,3 +1,22 @@
+10.8
+
+Paste / pty-write reliability
+* [Bryan Christ] Add vterm_write_data(vterm, data, len): bulk raw write to the
+  child pty with full write-all (short writes, EINTR, EAGAIN/POLLOUT retried).
+  Prefer this over a per-byte vterm_write_pipe loop for paste -- one transfer,
+  no silent character loss when the master buffer fills.
+* [Bryan Christ] When the child has enabled DECSET 2004 (bracketed paste),
+  vterm_write_data wraps the payload with ESC[200~ ... ESC[201~.  Per-keystroke
+  vterm_write_pipe is never wrapped.  SM/RM 2004 now track STATE_BRACKETED_PASTE
+  instead of no-op stubs.
+* [Bryan Christ] Multi-byte packed keycodes (ESC-then-payload from the host
+  kmio layer) are emitted low-byte-first, matching the pack order.  The old
+  high-to-low unpack inverted every Alt/escape sequence and mangled host
+  bracketed-paste wrappers on the way to the child.
+* [Bryan Christ] Pty master O_NONBLOCK is set with F_SETFL (was F_SETFD, which
+  never applied the flag).  Combined with write-all, keystroke and paste writes
+  complete without hanging the host or dropping bytes.
+
 10.7
 
 Scrollback-view cell copy

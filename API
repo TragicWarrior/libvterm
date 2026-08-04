@@ -61,9 +61,14 @@ pipe from filling up.
    void vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
 Writes a keycode to the terminal.  Special keys such as the F(x) keys are
-translated into the escape sequences expected by the shell.  If you wish
-to write raw data to the receiving process, do not use this function.  Use
-the file descriptor with write().
+translated into the escape sequences expected by the shell.
+
+   ssize_t vterm_write_data(vterm_t *vterm, const void *data, size_t len);
+
+Writes a raw byte buffer to the child pty (paste / bulk input).  Completes
+the full write (retries short writes, EINTR, EAGAIN).  When the child has
+enabled DECSET 2004, wraps the payload with ESC[200~ ... ESC[201~.  Prefer
+this over a per-byte vterm_write_pipe loop for paste.
 
    const char* vterm_get_ttyname(vterm_t *vterm);
 

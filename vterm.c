@@ -202,8 +202,13 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
         }
     }
 
-    fd_flags = fcntl(vterm->pty_fd, F_GETFD);
-    fcntl(vterm->pty_fd, F_SETFD, fd_flags | O_NONBLOCK);
+    /* status flags (O_NONBLOCK), not FD flags (FD_CLOEXEC).  Was F_SETFD,
+       which silently no-op'd the nonblock request and left the master
+       blocking.  Nonblocking + write-all in _vterm_write_pty keeps paste
+       and keystroke writes from hanging the host while still completing. */
+    fd_flags = fcntl(vterm->pty_fd, F_GETFL);
+    if(fd_flags != -1)
+        fcntl(vterm->pty_fd, F_SETFL, fd_flags | O_NONBLOCK);
 
     use_extended_names(TRUE);
     vterm->write = vterm_write_keymap;

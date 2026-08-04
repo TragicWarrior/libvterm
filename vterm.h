@@ -424,6 +424,29 @@ ssize_t         vterm_read_pipe(vterm_t *vterm, int timeout);
 */
 int             vterm_write_pipe(vterm_t *vterm, uint32_t keycode);
 
+/*
+    write a raw byte buffer to the child's pty (paste, bulk input).
+
+    Completes the full write: short writes and EINTR/EAGAIN are retried
+    until every byte is delivered or a hard error occurs.  Prefer this
+    over a per-byte vterm_write_pipe loop for paste -- one buffer, one
+    logical transfer, no dropped characters on a full pty.
+
+    When the child has enabled bracketed paste (DECSET 2004), the payload
+    is wrapped with ESC[200~ ... ESC[201~ so the guest can treat it as a
+    single paste rather than typed keystrokes.  Per-keystroke
+    vterm_write_pipe is not wrapped (that would be wrong for real typing).
+
+    @params:
+        vterm           a valid vterm object handle.
+        data            bytes to write; may be NULL only when len == 0.
+        len             number of bytes in data.
+
+    @return:            len on success, -1 on error.  Bracket wrappers are
+                        not counted in the return value.
+*/
+ssize_t         vterm_write_data(vterm_t *vterm, const void *data, size_t len);
+
 int             vterm_write_mouse_event(vterm_t *vterm, MEVENT *mouse_event);
 
 /*

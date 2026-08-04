@@ -4,6 +4,9 @@
 #include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <poll.h>
+#include <limits.h>
 
 #include "vterm.h"
 #include "vterm_private.h"
@@ -212,7 +215,7 @@ typedef union _key_alignment_u  key_alignment_t;
 
 
 int
-_vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes);
+_vterm_write_pty(vterm_t *vterm, const unsigned char *buf, ssize_t bytes);
 
 int
 vterm_write_pipe(vterm_t *vterm, uint32_t keycode)
@@ -363,23 +366,30 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         return retval;
     }
 
-    // there's probably a more elegant way to do this but
+    /*
+        Multi-byte keycodes from the host kmio layer pack wire bytes in
+        chronological order into the low half of the word: first byte in
+        bits 0-7 (ESC for Alt combos), second in 8-15, third in 16-23.
+        Emit low-to-high so ESC-V leaves as ESC then V, not V then ESC.
+        The old high-to-low unpack inverted every packed sequence and
+        mangled host bracketed-paste wrappers (ESC[200~ / ESC[201~).
+    */
     if(keycode > 0xFFFF)
     {
-        buf[0] = (keycode & 0x00FF0000) >> 16;
-        buf[1] = (keycode & 0x0000FF00) >> 8;
-        buf[2] = (keycode & 0x000000FF);
+        buf[0] = (unsigned char)(keycode & 0x000000FF);
+        buf[1] = (unsigned char)((keycode & 0x0000FF00) >> 8);
+        buf[2] = (unsigned char)((keycode & 0x00FF0000) >> 16);
         bytes = 3;
     }
     else if(keycode > 0xFF)
     {
-        buf[0] = (keycode & 0x0000FF00) >> 8;
-        buf[1] = (keycode & 0x000000FF);
+        buf[0] = (unsigned char)(keycode & 0x000000FF);
+        buf[1] = (unsigned char)((keycode & 0x0000FF00) >> 8);
         bytes = 2;
     }
     else
     {
-        buf[0] = (keycode & 0x000000FF);
+        buf[0] = (unsigned char)(keycode & 0x000000FF);
         bytes = 1;
     }
 
@@ -388,21 +398,97 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
     return retval;
 }
 
+/*
+    Deliver the full buffer to the pty master.  Retries short writes and
+    EINTR; on EAGAIN waits for POLLOUT (the master is nonblocking).  A
+    single write() used to drop the remainder on short write or EAGAIN --
+    silent character loss under paste load.
+*/
 int
-_vterm_write_pty(vterm_t *vterm, unsigned char *buf, ssize_t bytes)
+_vterm_write_pty(vterm_t *vterm, const unsigned char *buf, ssize_t bytes)
 {
-    ssize_t bytes_written = 0;
+    ssize_t             total = 0;
+    ssize_t             n;
+    struct pollfd       pfd;
 
-    if(buf == NULL) return -1;
+    if(buf == NULL || bytes < 0) return -1;
+    if(bytes == 0) return 0;
+    if(vterm == NULL || vterm->pty_fd < 0) return -1;
 
-    bytes_written = write(vterm->pty_fd, buf, bytes);
-    if(bytes_written != bytes)
+    while(total < bytes)
     {
+        n = write(vterm->pty_fd, buf + total, (size_t)(bytes - total));
+        if(n > 0)
+        {
+            total += n;
+            continue;
+        }
+
+        if(n < 0 && errno == EINTR)
+            continue;
+
+        if(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        {
+            memset(&pfd, 0, sizeof(pfd));
+            pfd.fd = vterm->pty_fd;
+            pfd.events = POLLOUT;
+            if(poll(&pfd, 1, -1) < 0)
+            {
+                if(errno == EINTR)
+                    continue;
+                vterm_error(vterm, VTERM_ECODE_PTY_WRITE_ERR, NULL);
+                return -1;
+            }
+            continue;
+        }
+
         vterm_error(vterm, VTERM_ECODE_PTY_WRITE_ERR, NULL);
         return -1;
     }
 
-    return bytes_written;
+    return (int)total;
+}
+
+ssize_t
+vterm_write_data(vterm_t *vterm, const void *data, size_t len)
+{
+    static const unsigned char bp_start[] = { 0x1b, '[', '2', '0', '0', '~' };
+    static const unsigned char bp_end[]   = { 0x1b, '[', '2', '0', '1', '~' };
+    const unsigned char        *buf;
+    int                         bracket;
+
+    if(vterm == NULL) return -1;
+    if(len == 0) return 0;
+    if(data == NULL) return -1;
+
+    /* size_t -> ssize_t: reject absurd lengths rather than truncate */
+    if(len > (size_t)SSIZE_MAX) return -1;
+
+    buf = (const unsigned char *)data;
+    bracket = (vterm->internal_state & STATE_BRACKETED_PASTE) ? 1 : 0;
+
+    if(bracket)
+    {
+        if(_vterm_write_pty(vterm, bp_start, (ssize_t)sizeof(bp_start)) < 0)
+            return -1;
+    }
+
+    if(_vterm_write_pty(vterm, buf, (ssize_t)len) < 0)
+        return -1;
+
+    if(bracket)
+    {
+        if(_vterm_write_pty(vterm, bp_end, (ssize_t)sizeof(bp_end)) < 0)
+            return -1;
+    }
+
+    if(vterm->event_mask & VTERM_MASK_PIPE_WRITTEN)
+    {
+        if(vterm->event_hook != NULL)
+            vterm->event_hook(vterm, VTERM_MASK_PIPE_WRITTEN, NULL);
+    }
+
+    return (ssize_t)len;
 }
 
 int
