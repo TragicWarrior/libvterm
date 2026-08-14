@@ -19,7 +19,8 @@
 #include "color_map.h"
 #include "color_cache.h"
 
-#define ESEQ_BUF_SIZE           128             // escape buffer max
+#define ESEQ_BUF_SIZE           128             // CSI / initial OSC cap
+#define ESEQ_BUF_OSC_MAX        (256 * 1024)    // OSC grow cap (OSC 52)
 #define UTF8_BUF_SIZE           5               // 4 bytes + 0-terminator
 #define VTERM_TITLE_BUF_SZ      128             // max OSC-set window title
 
@@ -179,14 +180,26 @@ struct _vterm_s
                                                     lazy-allocated at
                                                     VTERM_TITLE_BUF_SZ.
                                                 */
+    char            *clipboard;                 /*
+                                                    last OSC 52 SET payload,
+                                                    base64-decoded.  NULL
+                                                    until a child copies.
+                                                */
+    size_t          clipboard_len;
+    char            clipboard_sel;              /*  'c'/'p'/'s'/'0'-'7'   */
+
     char            *read_buf;                  /*
                                                     new incoming data goes
                                                     here.
                                                 */
-    char            esbuf[ESEQ_BUF_SIZE];       /*
+    char            esbuf_small[ESEQ_BUF_SIZE + 1];
+    char            *esbuf;                     /*
                                                     0-terminated string. Does
                                                     NOT include the initial
                                                     escape (\x1B) character.
+                                                    points at esbuf_small
+                                                    unless an OSC sequence
+                                                    outgrew it.
                                                 */
     int             esbuf_len;                  /*
                                                     length of buffer. The
@@ -194,6 +207,7 @@ struct _vterm_s
                                                     always kept:
                                                     esbuf[esbuf_len] == '\0'
                                                 */
+    int             esbuf_cap;                  /*  max esbuf_len (not NUL) */
 #ifndef NOUTF8
     int             utf8_buf_len;               //  number of utf8 bytes
     char            utf8_buf[UTF8_BUF_SIZE];    /*

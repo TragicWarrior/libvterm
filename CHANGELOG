@@ -1,3 +1,23 @@
+10.9
+
+OSC 52 clipboard (inner hop)
+* [Bryan Christ] Parse OSC 52 SET from the child: decode the base64 Pd,
+  store it on the instance, and fire VTERM_EVENT_CLIPBOARD (with
+  VTERM_MASK_CLIPBOARD) so the embedder can push it to xclip, OSC 52
+  out, or nowhere.  libvterm does not touch the host clipboard.
+* [Bryan Christ] OSC 52 query (Pd = '?') is refused -- no reply is
+  written to the child.  Empty Pd clears the stored payload and still
+  notifies the hook.  vterm_clipboard_get / vterm_clipboard_clear for
+  poll-style embedders.
+* [Bryan Christ] OSC sequences may grow the escape buffer up to 256 KiB
+  so a real clipboard payload is not truncated at the 128-byte CSI cap
+  and spilled onto the screen.  CSI stays inside the small buffer.
+* [Bryan Christ] vshell (the reference embedder) subscribes to
+  VTERM_MASK_CLIPBOARD.  On SET it forwards via xclip (CLIPBOARD, or
+  PRIMARY for Pc p/s) and re-emits OSC 52 to the outer terminal as a
+  best-effort extra -- xfce4-terminal ignores the latter.  The frame
+  shows CLIP <nbytes> / CLIP cleared.
+
 10.8
 
 Paste / pty-write reliability

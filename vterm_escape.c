@@ -85,13 +85,85 @@ check_suffix_dec(vterm_t *vterm)
 }
 
 void
+vterm_esbuf_init(vterm_t *vterm)
+{
+    if(vterm == NULL) return;
+
+    vterm->esbuf = vterm->esbuf_small;
+    vterm->esbuf_cap = ESEQ_BUF_SIZE;
+    vterm->esbuf_len = 0;
+    vterm->esbuf_small[0] = '\0';
+
+    return;
+}
+
+void
+vterm_esbuf_reset(vterm_t *vterm)
+{
+    if(vterm == NULL) return;
+
+    if(vterm->esbuf != NULL && vterm->esbuf != vterm->esbuf_small)
+        free(vterm->esbuf);
+
+    vterm_esbuf_init(vterm);
+
+    return;
+}
+
+static int
+vterm_esbuf_grow(vterm_t *vterm)
+{
+    char    *neu;
+    int     cap;
+
+    if(!IS_OSC_MODE(vterm)) return -1;
+
+    cap = vterm->esbuf_cap * 2;
+    if(cap < ESEQ_BUF_SIZE * 2) cap = ESEQ_BUF_SIZE * 2;
+    if(cap > ESEQ_BUF_OSC_MAX) cap = ESEQ_BUF_OSC_MAX;
+    if(vterm->esbuf_len >= cap) return -1;
+
+    neu = (char *)malloc((size_t)cap + 1);
+    if(neu == NULL) return -1;
+
+    memcpy(neu, vterm->esbuf, (size_t)vterm->esbuf_len + 1);
+
+    if(vterm->esbuf != vterm->esbuf_small)
+        free(vterm->esbuf);
+
+    vterm->esbuf = neu;
+    vterm->esbuf_cap = cap;
+
+    return 0;
+}
+
+int
+vterm_esbuf_putc(vterm_t *vterm, char c)
+{
+    if(vterm == NULL) return -1;
+
+    if(vterm->esbuf == NULL)
+        vterm_esbuf_init(vterm);
+
+    if(vterm->esbuf_len >= vterm->esbuf_cap)
+    {
+        if(vterm_esbuf_grow(vterm) == -1)
+            return -1;
+    }
+
+    vterm->esbuf[vterm->esbuf_len] = c;
+    vterm->esbuf_len++;
+    vterm->esbuf[vterm->esbuf_len] = '\0';
+
+    return 0;
+}
+
+void
 vterm_escape_start(vterm_t *vterm)
 {
     vterm->internal_state |= STATE_ESCAPE_MODE;
 
-    // zero out the escape buffer just in case
-    vterm->esbuf_len = 0;
-    vterm->esbuf[0] = '\0';
+    vterm_esbuf_reset(vterm);
 
     vterm->esc_handler = NULL;
     vterm->esc_suffix_check = NULL;
@@ -107,9 +179,7 @@ vterm_escape_cancel(vterm_t *vterm)
     // make sure OSC mode is off too
     vterm->internal_state &= ~STATE_OSC_MODE;
 
-    // zero out the escape buffer for the next run
-    vterm->esbuf_len = 0;
-    vterm->esbuf[0] = '\0';
+    vterm_esbuf_reset(vterm);
 
     vterm->esc_handler = NULL;
     vterm->esc_suffix_check = NULL;

@@ -4,6 +4,10 @@
 
 #include "vterm.h"
 
+void    vterm_esbuf_init(vterm_t *vterm);
+void    vterm_esbuf_reset(vterm_t *vterm);
+int     vterm_esbuf_putc(vterm_t *vterm, char c);
+
 void    vterm_escape_start(vterm_t *vterm);
 void    vterm_escape_cancel(vterm_t *vterm);
 

@@ -22,6 +22,10 @@ contribution from Hitachi-ID).
   history on the standard buffer
 * Mouse: X10 and SGR protocols, GPM wheel forwarding, and
   vterm_write_mouse_event for embedder-driven injection
+* OSC 52 clipboard SET from the child (inner hop): decoded payload is
+  stored and delivered via VTERM_EVENT_CLIPBOARD.  The library does
+  not talk to the host clipboard; the embedder decides xclip / OSC 52
+  out / ignore.  Query (`Pd = ?`) is refused.
 * Async I/O interface (SIGIO + self-pipe trick) for callers that
   don't want to spin a thread
 * Optional crash handler (`ENABLE_BACKTRACE`) that writes a glibc
@@ -65,9 +69,12 @@ cache (typically `ldconfig`).
 
 `vshell` is the canonical demo: it embeds libvterm into a tmux-like
 front end and exposes the major API surfaces (scrollback, mouse,
-title, resize, color modes).  Useful flags include `--truecolor`,
-`--c16`, `--no-utf8`, `--vt100`, `--scrollback <lines>` (64 - 512),
-and `--exec <program>`.
+title, resize, color modes, OSC 52 clipboard).  A child copy
+(`OSC 52`) is taken by the event hook and forwarded with xclip plus
+a best-effort OSC 52 to the outer terminal; the frame shows
+`CLIP <nbytes>`.  Useful flags include `--truecolor`, `--c16`,
+`--no-utf8`, `--vt100`, `--scrollback <lines>` (64 - 512), and
+`--exec <program>`.
 
 ## FreeBSD ##
 

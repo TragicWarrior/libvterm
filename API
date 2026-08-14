@@ -142,6 +142,23 @@ and a blank line is inserted at the bottom.
 This function moves all lines down by one so that the bottom row is discarded
 and a blank line is inserted at the top.
 
+   int vterm_clipboard_get(vterm_t *vterm, const char **data, size_t *len);
+
+Last OSC 52 SET received from the child (inner hop).  Returns 1 if a
+payload is stored, 0 if none, -1 on a NULL vterm.  data/len are
+optional; the pointer is valid until the next SET, clear, or destroy.
+libvterm does not talk to the host clipboard -- the embedder decides
+xclip / OSC 52 out / ignore.  OSC 52 query (Pd = '?') is refused.
+
+   void vterm_clipboard_clear(vterm_t *vterm);
+
+Drop the stored OSC 52 payload.  Does not notify the event hook.
+
+Subscribe with vterm_set_event_mask(..., VTERM_MASK_CLIPBOARD) and
+handle VTERM_EVENT_CLIPBOARD.  anything is a vterm_clipboard_t*
+(decoded bytes, length, selection 'c'/'p'/'s'/'0'-'7').  Empty Pd
+clears and still fires the hook with data == NULL, len == 0.
+
    void vterm_resize(vterm_t *vterm, uint width, uint height);
 
 This function resizes the offscreen buffer.  It DOES NOT resize the associated
