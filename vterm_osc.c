@@ -16,6 +16,21 @@ vterm_osc_read_string(vterm_t *vterm, char *esbuf, char *buf, int buf_sz);
 static void
 vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz);
 
+static void
+vterm_osc_parse_clipboard(vterm_t *vterm, char *pos);
+
+static int
+vterm_osc_is_term(const char *p);
+
+static int
+vterm_b64_val(unsigned char c);
+
+static int
+vterm_b64_decode(const char *src, size_t src_len, char **out, size_t *out_len);
+
+static void
+vterm_clipboard_store(vterm_t *vterm, char *data, size_t len, char selection);
+
 /*  public function */
 
 void
@@ -92,6 +107,18 @@ vterm_interpret_xterm_osc(vterm_t *vterm)
 
             vterm_osc_parse_xcolor(vterm, buf, count);
 
+            break;
+        }
+
+        /*
+            OSC 52 ; Pc ; Pd ST  -- clipboard SET from the child.
+
+            this is the inner hop only: decode and hand the payload to
+            the embedder.  query (Pd = '?') is refused.  empty Pd clears.
+        */
+        case 52:
+        {
+            vterm_osc_parse_clipboard(vterm, pos);
             break;
         }
 
@@ -224,6 +251,212 @@ vterm_osc_parse_xcolor(vterm_t *vterm, char *buf, int buf_sz)
         accordingly and vterm_add_mapped_color() does that on its own.
     */
     vterm_add_mapped_color(vterm, new_color, (float)r, (float)g, (float)b);
+
+    return;
+}
+
+int
+vterm_clipboard_get(vterm_t *vterm, const char **data, size_t *len)
+{
+    if(vterm == NULL) return -1;
+
+    if(data != NULL) *data = vterm->clipboard;
+    if(len != NULL) *len = vterm->clipboard_len;
+
+    return (vterm->clipboard != NULL) ? 1 : 0;
+}
+
+void
+vterm_clipboard_clear(vterm_t *vterm)
+{
+    if(vterm == NULL) return;
+
+    free(vterm->clipboard);
+    vterm->clipboard = NULL;
+    vterm->clipboard_len = 0;
+    vterm->clipboard_sel = 0;
+
+    return;
+}
+
+static int
+vterm_osc_is_term(const char *p)
+{
+    if(p == NULL || *p == '\0') return 1;
+    if(*p == '\x07') return 1;
+    if((unsigned char)*p == 0x9c) return 1;
+    if(*p == '\x1b' && p[1] == '\\') return 1;
+
+    return 0;
+}
+
+static int
+vterm_b64_val(unsigned char c)
+{
+    if(c >= 'A' && c <= 'Z') return c - 'A';
+    if(c >= 'a' && c <= 'z') return c - 'a' + 26;
+    if(c >= '0' && c <= '9') return c - '0' + 52;
+    if(c == '+') return 62;
+    if(c == '/') return 63;
+
+    return -1;
+}
+
+static int
+vterm_b64_decode(const char *src, size_t src_len, char **out, size_t *out_len)
+{
+    int         val[4];
+    int         nval = 0;
+    int         pads = 0;
+    size_t      cap;
+    size_t      n = 0;
+    size_t      i;
+    char        *buf;
+
+    *out = NULL;
+    *out_len = 0;
+
+    cap = (src_len / 4 + 1) * 3;
+    buf = (char *)malloc(cap + 1);
+    if(buf == NULL) return -1;
+
+    for(i = 0; i < src_len; i++)
+    {
+        unsigned char   c = (unsigned char)src[i];
+        int             v;
+
+        if(c == ' ' || c == '\t' || c == '\n' || c == '\r')
+            continue;
+
+        if(c == '=')
+        {
+            v = 0;
+            pads++;
+        }
+        else
+        {
+            if(pads > 0)
+            {
+                free(buf);
+                return -1;
+            }
+
+            v = vterm_b64_val(c);
+            if(v < 0)
+            {
+                free(buf);
+                return -1;
+            }
+        }
+
+        val[nval++] = v;
+        if(nval < 4) continue;
+
+        if(n + 3 > cap)
+        {
+            free(buf);
+            return -1;
+        }
+
+        buf[n++] = (char)((val[0] << 2) | (val[1] >> 4));
+        if(pads < 2)
+            buf[n++] = (char)((val[1] << 4) | (val[2] >> 2));
+        if(pads < 1)
+            buf[n++] = (char)((val[2] << 6) | val[3]);
+
+        nval = 0;
+        if(pads > 0) break;
+    }
+
+    if(nval != 0)
+    {
+        free(buf);
+        return -1;
+    }
+
+    *out = buf;
+    *out_len = n;
+    return 0;
+}
+
+static void
+vterm_clipboard_store(vterm_t *vterm, char *data, size_t len, char selection)
+{
+    vterm_clipboard_t   ev;
+
+    free(vterm->clipboard);
+    vterm->clipboard = data;
+    vterm->clipboard_len = len;
+    vterm->clipboard_sel = selection;
+
+    if(vterm->event_hook == NULL) return;
+    if(!(vterm->event_mask & VTERM_MASK_CLIPBOARD)) return;
+
+    ev.data = data;
+    ev.len = len;
+    ev.selection = selection;
+    vterm->event_hook(vterm, VTERM_EVENT_CLIPBOARD, &ev);
+
+    return;
+}
+
+static void
+vterm_osc_parse_clipboard(vterm_t *vterm, char *pos)
+{
+    char        *pc;
+    char        *pd;
+    char        *decoded = NULL;
+    size_t      pd_len;
+    size_t      decoded_len = 0;
+    char        selection;
+
+    if(vterm == NULL || pos == NULL) return;
+
+    /* skip the semicolon after the verb (and nothing else) */
+    if(*pos == ';') pos++;
+    else return;
+
+    pc = pos;
+    while(*pos != '\0' && *pos != ';' && !vterm_osc_is_term(pos))
+        pos++;
+
+    if(*pos != ';') return;
+
+    selection = (pos > pc) ? pc[0] : 'c';
+    pos++;
+    pd = pos;
+
+    while(*pos != '\0' && !vterm_osc_is_term(pos))
+        pos++;
+
+    pd_len = (size_t)(pos - pd);
+
+    {
+        const char  *s = pd;
+        const char  *e = pd + pd_len;
+
+        while(s < e && (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r'))
+            s++;
+        while(e > s && (e[-1] == ' ' || e[-1] == '\t' ||
+            e[-1] == '\n' || e[-1] == '\r'))
+            e--;
+
+        /* query: refuse -- do not reply, do not touch the stored payload */
+        if((e - s) == 1 && *s == '?')
+            return;
+
+        /* empty Pd: clear */
+        if(s == e)
+        {
+            vterm_clipboard_store(vterm, NULL, 0, selection);
+            return;
+        }
+
+        if(vterm_b64_decode(s, (size_t)(e - s), &decoded, &decoded_len) != 0)
+            return;
+    }
+
+    vterm_clipboard_store(vterm, decoded, decoded_len, selection);
 
     return;
 }

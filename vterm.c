@@ -33,6 +33,7 @@
 #include "vterm_private.h"
 #include "vterm_write.h"
 #include "vterm_exec.h"
+#include "vterm_escape.h"
 #include "vterm_buffer.h"
 #include "vterm_csi.h"
 #include "color_cache.h"
@@ -61,6 +62,8 @@ vterm_alloc(void)
     vterm_t *vterm;
 
     vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
+    if(vterm != NULL)
+        vterm_esbuf_init(vterm);
 
     return  vterm;
 }
@@ -88,7 +91,15 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
 
     // a new instance
     if(vterm == NULL)
+    {
         vterm = (vterm_t*)calloc(1, sizeof(vterm_t));
+        if(vterm == NULL) return NULL;
+        vterm_esbuf_init(vterm);
+    }
+    else if(vterm->esbuf == NULL)
+    {
+        vterm_esbuf_init(vterm);
+    }
 
     // seed the active descriptor cache.  vterm_desc_idx defaults to 0
     // (VTERM_BUF_STANDARD) from calloc; the inline array address is stable
@@ -240,6 +251,8 @@ vterm_destroy(vterm_t *vterm)
 
     free(vterm->read_buf);
     free(vterm->title);
+    free(vterm->clipboard);
+    vterm_esbuf_reset(vterm);
 
     free(vterm);
 

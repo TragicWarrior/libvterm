@@ -151,12 +151,6 @@ vterm_render(vterm_t *vterm, char *data, int len)
 
         if(IS_MODE_ESCAPED(vterm))
         {
-            if(vterm->esbuf_len >= ESEQ_BUF_SIZE)
-            {
-                vterm_escape_cancel(vterm);
-                continue;
-            }
-
             /*
                 it's absurd but control chars can legitimately happen inside
                 a escape sequence.  process them but omit them from the
@@ -170,12 +164,17 @@ vterm_render(vterm_t *vterm, char *data, int len)
             }
             else
             {
-                // append character to ongoing escape sequence
-                vterm->esbuf[vterm->esbuf_len] = *data;
-
-                // increment the buffer length and push out the NULL terminator
-                vterm->esbuf_len++;
-                vterm->esbuf[vterm->esbuf_len] = 0;
+                /*
+                    CSI stays inside esbuf_small.  OSC (especially 52)
+                    grows up to ESEQ_BUF_OSC_MAX; past that, drop the
+                    sequence rather than spill the payload onto the
+                    screen.
+                */
+                if(vterm_esbuf_putc(vterm, *data) == -1)
+                {
+                    vterm_escape_cancel(vterm);
+                    continue;
+                }
 
                 if(vterm->esc_suffix_check != NULL)
                 {

@@ -190,6 +190,12 @@ struct _vshell_s
     // term specific data stores
     uint32_t        vterm_flags;
 
+    char            clip_note[32];      /*
+                                            last OSC 52 SET summary for the
+                                            frame ("12b", "cleared").  empty
+                                            until the first clipboard event.
+                                        */
+
     vpane_t         *vpane_list;
 
     void            (*main_loop)        (vshell_t *);
@@ -219,6 +225,8 @@ void        vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
 void        vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
 
 void        vshell_hook(vterm_t *vterm, int event, void *anything);
+void        vshell_clipboard_xclip(const char *buf, size_t len, char selection);
+void        vshell_clipboard_osc52(const char *buf, size_t len, char selection);
 short       vshell_pair_selector(vterm_t *vterm, short fg, short bg);
 
 cchar_t*    cchar_alloc(wchar_t *wcs, attr_t attrs, short color_pair);
@@ -624,7 +632,8 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
     vterm_wnd_set(vpane->vterm, vpane->term_wnd);
 
     // this illustrates how to install an event hook
-    vterm_set_event_mask(vpane->vterm, VTERM_MASK_BUFFER_ACTIVATED);
+    vterm_set_event_mask(vpane->vterm,
+        VTERM_MASK_BUFFER_ACTIVATED | VTERM_MASK_CLIPBOARD);
     vterm_install_hook(vpane->vterm, vshell_hook);
 
     if(vshell->vshell_flags & VSHELL_FLAG_ASYNC)
@@ -795,9 +804,26 @@ vshell_update_canvas(vshell_t *vshell, int flags)
             {
                 history_sz = vterm_get_history_size(vpane->vterm);
 
+                if(vshell->clip_note[0] != '\0')
+                {
+                    len = swprintf(wbuf, WBUF_MAX,
+                        L"[ Active | %s | %04d / %04d | CLIP %s | Help = < Alt ? > ]",
+                        mode, vpane->cursor_pos + vpane->height,
+                        history_sz, vshell->clip_note);
+                }
+                else
+                {
+                    len = swprintf(wbuf, WBUF_MAX,
+                        L"[ Active | %s | %04d / %04d | Help = < Alt ? > ]",
+                        mode, vpane->cursor_pos + vpane->height,
+                        history_sz);
+                }
+            }
+            else if(vshell->clip_note[0] != '\0')
+            {
                 len = swprintf(wbuf, WBUF_MAX,
-                    L"[ Active | %s | %04d / %04d | Help = < Alt ? > ]", mode,
-                    vpane->cursor_pos + vpane->height, history_sz);
+                    L"[ Active | %s | CLIP %s | Help < Alt ? > ]",
+                    mode, vshell->clip_note);
             }
             else
             {
@@ -932,9 +958,10 @@ vshell_resize(vshell_t *vshell)
 void
 vshell_hook(vterm_t *vterm, int event, void *anything)
 {
-    vpane_t     *vpane;
-    vshell_t    *vshell;
-    int         idx;
+    vpane_t             *vpane;
+    vshell_t            *vshell;
+    vterm_clipboard_t   *clip;
+    int                 idx;
 
     if(vterm == NULL) return;       // something went horribly wrong
 
@@ -959,9 +986,114 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             vshell_update_canvas(vshell, FLAG_PAINT_ALL);
             break;
         }
+
+        /*
+            inner hop: the child copied.  vshell is the reference
+            embedder -- it does not assume the host honours OSC 52
+            (xfce4-terminal does not), so it always tries xclip and
+            also emits OSC 52 out as a best-effort extra.
+        */
+        case VTERM_EVENT_CLIPBOARD:
+        {
+            clip = (vterm_clipboard_t *)anything;
+            if(clip == NULL) break;
+
+            vshell_clipboard_xclip(clip->data, clip->len, clip->selection);
+            vshell_clipboard_osc52(clip->data, clip->len, clip->selection);
+
+            if(clip->data == NULL || clip->len == 0)
+                snprintf(vshell->clip_note, sizeof(vshell->clip_note),
+                    "cleared");
+            else
+                snprintf(vshell->clip_note, sizeof(vshell->clip_note),
+                    "%zub", clip->len);
+
+            break;
+        }
     }
 
     return;
+}
+
+/*
+    Pipe the payload through xclip(1).  stderr is silenced so a missing
+    binary does not smear the ncurses screen.  'p' / 's' go to PRIMARY;
+    everything else to CLIPBOARD.
+*/
+void
+vshell_clipboard_xclip(const char *buf, size_t len, char selection)
+{
+    FILE        *fp;
+    const char  *cmd;
+
+    if(selection == 'p' || selection == 's')
+        cmd = "xclip -selection primary 2>/dev/null";
+    else
+        cmd = "xclip -selection clipboard 2>/dev/null";
+
+    fp = popen(cmd, "w");
+    if(fp == NULL) return;
+
+    if(buf != NULL && len > 0)
+        fwrite(buf, 1, len, fp);
+
+    pclose(fp);
+}
+
+/*
+    Re-encode and emit OSC 52 to the *outer* terminal.  Harmless on
+    hosts that ignore it (including xfce4-terminal).  Empty / clear
+    is an empty Pd.  Same stdout fd ncurses already drives.
+*/
+void
+vshell_clipboard_osc52(const char *buf, size_t len, char selection)
+{
+    static const char   tbl[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    char                *enc;
+    size_t              enc_len;
+    size_t              i, j;
+    unsigned char       a, b, c;
+    char                pc;
+
+    pc = (selection == '\0') ? 'c' : selection;
+
+    if(buf == NULL || len == 0)
+    {
+        fprintf(stdout, "\033]52;%c;\033\\", pc);
+        fflush(stdout);
+        return;
+    }
+
+    enc_len = 4 * ((len + 2) / 3);
+    enc = (char *)malloc(enc_len + 1);
+    if(enc == NULL) return;
+
+    j = 0;
+    for(i = 0; i + 3 <= len; i += 3)
+    {
+        a = (unsigned char)buf[i];
+        b = (unsigned char)buf[i + 1];
+        c = (unsigned char)buf[i + 2];
+        enc[j++] = tbl[a >> 2];
+        enc[j++] = tbl[((a & 0x03) << 4) | (b >> 4)];
+        enc[j++] = tbl[((b & 0x0f) << 2) | (c >> 6)];
+        enc[j++] = tbl[c & 0x3f];
+    }
+    if(i < len)
+    {
+        a = (unsigned char)buf[i];
+        b = (i + 1 < len) ? (unsigned char)buf[i + 1] : 0;
+        enc[j++] = tbl[a >> 2];
+        enc[j++] = tbl[((a & 0x03) << 4) | (b >> 4)];
+        enc[j++] = (i + 1 < len) ? tbl[(b & 0x0f) << 2] : '=';
+        enc[j++] = '=';
+    }
+    enc[j] = '\0';
+
+    fprintf(stdout, "\033]52;%c;%s\033\\", pc, enc);
+    fflush(stdout);
+    free(enc);
 }
 
 void

@@ -8,6 +8,7 @@
 #define _VTERM_H_
 
 #include <inttypes.h>
+#include <stddef.h>
 
 #include <sys/types.h>
 
@@ -28,7 +29,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTERM_VERSION        "10.7"
+#define LIBVTERM_VERSION        "10.9"
 
 #define VTERM_FLAG_RXVT         (1UL << 0)      //  emulate rxvt
 #define VTERM_FLAG_VT100        (1UL << 1)      //  emulate vt100
@@ -130,6 +131,23 @@ typedef void (*VtermEventHook) \
                     (vterm_t *vterm, int event, void *anything);
 
 /*
+    payload of VTERM_EVENT_CLIPBOARD.  data is the base64-decoded OSC 52
+    SET payload (binary; not necessarily NUL-terminated).  valid only
+    for the duration of the hook.  copy it if you need it afterwards.
+    a clear (empty Pd) arrives as data == NULL, len == 0.
+*/
+struct _vterm_clipboard_s
+{
+    const char      *data;
+    size_t          len;
+    char            selection;      /* 'c' CLIPBOARD, 'p' PRIMARY,
+                                       's' SELECT, '0'-'7' cut buffer;
+                                       'c' when Pc is empty          */
+};
+
+typedef struct _vterm_clipboard_s   vterm_clipboard_t;
+
+/*
     certain events will trigger a callback if it's installed.  the
     callback "hook" is installed via the vterm_install_hook() API.
 
@@ -149,6 +167,7 @@ typedef void (*VtermEventHook) \
     VTERM_EVENT_TERM_RESIZED            size as struct winsize*
     VTERM_EVENT_TERM_PRECLEAR           unused
     VTERM_EVENT_TERM_SCROLLED           direction of scroll as int* (-1 or 1)
+    VTERM_EVENT_CLIPBOARD               vterm_clipboard_t*
 */
 
 enum
@@ -162,6 +181,7 @@ enum
     VTERM_EVENT_TERM_RESIZED,
     VTERM_EVENT_TERM_PRECLEAR,
     VTERM_EVENT_TERM_SCROLLED,
+    VTERM_EVENT_CLIPBOARD,
 };
 
 #define VTERM_MASK_BUFFER_ACTIVATED     (1UL << 0)
@@ -174,6 +194,7 @@ enum
 #define VTERM_MASK_TERM_RESIZED         (1UL << 7)
 #define VTERM_MASK_TERM_PRECLEAR        (1UL << 8)
 #define VTERM_MASK_TERM_SCROLLED        (1UL << 9)
+#define VTERM_MASK_CLIPBOARD            (1UL << 10)
 
 enum
 {
@@ -383,6 +404,34 @@ const char*     vterm_get_ttyname(vterm_t *vterm);
                         usable space will be buf_sz - 1 for null termination.
 */
 void            vterm_get_title(vterm_t *vterm, char *buf, int buf_sz);
+
+/*
+    last OSC 52 SET received from the child.
+
+    libvterm does not talk to the host clipboard (xclip, OSC 52 out,
+    Wayland).  it only decodes the inner hop and stores the payload.
+    the embedder decides whether and how to push it onward.
+
+    OSC 52 query (Pd = '?') is refused: no reply is written to the
+    child.  an empty Pd clears the stored payload.
+
+    @params:
+        vterm           a valid vterm object handle.
+        data            optional; set to the decoded bytes (may contain
+                        NULs).  pointer is valid until the next SET,
+                        clear, or vterm_destroy.
+        len             optional; set to the byte length.
+
+    @return:            1 if a payload is stored, 0 if none / cleared,
+                        -1 on a NULL vterm.
+*/
+int             vterm_clipboard_get(vterm_t *vterm, const char **data,
+                    size_t *len);
+
+/*
+    drop the stored OSC 52 payload.  does not notify the event hook.
+*/
+void            vterm_clipboard_clear(vterm_t *vterm);
 
 /*
     set a binary and args to launch instead of a shell.
