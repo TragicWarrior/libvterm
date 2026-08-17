@@ -359,12 +359,59 @@ vterm_write_keymap(vterm_t *vterm, uint32_t keycode)
         bytes = strlen((char *)buf);
     }
 
+    /*
+        Function keys as a last-chance map.  If the terminfo table walk
+        missed KEY_F(n) -- wrong curses, KEY_DYNAMIC mutation, stale .so
+        -- the pack fallback below would emit KEY_F(10)=274 as 0x12 0x01
+        and the child would never see F10.
+    */
+    if(bytes == 0)
+    {
+        static const struct
+        {
+            uint32_t    key;
+            const char  *seq;
+        } fkeys[] =
+        {
+            { KEY_F(1),  "\x1bOP" },
+            { KEY_F(2),  "\x1bOQ" },
+            { KEY_F(3),  "\x1bOR" },
+            { KEY_F(4),  "\x1bOS" },
+            { KEY_F(5),  "\x1b[15~" },
+            { KEY_F(6),  "\x1b[17~" },
+            { KEY_F(7),  "\x1b[18~" },
+            { KEY_F(8),  "\x1b[19~" },
+            { KEY_F(9),  "\x1b[20~" },
+            { KEY_F(10), "\x1b[21~" },
+            { KEY_F(11), "\x1b[23~" },
+            { KEY_F(12), "\x1b[24~" },
+        };
+        int fi;
+
+        for(fi = 0; fi < (int)(sizeof(fkeys) / sizeof(fkeys[0])); fi++)
+        {
+            if(keycode == fkeys[fi].key)
+            {
+                bytes = (int)strlen(fkeys[fi].seq);
+                memcpy(buf, fkeys[fi].seq, (size_t)bytes);
+                break;
+            }
+        }
+    }
+
     // if bytes is > 0 we've arleady found something to write
     if(bytes > 0)
     {
         retval = _vterm_write_pty(vterm, buf, bytes);
         return retval;
     }
+
+    /*
+        ncurses KEY_* (KEY_MIN..KEY_MAX) are not packed kmio sequences.
+        Emitting the low two bytes is never a valid keystroke.
+    */
+    if(keycode >= (uint32_t)KEY_MIN && keycode <= (uint32_t)KEY_MAX)
+        return -1;
 
     /*
         Multi-byte keycodes from the host kmio layer pack wire bytes in

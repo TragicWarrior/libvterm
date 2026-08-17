@@ -1,3 +1,9 @@
+10.9.1
+
+* [Bryan Christ] vterm_write_keymap: if KEY_F(1..12) misses the terminfo
+  table, emit the xterm sequence (F10 = CSI 21~).  Do not pack leftover
+  KEY_MIN..KEY_MAX codes as two raw bytes (KEY_F(10)=274 became 0x12 0x01).
+
 10.9
 
 OSC 52 clipboard (inner hop)
