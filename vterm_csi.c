@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <string.h>
 #include <wchar.h>
 
 #include "macros.h"
@@ -14,7 +15,10 @@ vterm_interpret_csi(vterm_t *vterm)
     static int      csiparam[MAX_CSI_ES_PARAMS];
     int             param_count = 0;
     const char      *p;
+    const char      *q;
     char            verb;
+    char            marker = 0;
+    char            intermediate = 0;
     bool            dec_sequence = FALSE;
 
     static void     *csi_table[] =
@@ -114,6 +118,34 @@ vterm_interpret_csi(vterm_t *vterm)
 
         break;
     }
+
+    /*
+        a CSI may carry a private marker (one of < = > ?) ahead of the
+        parameters and intermediate bytes (0x20 - 0x2F) ahead of the final
+        byte.  either one makes it a different function from the plain
+        sequence sharing the same final byte, so it must not be dispatched
+        as the plain one.  for example, the kitty keyboard protocol uses
+        CSI ? u, CSI > 1 u and CSI < u which are not RESTORECUR, xterm's
+        modifyOtherKeys CSI > 4 ; 2 m is not SGR, and DECRQM CSI ? 2026 $ p
+        is not DECSTR.
+    */
+    for(q = vterm->esbuf + 1; q < vterm->esbuf + vterm->esbuf_len - 1; q++)
+    {
+        if(*q >= '<' && *q <= '?') marker = *q;
+        else if(*q >= ' ' && *q <= '/') intermediate = *q;
+    }
+
+    // the only intermediate handled is DECSTR (CSI ! p)
+    if(intermediate != 0 && !(intermediate == '!' && verb == 'p'))
+        goto csi_char_unknown;
+
+    // DA is the only function handled with a < = > marker
+    if(marker != 0 && marker != '?' && verb != 'c')
+        goto csi_char_unknown;
+
+    // DEC private:  set / reset mode, selective erase, DSR and DA
+    if(marker == '?' && strchr("hlJKnc", verb) == NULL)
+        goto csi_char_unknown;
 
     // jump table
     SWITCH(csi_table, (unsigned int)verb, 0);

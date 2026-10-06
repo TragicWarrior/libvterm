@@ -387,6 +387,36 @@ main(int argc, char **argv)
     CHECK(CELL(vt, 0, 5).colors == 9, "cols: default colors (%d)",
         CELL(vt, 0, 5).colors);
 
+    /*
+        ---- CSI private markers / intermediates are not the plain verb ----
+        kitty keyboard (CSI ? u, CSI > 5 u, CSI < u) is not RESTORECUR,
+        modifyOtherKeys (CSI > 4 ; 2 m) is not SGR and DECRQM
+        (CSI ? 2026 $ p) is not DECSTR.
+    */
+    std->default_colors = std->colors;
+    R(vt, "\033[1;1H\033[2J\033[s");
+    R(vt, "\033[4;6H\033[?u\033[>5u\033[<u\033[=1;1u");
+    CHECK(std->crow == 3 && std->ccol == 5, "marker: 'u' moved cursor %d,%d",
+        std->crow, std->ccol);
+
+    R(vt, "\033[?2026$p\033[>0q\033[2 q");
+    CHECK(std->crow == 3 && std->ccol == 5, "marker: '$p' moved cursor %d,%d",
+        std->crow, std->ccol);
+
+    R(vt, "\033[1m\033[>4;2m\033[>4mX");
+    CHECK(CELL(vt, 3, 5).wch[0] == L'X', "marker: glyph");
+    CHECK(CELL(vt, 3, 5).attr == A_BOLD, "marker: '>m' changed attrs");
+
+    R(vt, "\033[?1;2s\033[?1;2r\033[5;1H\nZ");
+    CHECK(std->scroll_min == 0 && std->scroll_max == std->rows - 1,
+        "marker: '?r' set scroll region %d-%d",
+        std->scroll_min, std->scroll_max);
+
+    // the plain sequence still restores
+    R(vt, "\033[0m\033[u");
+    CHECK(std->crow == 0 && std->ccol == 0, "marker: plain 'u' restore %d,%d",
+        std->crow, std->ccol);
+
     destroy_vterm(vt);
 
     if(failures > 0)

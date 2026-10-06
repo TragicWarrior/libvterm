@@ -1,3 +1,13 @@
+10.9.2
+
+* [Bryan Christ] CSI parser: honor the private marker (< = > ?) and
+  intermediate bytes instead of dispatching on the final byte alone.
+  Kitty keyboard CSI ? u / CSI > n u / CSI < u ran as RESTORECUR,
+  modifyOtherKeys CSI > 4 ; 2 m as SGR, DECRQM CSI ? n $ p as DECSTR and
+  XTSAVE / XTRESTORE CSI ? n s / r as SAVECUR / DECSTBM.  They are now
+  ignored.  Fixes the Claude Code trust dialog repainting its menu at the
+  saved cursor position.
+
 10.9.1
 
 * [Bryan Christ] vterm_write_keymap: if KEY_F(1..12) misses the terminfo
