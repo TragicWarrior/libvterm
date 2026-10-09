@@ -1,3 +1,10 @@
+10.9.3
+
+* [Bryan Christ] "make install" runs ldconfig on Linux, so a newly
+  installed libvterm.so is in the dynamic linker's cache at once.
+  Skipped when DESTDIR is set (staged and package installs); a failure
+  to write the cache is a warning, not a failed install.
+
 10.9.2
 
 * [Bryan Christ] CSI parser: honor the private marker (< = > ?) and

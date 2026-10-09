@@ -62,10 +62,11 @@ sudo make install
 ```
 
 A successful build installs the shared library to `/usr/local/lib` and
-the `vshell` demo program to `/usr/local/bin/`.  If your runtime
-linker configuration (typically `/etc/ld.so.conf`) isn't configured to
-look in this location, you will need to add it and refresh the linker
-cache (typically `ldconfig`).
+the `vshell` demo program to `/usr/local/bin/`.  On Linux the install
+then runs `ldconfig` to refresh the linker cache (a staged install with
+`DESTDIR` skips it).  If your runtime linker configuration (typically
+`/etc/ld.so.conf`) isn't configured to look in `/usr/local/lib`, you
+will still need to add it and run `ldconfig` yourself.
 
 `vshell` is the canonical demo: it embeds libvterm into a tmux-like
 front end and exposes the major API surfaces (scrollback, mouse,

@@ -385,6 +385,40 @@ else()
 endif()
 install (FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION ${PKG_CONFIG_INSTALL_DIR})
 
+# Refresh the dynamic linker's cache after installing, so a newly
+# installed libvterm.so is found straight away.  Without it a program
+# linked against the library fails with "cannot open shared object file"
+# until someone runs ldconfig by hand.
+#
+# Skipped for a staged install (DESTDIR set: a packager installs into a
+# scratch root, and the package's own scripts run ldconfig on the real
+# system).  Never fatal: an install as a non-root user cannot write the
+# cache, and that is reported, not treated as a failed install.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    install(CODE [[
+        if(NOT "$ENV{DESTDIR}" STREQUAL "")
+            message(STATUS "DESTDIR is set: not running ldconfig")
+        else()
+            find_program(VTERM_LDCONFIG ldconfig PATHS /sbin /usr/sbin)
+            if(NOT VTERM_LDCONFIG)
+                message(STATUS "ldconfig not found: linker cache not refreshed")
+            else()
+                execute_process(COMMAND "${VTERM_LDCONFIG}"
+                    RESULT_VARIABLE vterm_ldconfig_rc
+                    OUTPUT_QUIET ERROR_QUIET)
+                if(vterm_ldconfig_rc EQUAL 0)
+                    message(STATUS "Ran ldconfig")
+                else()
+                    message(WARNING
+                        "ldconfig could not refresh the linker cache "
+                        "(not root?).  Run 'sudo ldconfig' before using "
+                        "the newly installed library.")
+                endif()
+            endif()
+        endif()
+    ]])
+endif()
+
 #
 # Optional regression harnesses (OFF by default; not installed).
 #
