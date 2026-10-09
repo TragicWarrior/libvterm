@@ -176,13 +176,17 @@ vterm_init(vterm_t *vterm, uint16_t width, uint16_t height, uint32_t flags)
     else
     {
         child_pid = forkpty(&master_fd, NULL, NULL, &ws);
-        vterm->pty_fd = master_fd;
 
         if(child_pid < 0)
         {
+            /* no pty was made: master_fd is not a descriptor, and
+               vterm_destroy must not close whatever number it holds */
+            vterm->pty_fd = -1;
             vterm_destroy(vterm);
             exit(EXIT_FAILURE);
         }
+
+        vterm->pty_fd = master_fd;
 
         if(child_pid == 0)
         {
@@ -235,6 +239,25 @@ vterm_destroy(vterm_t *vterm)
     int   i;
 
     if(vterm == NULL) return;
+
+    /* the pty master is ours: forkpty() opened it in vterm_create and
+       nothing else closes it.  Left open, every destroyed terminal
+       leaked one descriptor (and kept its pty alive) for the life of
+       the host.  Not in NOPTY mode -- there pty_fd was never assigned
+       and still holds calloc's 0, which is stdin. */
+    if(!(vterm->flags & VTERM_FLAG_NOPTY) && vterm->pty_fd >= 0)
+    {
+        close(vterm->pty_fd);
+        vterm->pty_fd = -1;
+    }
+
+    /* likewise the dump file opened under VTERM_FLAG_DUMP, and the path
+       buffer it was built in */
+    if(vterm->flags & VTERM_FLAG_DUMP)
+    {
+        if(vterm->debug_fd > 0) close(vterm->debug_fd);
+        free(vterm->debug_filepath);
+    }
 
     color_cache_free_pairs(vterm);
     vterm_free_mapped_colors(vterm);
