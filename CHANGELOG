@@ -1,3 +1,12 @@
+10.10.0
+
+* [Bryan Christ] vterm_destroy closes the pty master.  It never did, so
+  a host leaked one descriptor (and kept a pty alive) for every
+  terminal it destroyed; vwm lost one per window closed.  It also
+  closes the dump file and frees its path under VTERM_FLAG_DUMP.  A
+  failed forkpty() in vterm_create no longer leaves an uninitialised
+  value in pty_fd on the way to vterm_destroy.
+
 10.9.3
 
 * [Bryan Christ] "make install" runs ldconfig on Linux, so a newly
