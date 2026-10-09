@@ -350,8 +350,12 @@ main(int argc, char **argv)
     CHECK(CELL(vt, 2, 10).colors == 3, "decaln: default colors (%d)",
         CELL(vt, 2, 10).colors);
 
-    /* ---- erase_row(FALSE): preserve flavor -- per-cell colors
-       must SURVIVE (the ALT-scroll / esc-IND path) ---- */
+    /* ---- erase_row(FALSE): bce flavor -- the row is blanked with the
+       CURRENT pair, like EL/ED/IL/DL and xterm (the ALT-scroll /
+       esc-IND path).  It used to keep each cell's old colors; that left
+       the stale background of whatever had occupied a recycled row
+       bleeding down the screen, and was changed on purpose.  So the
+       per-cell colors seeded here must NOT survive. ---- */
     for(c = 0; c < std->cols; c++)
     {
         CELL(vt, 4, c).wch[0] = L'Z';
@@ -365,8 +369,9 @@ main(int argc, char **argv)
     {
         CHECK(CELL(vt, 4, c).wch[0] == L' ', "rowF: col %d blank", c);
         CHECK(CELL(vt, 4, c).attr == A_NORMAL, "rowF: col %d attr", c);
-        CHECK(CELL(vt, 4, c).colors == 40 + c,
-            "rowF: col %d colors PRESERVED (%d)", c, CELL(vt, 4, c).colors);
+        CHECK(CELL(vt, 4, c).colors == std->colors,
+            "rowF: col %d current-pair colors (%d, want %d)", c,
+            CELL(vt, 4, c).colors, std->colors);
     }
 
     /* ---- erase_row(TRUE): reset flavor ---- */

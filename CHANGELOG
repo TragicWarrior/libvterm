@@ -1,3 +1,11 @@
+10.10.1
+
+* [Bryan Christ] test_render: the erase_row(FALSE) check asserts the
+  current contract.  It still expected each cell to keep its old
+  colors, the behaviour deliberately replaced in June (rows are
+  blanked with the current pair, as xterm does), so the harness had
+  reported 20 failures ever since.  No library change.
+
 10.10.0
 
 * [Bryan Christ] vterm_destroy closes the pty master.  It never did, so
