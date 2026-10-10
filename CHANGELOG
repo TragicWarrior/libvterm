@@ -1,3 +1,10 @@
+10.10.2
+
+* [Bryan Christ] vterm_destroy frees the program path and argument
+  list.  vterm_set_exec copies both and nothing released them, so a
+  host leaked the length of the command line for every terminal it
+  destroyed.
+
 10.10.1
 
 * [Bryan Christ] test_render: the erase_row(FALSE) check asserts the
