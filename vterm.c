@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 
 
+#include "stringv.h"
 #include "vterm.h"
 #include "vterm_private.h"
 #include "vterm_write.h"
@@ -275,6 +276,13 @@ vterm_destroy(vterm_t *vterm)
     free(vterm->read_buf);
     free(vterm->title);
     free(vterm->clipboard);
+
+    /* the program path and argument list copied by vterm_set_exec.
+       Both are NULL when it was never called (free and strfreev take
+       that). */
+    free(vterm->exec_path);
+    strfreev(vterm->exec_argv);
+
     vterm_esbuf_reset(vterm);
 
     free(vterm);
