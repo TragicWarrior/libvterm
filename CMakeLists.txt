@@ -5,30 +5,30 @@ cmake_minimum_required(VERSION 3.10.2)
 
 #set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
 
-project(libvterm C)
-set(MAJOR_VERSION 10)
-set(MINOR_VERSION 10)
+project(libvtty C)
+set(MAJOR_VERSION 11)
+set(MINOR_VERSION 0)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 option(DEFINE_CURSES "Build with curses" ON)
 option(ENABLE_BACKTRACE
-    "Install a fatal-signal handler that writes a glibc backtrace to ./vterm-crash-<pid>.log"
+    "Install a fatal-signal handler that writes a glibc backtrace to ./vtty-crash-<pid>.log"
     OFF)
 
 # Link-time optimization: lets the compiler inline across translation
-# unit boundaries.  libvterm has many small cross-TU helpers
-# (vterm_buffer_get_active, clamp_cursor_to_bounds, the VCELL_* shapes)
+# unit boundaries.  libvtty has many small cross-TU helpers
+# (vtty_buffer_get_active, clamp_cursor_to_bounds, the VCELL_* shapes)
 # that benefit.  Disabled with ENABLE_BACKTRACE since that mode forces
 # -O0 for predictable frames.
 if(NOT ENABLE_BACKTRACE)
     include(CheckIPOSupported)
-    check_ipo_supported(RESULT _libvterm_ipo_ok OUTPUT _libvterm_ipo_err)
-    if(_libvterm_ipo_ok)
-        message(STATUS "libvterm: link-time optimization ENABLED")
+    check_ipo_supported(RESULT _libvtty_ipo_ok OUTPUT _libvtty_ipo_err)
+    if(_libvtty_ipo_ok)
+        message(STATUS "libvtty: link-time optimization ENABLED")
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     else()
-        message(STATUS "libvterm: LTO unavailable: ${_libvterm_ipo_err}")
+        message(STATUS "libvtty: LTO unavailable: ${_libvtty_ipo_err}")
     endif()
 endif()
 
@@ -76,7 +76,7 @@ endif()
 
 find_package(Curses)
 
-add_library(vterm-static STATIC
+add_library(vtty-static STATIC
     color_cache.c
     color_math.c
     color_map.c
@@ -84,62 +84,62 @@ add_library(vterm-static STATIC
     mouse_driver_X10.c
     mouse_driver_SGR.c
     nc_wrapper.c
-    vterm.c
-    vterm_aio.c
-    vterm_ctrl_char.c
-    vterm_csi.c
-    vterm_exec.c
-    vterm_erase.c
-    vterm_error.c
-    vterm_escape.c
-    vterm_escape_simple.c
-    vterm_escape_suffixes.c
-    vterm_buffer.c
-    vterm_csi_CBT.c
-    vterm_csi_CUP.c
-    vterm_csi_CUx.c
-    vterm_csi_DCH.c
-    vterm_csi_DECSTBM.c
-    vterm_csi_DL.c
-    vterm_csi_ECH.c
-    vterm_csi_ED.c
-    vterm_csi_EL.c
-    vterm_csi_ICH.c
-    vterm_csi_IL.c
-    vterm_csi_IRM.c
-    vterm_csi_RESTORECUR.c
-    vterm_csi_REP.c
-    vterm_csi_RS1.c
-    vterm_csi_SAVECUR.c
-    vterm_csi_SD.c
-    vterm_csi_DSR.c
-    vterm_csi_SGR.c
-    vterm_csi_SU.c
-    vterm_csi_UNKNOWN.c
-    vterm_cursor.c
-    vterm_dec_DECALN.c
-    vterm_dec_RM.c
-    vterm_dec_SM.c
-    vterm_esc_IND.c
-    vterm_esc_NEL.c
-    vterm_esc_RI.c
-    vterm_history.c
-    vterm_hook.c
-    vterm_osc.c
-    vterm_osc_DA.c
-    vterm_read.c
-    vterm_render.c
-    vterm_reply.c
-    vterm_resize.c
-    vterm_scroll.c
-    vterm_userptr.c
-    vterm_utf8.c
-    vterm_wnd.c
-    vterm_write.c
+    vtty.c
+    vtty_aio.c
+    vtty_ctrl_char.c
+    vtty_csi.c
+    vtty_exec.c
+    vtty_erase.c
+    vtty_error.c
+    vtty_escape.c
+    vtty_escape_simple.c
+    vtty_escape_suffixes.c
+    vtty_buffer.c
+    vtty_csi_CBT.c
+    vtty_csi_CUP.c
+    vtty_csi_CUx.c
+    vtty_csi_DCH.c
+    vtty_csi_DECSTBM.c
+    vtty_csi_DL.c
+    vtty_csi_ECH.c
+    vtty_csi_ED.c
+    vtty_csi_EL.c
+    vtty_csi_ICH.c
+    vtty_csi_IL.c
+    vtty_csi_IRM.c
+    vtty_csi_RESTORECUR.c
+    vtty_csi_REP.c
+    vtty_csi_RS1.c
+    vtty_csi_SAVECUR.c
+    vtty_csi_SD.c
+    vtty_csi_DSR.c
+    vtty_csi_SGR.c
+    vtty_csi_SU.c
+    vtty_csi_UNKNOWN.c
+    vtty_cursor.c
+    vtty_dec_DECALN.c
+    vtty_dec_RM.c
+    vtty_dec_SM.c
+    vtty_esc_IND.c
+    vtty_esc_NEL.c
+    vtty_esc_RI.c
+    vtty_history.c
+    vtty_hook.c
+    vtty_osc.c
+    vtty_osc_DA.c
+    vtty_read.c
+    vtty_render.c
+    vtty_reply.c
+    vtty_resize.c
+    vtty_scroll.c
+    vtty_userptr.c
+    vtty_utf8.c
+    vtty_wnd.c
+    vtty_write.c
     stringv.c
     )
 
-add_library(vterm.o OBJECT
+add_library(vtty.o OBJECT
     color_cache.c
     color_math.c
     color_map.c
@@ -147,70 +147,70 @@ add_library(vterm.o OBJECT
     mouse_driver_X10.c
     mouse_driver_SGR.c
     nc_wrapper.c
-    vterm.c
-    vterm_aio.c
-    vterm_buffer.c
-    vterm_ctrl_char.c
-    vterm_csi.c
-    vterm_erase.c
-    vterm_error.c
-    vterm_escape.c
-    vterm_escape_simple.c
-    vterm_escape_suffixes.c
-    vterm_exec.c
-    vterm_csi_CBT.c
-    vterm_csi_CUP.c
-    vterm_csi_CUx.c
-    vterm_csi_DCH.c
-    vterm_csi_DECSTBM.c
-    vterm_csi_DL.c
-    vterm_csi_ECH.c
-    vterm_csi_ED.c
-    vterm_csi_EL.c
-    vterm_csi_ICH.c
-    vterm_csi_IL.c
-    vterm_csi_IRM.c
-    vterm_csi_RESTORECUR.c
-    vterm_csi_REP.c
-    vterm_csi_RS1.c
-    vterm_csi_SAVECUR.c
-    vterm_csi_SD.c
-    vterm_csi_DSR.c
-    vterm_csi_SGR.c
-    vterm_csi_SU.c
-    vterm_csi_UNKNOWN.c
-    vterm_cursor.c
-    vterm_dec_DECALN.c
-    vterm_dec_RM.c
-    vterm_dec_SM.c
-    vterm_esc_IND.c
-    vterm_esc_NEL.c
-    vterm_esc_RI.c
-    vterm_history.c
-    vterm_hook.c
-    vterm_osc.c
-    vterm_osc_DA.c
-    vterm_read.c
-    vterm_render.c
-    vterm_reply.c
-    vterm_resize.c
-    vterm_scroll.c
-    vterm_userptr.c
-    vterm_utf8.c
-    vterm_wnd.c
-    vterm_write.c
+    vtty.c
+    vtty_aio.c
+    vtty_buffer.c
+    vtty_ctrl_char.c
+    vtty_csi.c
+    vtty_erase.c
+    vtty_error.c
+    vtty_escape.c
+    vtty_escape_simple.c
+    vtty_escape_suffixes.c
+    vtty_exec.c
+    vtty_csi_CBT.c
+    vtty_csi_CUP.c
+    vtty_csi_CUx.c
+    vtty_csi_DCH.c
+    vtty_csi_DECSTBM.c
+    vtty_csi_DL.c
+    vtty_csi_ECH.c
+    vtty_csi_ED.c
+    vtty_csi_EL.c
+    vtty_csi_ICH.c
+    vtty_csi_IL.c
+    vtty_csi_IRM.c
+    vtty_csi_RESTORECUR.c
+    vtty_csi_REP.c
+    vtty_csi_RS1.c
+    vtty_csi_SAVECUR.c
+    vtty_csi_SD.c
+    vtty_csi_DSR.c
+    vtty_csi_SGR.c
+    vtty_csi_SU.c
+    vtty_csi_UNKNOWN.c
+    vtty_cursor.c
+    vtty_dec_DECALN.c
+    vtty_dec_RM.c
+    vtty_dec_SM.c
+    vtty_esc_IND.c
+    vtty_esc_NEL.c
+    vtty_esc_RI.c
+    vtty_history.c
+    vtty_hook.c
+    vtty_osc.c
+    vtty_osc_DA.c
+    vtty_read.c
+    vtty_render.c
+    vtty_reply.c
+    vtty_resize.c
+    vtty_scroll.c
+    vtty_userptr.c
+    vtty_utf8.c
+    vtty_wnd.c
+    vtty_write.c
     stringv.c
     )
 
-add_library(vterm-shared SHARED
-    $<TARGET_OBJECTS:vterm.o>
+add_library(vtty-shared SHARED
+    $<TARGET_OBJECTS:vtty.o>
     )
 
 #
-# Optional backtrace handler.  When ENABLE_BACKTRACE is ON, vterm_debug.c
-# is compiled into the regular libvterm.so/.a and its constructor installs
+# Optional backtrace handler.  When ENABLE_BACKTRACE is ON, vtty_debug.c
+# is compiled into the regular libvtty.so/.a and its constructor installs
 # fatal-signal handlers (SEGV/ABRT/BUS/FPE/ILL).  On signal, a glibc
-# backtrace is dumped to ./vterm-crash-<pid>.log in the process's CWD and
+# backtrace is dumped to ./vtty-crash-<pid>.log in the process's CWD and
 # the signal is re-raised under its default disposition so the process
 # still terminates (and cores if rlimits allow).
 #
@@ -218,23 +218,23 @@ add_library(vterm-shared SHARED
 # Disable with:   cmake -DENABLE_BACKTRACE=OFF .
 #
 if(ENABLE_BACKTRACE)
-    message(STATUS "libvterm: backtrace handler ENABLED")
+    message(STATUS "libvtty: backtrace handler ENABLED")
 
-    target_sources(vterm-static PRIVATE vterm_debug.c)
-    target_sources(vterm.o      PRIVATE vterm_debug.c)
+    target_sources(vtty-static PRIVATE vtty_debug.c)
+    target_sources(vtty.o       PRIVATE vtty_debug.c)
 
     # -g for line numbers, -O0 for predictable frames,
     # -fno-omit-frame-pointer for reliable unwinding
-    target_compile_options(vterm-static PRIVATE
+    target_compile_options(vtty-static PRIVATE
         -g -O0 -fno-omit-frame-pointer)
-    target_compile_options(vterm.o PRIVATE
+    target_compile_options(vtty.o PRIVATE
         -g -O0 -fno-omit-frame-pointer)
 
-    target_compile_definitions(vterm-static PRIVATE VTERM_DEBUG_BACKTRACE)
-    target_compile_definitions(vterm.o      PRIVATE VTERM_DEBUG_BACKTRACE)
+    target_compile_definitions(vtty-static PRIVATE VTTY_DEBUG_BACKTRACE)
+    target_compile_definitions(vtty.o       PRIVATE VTTY_DEBUG_BACKTRACE)
 
     # -rdynamic exposes symbols so backtrace_symbols_fd() can resolve names
-    set_property(TARGET vterm-shared APPEND_STRING
+    set_property(TARGET vtty-shared APPEND_STRING
         PROPERTY LINK_FLAGS " -rdynamic")
 endif()
 
@@ -254,8 +254,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     if ((Curses_FOUND) AND (DEFINE_CURSES))
         target_link_libraries(
                     vshell
-                    vterm-shared
-                    vterm-static
+                    vtty-shared
+                    vtty-static
                     -lutil
                     -lm
                     -lrt
@@ -263,8 +263,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
                     ${CURSES_LIBRARIES})
     else()
         target_link_libraries(
-                    vterm-shared
-                    vterm-static
+                    vtty-shared
+                    vtty-static
                     -lutil
                     -lm
                     -lrt
@@ -285,8 +285,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     if (DEFINE_CURSES)
         target_link_libraries(
                     vshell
-                    vterm-shared
-                    vterm-static
+                    vtty-shared
+                    vtty-static
                     -lc
                     -lutil
                     -lm
@@ -294,8 +294,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     else()
 
         target_link_libraries(
-                    vterm-shared
-                    vterm-static
+                    vtty-shared
+                    vtty-static
                     -lc
                     -lutil
                     -lm
@@ -317,15 +317,15 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     if (DEFINE_CURSES)
         target_link_libraries(
                     vshell
-                    vterm-shared
-                    vterm-static
+                    vtty-shared
+                    vtty-static
                     -lutil
                     -lm
                     /usr/local/opt/ncurses/lib/libncursesw.dylib)
     else()
         target_link_libraries(
-                    vterm-shared
-                    vterm-static
+                    vtty-shared
+                    vtty-static
                     -lutil
                     -lm)
     endif()
@@ -333,14 +333,20 @@ endif()
 
 
 # CMake doesn't allow targets with the same name.  This renames them properly afterward.
-SET_TARGET_PROPERTIES(vterm-static PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUTPUT 1)
-SET_TARGET_PROPERTIES(vterm-shared PROPERTIES OUTPUT_NAME vterm CLEAN_DIRECT_OUTPUT 1)
+SET_TARGET_PROPERTIES(vtty-static PROPERTIES OUTPUT_NAME vtty CLEAN_DIRECT_OUTPUT 1)
+SET_TARGET_PROPERTIES(vtty-shared PROPERTIES OUTPUT_NAME vtty CLEAN_DIRECT_OUTPUT 1)
+
+# The shared library carries a versioned soname (libvtty.so.11) so that a
+# program built against one major version is never loaded against another.
+SET_TARGET_PROPERTIES(vtty-shared PROPERTIES
+    VERSION ${MAJOR_VERSION}.${MINOR_VERSION}
+    SOVERSION ${MAJOR_VERSION})
 
 # set the subst vars that configure_file() will use
 set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION})
 
 set(PKG_CONFIG_LIBS
-    "-lvterm"
+    "-lvtty"
 )
 
 configure_file(
@@ -374,8 +380,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 
 endif()
 
-install (TARGETS vterm-static vterm-shared DESTINATION lib)
-install (FILES vterm.h DESTINATION include)
+install (TARGETS vtty-static vtty-shared DESTINATION lib)
+install (FILES vtty.h DESTINATION include)
 
 # Install pkgconfig files to libdata on BSD, otherwise lib
 if(CMAKE_SYSTEM_NAME MATCHES "BSD")
@@ -386,7 +392,7 @@ endif()
 install (FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION ${PKG_CONFIG_INSTALL_DIR})
 
 # Refresh the dynamic linker's cache after installing, so a newly
-# installed libvterm.so is found straight away.  Without it a program
+# installed libvtty.so is found straight away.  Without it a program
 # linked against the library fails with "cannot open shared object file"
 # until someone runs ldconfig by hand.
 #
@@ -399,14 +405,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         if(NOT "$ENV{DESTDIR}" STREQUAL "")
             message(STATUS "DESTDIR is set: not running ldconfig")
         else()
-            find_program(VTERM_LDCONFIG ldconfig PATHS /sbin /usr/sbin)
-            if(NOT VTERM_LDCONFIG)
+            find_program(VTTY_LDCONFIG ldconfig PATHS /sbin /usr/sbin)
+            if(NOT VTTY_LDCONFIG)
                 message(STATUS "ldconfig not found: linker cache not refreshed")
             else()
-                execute_process(COMMAND "${VTERM_LDCONFIG}"
-                    RESULT_VARIABLE vterm_ldconfig_rc
+                execute_process(COMMAND "${VTTY_LDCONFIG}"
+                    RESULT_VARIABLE vtty_ldconfig_rc
                     OUTPUT_QUIET ERROR_QUIET)
-                if(vterm_ldconfig_rc EQUAL 0)
+                if(vtty_ldconfig_rc EQUAL 0)
                     message(STATUS "Ran ldconfig")
                 else()
                     message(WARNING
@@ -432,7 +438,7 @@ endif()
 # buffer attempts.  Run under ASan for full value:
 #   cmake -DBUILD_TESTS=ON -DCMAKE_C_FLAGS="-fsanitize=address -g" .
 #
-option(BUILD_TESTS "Build the libvterm regression test harnesses" OFF)
+option(BUILD_TESTS "Build the libvtty regression test harnesses" OFF)
 if(BUILD_TESTS)
     add_executable(test_resize test/test_resize.c)
     add_executable(test_bufapi test/test_bufapi.c)
@@ -442,7 +448,7 @@ if(BUILD_TESTS)
     add_executable(test_osc52 test/test_osc52.c)
     foreach(_t test_resize test_bufapi test_shift test_history test_render test_osc52)
         target_include_directories(${_t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-        target_link_libraries(${_t} vterm-static -lncursesw -lutil -lm -lrt)
+        target_link_libraries(${_t} vtty-static -lncursesw -lutil -lm -lrt)
     endforeach()
 endif()
 

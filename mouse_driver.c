@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vterm_private.h"
+#include "vtty_private.h"
 #include "mouse_driver.h"
 #include "stringv.h"
 #include "macros.h"
@@ -11,7 +11,7 @@
 mouse_state_t   *mouse_state = NULL;
 
 void
-mouse_driver_init(vterm_t *vterm)
+mouse_driver_init(vtty_t *vtty)
 {
     extern mouse_state_t    *mouse_state;
 
@@ -22,7 +22,7 @@ mouse_driver_init(vterm_t *vterm)
         claim it.  the has_mouse() function tells us whether the mouse
         driver was started externally or not.  based on this we set origin
         accordingly -- null means the driver instantiated externally and
-        if it's not null it means that the driver was started by a libvterm
+        if it's not null it means that the driver was started by a libvtty
         instance.  when it's not null it almost certainly means we're
         in a shared environment (like the VWM window manager).
     */
@@ -30,12 +30,12 @@ mouse_driver_init(vterm_t *vterm)
     {
         mouse_state = calloc(1, sizeof(mouse_state_t));
 
-        if(has_mouse() == TRUE || (vterm->flags & VTERM_FLAG_EXTMOUSE))
+        if(has_mouse() == TRUE || (vtty->flags & VTTY_FLAG_EXTMOUSE))
         {
             /*
                 the host owns the real terminal's mouse -- either ncurses
                 reports it armed, or the host told us so explicitly via
-                VTERM_FLAG_EXTMOUSE.  the explicit flag is required when the
+                VTTY_FLAG_EXTMOUSE.  the explicit flag is required when the
                 host enables mouse with raw escape sequences that bypass
                 ncurses' mask (e.g. vwm), because has_mouse() then reports
                 FALSE and we would otherwise wrongly seize the mask out from
@@ -45,7 +45,7 @@ mouse_driver_init(vterm_t *vterm)
         }
         else
         {
-            mouse_state->origin = vterm;
+            mouse_state->origin = vtty;
 
             /*
                 as the instantiator, we can set this up however we want
@@ -58,67 +58,67 @@ mouse_driver_init(vterm_t *vterm)
 
     mouse_state->ref_count++;
 
-    if(vterm->mouse_config == NULL)
+    if(vtty->mouse_config == NULL)
     {
-        vterm->mouse_config = calloc(1, sizeof(mouse_config_t));
+        vtty->mouse_config = calloc(1, sizeof(mouse_config_t));
     }
 
     return;
 }
 
 void
-mouse_driver_start(vterm_t *vterm)
+mouse_driver_start(vtty_t *vtty)
 {
-    if(vterm->mouse_config == NULL) return;
+    if(vtty->mouse_config == NULL) return;
 
-    vterm->mouse_config->state |= MOUSE_STATE_RUNNING;
+    vtty->mouse_config->state |= MOUSE_STATE_RUNNING;
 
     return;
 }
 
 void
-mouse_driver_stop(vterm_t *vterm)
+mouse_driver_stop(vtty_t *vtty)
 {
-    if(vterm->mouse_config == NULL) return;
+    if(vtty->mouse_config == NULL) return;
 
     // reset the mouse driver setup
-    vterm->mouse_mode = 0;
-    vterm->mouse_driver = NULL;
+    vtty->mouse_mode = 0;
+    vtty->mouse_driver = NULL;
 
     // indicate that we're stopped
-    vterm->mouse_config->state = ~MOUSE_STATE_RUNNING;
+    vtty->mouse_config->state = ~MOUSE_STATE_RUNNING;
 
     return;
 }
 
 ssize_t
-mouse_driver_default(vterm_t *vterm, unsigned char *buf)
+mouse_driver_default(vtty_t *vtty, unsigned char *buf)
 {
     MEVENT      discard_event;
     ssize_t     mbytes = 0;
 
-    if((vterm->mouse_config->state & MOUSE_STATE_RUNNING) == 0)
+    if((vtty->mouse_config->state & MOUSE_STATE_RUNNING) == 0)
     {
         getmouse(&discard_event);
         return 0;
     }
 
     // save the previous mouse state so we can restore it later
-    mouse_driver_save_state(vterm);
+    mouse_driver_save_state(vtty);
 
     // SGR is a special variant of VT200
-    if(vterm->mouse_mode & VTERM_MOUSE_SGR)
+    if(vtty->mouse_mode & VTTY_MOUSE_SGR)
     {
-        mbytes = mouse_driver_SGR(vterm, buf);
-        mouse_driver_restore_state(vterm);
+        mbytes = mouse_driver_SGR(vtty, buf);
+        mouse_driver_restore_state(vtty);
 
         return mbytes;
     }
 
-    if(vterm->mouse_mode & VTERM_MOUSE_VT200)
+    if(vtty->mouse_mode & VTTY_MOUSE_VT200)
     {
-        mbytes = mouse_driver_vt200(vterm, buf);
-        mouse_driver_restore_state(vterm);
+        mbytes = mouse_driver_vt200(vtty, buf);
+        mouse_driver_restore_state(vtty);
 
         return mbytes;
     }
@@ -128,64 +128,64 @@ mouse_driver_default(vterm_t *vterm, unsigned char *buf)
 }
 
 void
-mouse_driver_save_state(vterm_t *vterm)
+mouse_driver_save_state(vtty_t *vtty)
 {
     extern mouse_state_t    *mouse_state;
 
     mmask_t     mouse_mask = EVERY_MOUSE_EVENT;
 
     /*
-        when the host owns the mouse (VTERM_FLAG_EXTMOUSE) we must never
+        when the host owns the mouse (VTTY_FLAG_EXTMOUSE) we must never
         touch ncurses' mousemask -- not even the transient save/restore
         below, which would momentarily re-arm it and (on each event) emit
         ncurses' own mouse enable/disable escapes, fighting the host's setup.
     */
-    if(vterm->flags & VTERM_FLAG_EXTMOUSE) return;
+    if(vtty->flags & VTTY_FLAG_EXTMOUSE) return;
 
     /*
         if the mouse origin is anyone but this instance, then we need to
         save the previous mask and interval so we can restore it later.
     */
-    if(mouse_state->origin != vterm)
+    if(mouse_state->origin != vtty)
     {
-        mousemask(mouse_mask, &vterm->mouse_config->mouse_mask);
-        vterm->mouse_config->mouse_interval = mouseinterval(0);
+        mousemask(mouse_mask, &vtty->mouse_config->mouse_mask);
+        vtty->mouse_config->mouse_interval = mouseinterval(0);
     }
 
     return;
 }
 
 void
-mouse_driver_restore_state(vterm_t *vterm)
+mouse_driver_restore_state(vtty_t *vtty)
 {
     extern mouse_state_t    *mouse_state;
 
     /* host owns the mouse -- save_state was a no-op, so is this */
-    if(vterm->flags & VTERM_FLAG_EXTMOUSE) return;
+    if(vtty->flags & VTTY_FLAG_EXTMOUSE) return;
 
     /*
         if the mouse origin is anyone but this instance, then we need to
         restore the saved mask and interval.
     */
-    if(mouse_state->origin != vterm)
+    if(mouse_state->origin != vtty)
     {
-        mousemask(vterm->mouse_config->mouse_mask, NULL);
-        mouseinterval(vterm->mouse_config->mouse_interval);
+        mousemask(vtty->mouse_config->mouse_mask, NULL);
+        mouseinterval(vtty->mouse_config->mouse_interval);
     }
 
     return;
 }
 
 void
-mouse_driver_free(vterm_t *vterm)
+mouse_driver_free(vtty_t *vtty)
 {
     extern mouse_state_t    *mouse_state;
 
     // release the mouse config
-    if(vterm->mouse_config != NULL)
+    if(vtty->mouse_config != NULL)
     {
-        free(vterm->mouse_config);
-        vterm->mouse_config = NULL;
+        free(vtty->mouse_config);
+        vtty->mouse_config = NULL;
     }
 
     if(mouse_state != NULL)

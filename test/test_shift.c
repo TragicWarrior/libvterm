@@ -1,5 +1,5 @@
 /*
-    Content-verifying harness for vterm_buffer_shift_up/_shift_down.
+    Content-verifying harness for vtty_buffer_shift_up/_shift_down.
 
     Drives the shift primitives directly (like test_bufapi.c) and checks
     the resulting cell content row by row, including:
@@ -8,12 +8,12 @@
       - sub-region shifts at stride > 1
       - stride >= region no-op behavior
       - dirty-bit side effects (set for STANDARD, untouched for HISTORY)
-      - the vterm_set_history_size grow path, which calls
+      - the vtty_set_history_size grow path, which calls
         shift_down(HISTORY, -1, -1, delta) with delta > 1.  The
         pre-memmove shift_down looped `region` iterations with no
         lower-bound guard, walking its source pointer below cells[0] --
         an out-of-bounds read for any stride > 1 (only reachable via
-        vterm_set_history_size jumps > 1; vshell only ever steps by 1).
+        vtty_set_history_size jumps > 1; vshell only ever steps by 1).
         Run under ASan to see it fault on the old code.
 
     Build: cmake -DBUILD_TESTS=ON . && make test_shift
@@ -27,9 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vterm.h"
-#include "vterm_private.h"
-#include "vterm_buffer.h"
+#include "vtty.h"
+#include "vtty_private.h"
+#include "vtty_buffer.h"
 
 static int failures = 0;
 
@@ -47,7 +47,7 @@ static int failures = 0;
 
 /* fill row r with a single identifying char across the logical width */
 static void
-fill_row(vterm_desc_t *d, int r, wchar_t ch)
+fill_row(vtty_desc_t *d, int r, wchar_t ch)
 {
     int c;
 
@@ -60,7 +60,7 @@ fill_row(vterm_desc_t *d, int r, wchar_t ch)
 
 /* TRUE when every logical cell of row r holds ch */
 static int
-row_is(vterm_desc_t *d, int r, wchar_t ch)
+row_is(vtty_desc_t *d, int r, wchar_t ch)
 {
     int c;
 
@@ -73,7 +73,7 @@ row_is(vterm_desc_t *d, int r, wchar_t ch)
 }
 
 static void
-fill_ident(vterm_desc_t *d)
+fill_ident(vtty_desc_t *d)
 {
     int r;
 
@@ -81,7 +81,7 @@ fill_ident(vterm_desc_t *d)
 }
 
 static void
-clear_dirty(vterm_desc_t *d)
+clear_dirty(vtty_desc_t *d)
 {
     int r;
 
@@ -89,7 +89,7 @@ clear_dirty(vterm_desc_t *d)
 }
 
 static int
-any_dirty(vterm_desc_t *d)
+any_dirty(vtty_desc_t *d)
 {
     int r, c;
 
@@ -107,22 +107,22 @@ any_dirty(vterm_desc_t *d)
 int
 main(void)
 {
-    vterm_t         *vt;
-    vterm_desc_t    *std;
-    vterm_desc_t    *hist;
+    vtty_t          *vt;
+    vtty_desc_t     *std;
+    vtty_desc_t     *hist;
     int             retval;
     int             r;
 
-    vt = vterm_alloc();
+    vt = vtty_alloc();
 
-    vterm_buffer_alloc(vt, VTERM_BUF_STANDARD, 8, 10);
-    std = &vt->vterm_desc[VTERM_BUF_STANDARD];
+    vtty_buffer_alloc(vt, VTTY_BUF_STANDARD, 8, 10);
+    std = &vt->vtty_desc[VTTY_BUF_STANDARD];
 
     /* ---- full-buffer shift up, stride 1 ---- */
     fill_ident(std);
     clear_dirty(std);
 
-    retval = vterm_buffer_shift_up(vt, VTERM_BUF_STANDARD, -1, -1, 1);
+    retval = vtty_buffer_shift_up(vt, VTTY_BUF_STANDARD, -1, -1, 1);
     CHECK(retval == 0, "shift_up stride 1 retval %d", retval);
 
     for(r = 0; r < 9; r++)
@@ -133,7 +133,7 @@ main(void)
     /* ---- sub-region shift up, stride 3 (rows 2..7) ---- */
     fill_ident(std);
 
-    retval = vterm_buffer_shift_up(vt, VTERM_BUF_STANDARD, 2, 7, 3);
+    retval = vtty_buffer_shift_up(vt, VTTY_BUF_STANDARD, 2, 7, 3);
     CHECK(retval == 0, "shift_up region stride 3 retval %d", retval);
 
     CHECK(row_is(std, 0, L'A'), "up3: row 0 untouched");
@@ -146,7 +146,7 @@ main(void)
     /* ---- full-buffer shift down, stride 1 ---- */
     fill_ident(std);
 
-    retval = vterm_buffer_shift_down(vt, VTERM_BUF_STANDARD, -1, -1, 1);
+    retval = vtty_buffer_shift_down(vt, VTTY_BUF_STANDARD, -1, -1, 1);
     CHECK(retval == 0, "shift_down stride 1 retval %d", retval);
 
     CHECK(row_is(std, 0, L'A'), "down1: vacated row 0 unchanged");
@@ -156,7 +156,7 @@ main(void)
     /* ---- sub-region shift down, stride 3 (rows 2..7) ---- */
     fill_ident(std);
 
-    retval = vterm_buffer_shift_down(vt, VTERM_BUF_STANDARD, 2, 7, 3);
+    retval = vtty_buffer_shift_down(vt, VTTY_BUF_STANDARD, 2, 7, 3);
     CHECK(retval == 0, "shift_down region stride 3 retval %d", retval);
 
     CHECK(row_is(std, 0, L'A'), "down3: row 0 untouched");
@@ -171,72 +171,72 @@ main(void)
     /* ---- stride >= region: nothing to copy, content intact ---- */
     fill_ident(std);
 
-    retval = vterm_buffer_shift_up(vt, VTERM_BUF_STANDARD, -1, -1, 10);
+    retval = vtty_buffer_shift_up(vt, VTTY_BUF_STANDARD, -1, -1, 10);
     CHECK(retval == 0, "shift_up stride==rows retval %d", retval);
     for(r = 0; r < 10; r++)
         CHECK(row_is(std, r, L'A' + r), "up-noop: row %d", r);
 
     /* ---- degenerate region (bottom == top) rejected ---- */
-    retval = vterm_buffer_shift_up(vt, VTERM_BUF_STANDARD, 4, 4, 1);
+    retval = vtty_buffer_shift_up(vt, VTTY_BUF_STANDARD, 4, 4, 1);
     CHECK(retval == -1, "shift_up empty region retval %d", retval);
 
     /* ---- ratcheted stride: cols < max_cols, visible content correct ---- */
-    vterm_buffer_realloc(vt, VTERM_BUF_STANDARD, 12, 10);
-    vterm_buffer_realloc(vt, VTERM_BUF_STANDARD, 8, 10);
+    vtty_buffer_realloc(vt, VTTY_BUF_STANDARD, 12, 10);
+    vtty_buffer_realloc(vt, VTTY_BUF_STANDARD, 8, 10);
     CHECK(std->cols == 8 && std->max_cols == 12,
         "ratchet setup: cols %d max_cols %d", std->cols, std->max_cols);
 
     fill_ident(std);
 
-    retval = vterm_buffer_shift_up(vt, VTERM_BUF_STANDARD, -1, -1, 1);
+    retval = vtty_buffer_shift_up(vt, VTTY_BUF_STANDARD, -1, -1, 1);
     CHECK(retval == 0, "ratchet shift_up retval %d", retval);
     for(r = 0; r < 9; r++)
         CHECK(row_is(std, r, L'A' + r + 1), "ratchet up1: row %d", r);
 
     /* ---- HISTORY: dirty bits must NOT be touched ---- */
-    vterm_buffer_alloc(vt, VTERM_BUF_HISTORY, 8, 6);
-    hist = &vt->vterm_desc[VTERM_BUF_HISTORY];
+    vtty_buffer_alloc(vt, VTTY_BUF_HISTORY, 8, 6);
+    hist = &vt->vtty_desc[VTTY_BUF_HISTORY];
 
     fill_ident(hist);
     clear_dirty(hist);
 
-    retval = vterm_buffer_shift_up(vt, VTERM_BUF_HISTORY, -1, -1, 1);
+    retval = vtty_buffer_shift_up(vt, VTTY_BUF_HISTORY, -1, -1, 1);
     CHECK(retval == 0, "hist shift_up retval %d", retval);
     CHECK(!any_dirty(hist), "hist: shift must not set dirty");
 
-    /* ---- vterm_set_history_size grow: 6 -> 20 rows must land the 6
+    /* ---- vtty_set_history_size grow: 6 -> 20 rows must land the 6
        original rows at the LOGICAL tail (14..19) with blanks above.
-       checked through vterm_desc_row_phys so the assertion holds for
+       checked through vtty_desc_row_phys so the assertion holds for
        both the legacy shift implementation (head always 0) and a ring
        implementation (head rotates).  legacy note: the shift_down
        (-1, -1, 14) path read cells[-13..-1] here (ASan faults) before
        the rows_moved fix. */
     fill_ident(hist);
 
-    vterm_set_history_size(vt, 20);
+    vtty_set_history_size(vt, 20);
     CHECK(hist->rows == 20, "grow: rows %d", hist->rows);
 
     for(r = 6; r <= 13; r++)
-        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L' '),
+        CHECK(row_is(hist, vtty_desc_row_phys(hist, r), L' '),
             "grow: row %d blank", r);
     for(r = 14; r <= 19; r++)
-        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L'A' + r - 14),
+        CHECK(row_is(hist, vtty_desc_row_phys(hist, r), L'A' + r - 14),
             "grow: row %d content", r);
 
-    /* ---- vterm_set_history_size shrink: 20 -> 9 rows keeps the
+    /* ---- vtty_set_history_size shrink: 20 -> 9 rows keeps the
        NEWEST 9 logical rows (blanks at 0..2, original 6 at 3..8) ---- */
-    vterm_set_history_size(vt, 9);
+    vtty_set_history_size(vt, 9);
     CHECK(hist->rows == 9, "shrink: rows %d", hist->rows);
 
     for(r = 0; r <= 2; r++)
-        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L' '),
+        CHECK(row_is(hist, vtty_desc_row_phys(hist, r), L' '),
             "shrink: row %d blank", r);
     for(r = 3; r <= 8; r++)
-        CHECK(row_is(hist, vterm_desc_row_phys(hist, r), L'A' + r - 3),
+        CHECK(row_is(hist, vtty_desc_row_phys(hist, r), L'A' + r - 3),
             "shrink: row %d content", r);
 
-    vterm_buffer_dealloc(vt, VTERM_BUF_STANDARD);
-    vterm_buffer_dealloc(vt, VTERM_BUF_HISTORY);
+    vtty_buffer_dealloc(vt, VTTY_BUF_STANDARD);
+    vtty_buffer_dealloc(vt, VTTY_BUF_HISTORY);
     free(vt);
 
     if(failures > 0)

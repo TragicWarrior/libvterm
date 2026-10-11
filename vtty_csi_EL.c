@@ -1,0 +1,80 @@
+
+#include "vtty.h"
+#include "vtty_private.h"
+#include "vtty_csi.h"
+#include "vtty_buffer.h"
+
+
+/*
+    vt100 - ESC [ x K
+
+    vt200 - ESC [ ? x K
+
+    where 'x' dictates the behavior
+
+    default value: 0
+    Erases some or all characters in the active line
+    according to the parameter. Editor Function
+    Parameter Parameter Meaning
+
+    0   Erase from the active position to the end of the
+        line, inclusive (default)
+
+    1   Erase from the start of the screen to the active
+        position, inclusive
+
+    2   Erase all of the line, inclusive
+*/
+
+/* Interpret the 'erase line' escape sequence */
+void
+interpret_csi_EL(vtty_t *vtty, int param[], int pcount)
+{
+    vtty_desc_t     *v_desc = NULL;
+    int             erase_start, erase_end;
+    int             cmd = 0;
+
+    // set the vtty description buffer selector
+    v_desc = vtty->v_desc_active;
+
+    cmd =  (pcount > 0 ? param[0] : 0);
+
+    switch(cmd)
+    {
+        case 1:
+        {
+            erase_start = 0;
+            erase_end = v_desc->ccol;
+            break;
+        }
+
+        case 2:
+        {
+            erase_start = 0;
+            erase_end = v_desc->cols - 1;
+            break;
+        }
+
+        case 0:
+        default:
+        {
+            erase_start = v_desc->ccol;
+            erase_end = v_desc->cols - 1;
+            break;
+        }
+    }
+
+    /*
+        at DEC pending-wrap ccol == cols, so EL 1 (erase_end = ccol) would ask
+        vtty_fill_span to write cells[crow][cols] -- one cell past the row
+        (fill_span only guards col_end < col_start).  Clamp to the last real
+        column; the whole visible line is still erased.
+    */
+    if(erase_end >= v_desc->cols) erase_end = v_desc->cols - 1;
+
+    vtty_fill_span(v_desc, v_desc->crow, erase_start, erase_end, L' ',
+        v_desc->curattr, v_desc->colors);
+
+    return;
+}
+

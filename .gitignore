@@ -1,6 +1,7 @@
 *.rpm
 *.deb
 *.so
+*.so.*
 *.pc
 *.a
 install_manifest.txt

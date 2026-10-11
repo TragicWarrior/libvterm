@@ -1,3 +1,32 @@
+11.0.0
+
+Renamed to libvtty
+* [Bryan Christ] The project is now libvtty.  It was libvterm, a name
+  shared with an unrelated library that also installs libvterm.so and
+  vterm.h, so the two could not live in the same prefix.  Everything
+  public is renamed and there are no aliases for the old names:
+
+      project / package   libvterm            libvtty
+      shared library      libvterm.so         libvtty.so.11
+      static library      libvterm.a          libvtty.a
+      linker flag         -lvterm             -lvtty
+      header              vterm.h             vtty.h
+      pkg-config          libvterm.pc         libvtty.pc
+      functions           vterm_*             vtty_*
+      types               vterm_t, vterm_*_t  vtty_t, vtty_*_t
+      callback types      Vterm*              Vtty*
+      macros              VTERM_*             VTTY_*
+      version macro       LIBVTERM_VERSION    LIBVTTY_VERSION
+      crash log           vterm-crash-<pid>   vtty-crash-<pid>
+
+  A host migrates by replacing vterm with vtty (keeping the case) in its
+  sources and build files.  Behaviour is unchanged from 10.10.2.
+* [Bryan Christ] The shared library now has a versioned soname,
+  libvtty.so.11.  It had none before.
+* [Bryan Christ] Remove an installed libvterm (libvterm.so, libvterm.a,
+  vterm.h, libvterm.pc) by hand; installing libvtty does not replace it.
+* Entries below this one predate the rename and keep the old names.
+
 10.10.2
 
 * [Bryan Christ] vterm_destroy frees the program path and argument

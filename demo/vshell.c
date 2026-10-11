@@ -46,7 +46,7 @@
 
 #include "ctimer.h"
 #include "protothread.h"
-#include "../vterm.h"
+#include "../vtty.h"
 #include "../stringv.h"
 #include "../macros.h"
 #include "../utlist.h"
@@ -122,7 +122,7 @@ struct _pt_ctx_s
 struct _vpane_s
 {
     int             cursor_pos;
-    vterm_t         *vterm;
+    vtty_t          *vtty;
     WINDOW          *term_wnd;
     int             x;              // x coordinate of top left
     int             y;              // y coordinate of top left
@@ -147,7 +147,7 @@ struct _vpane_s
 
 /*
     bounds for the user-specified scrollback size (--scrollback and the
-    runtime +/- keys).  libvterm itself accepts any depth >= 1; these
+    runtime +/- keys).  libvtty itself accepts any depth >= 1; these
     are vshell policy.
 */
 #define VSHELL_SCROLLBACK_MIN   64
@@ -165,7 +165,7 @@ struct _vshell_s
     int             scrollback_sz;      /*
                                             lines of scrollback requested
                                             via --scrollback; 0 means use
-                                            the libvterm default (4x the
+                                            the libvtty default (4x the
                                             terminal height).
                                         */
 
@@ -188,7 +188,7 @@ struct _vshell_s
     int             pane_count;         //  total number of panes
 
     // term specific data stores
-    uint32_t        vterm_flags;
+    uint32_t        vtty_flags;
 
     char            clip_note[32];      /*
                                             last OSC 52 SET summary for the
@@ -224,10 +224,10 @@ void        vshell_render_history(vpane_t *vpane, uint8_t flags);
 void        vshell_kinput_normal(vshell_t *vshell, int32_t keystroke);
 void        vshell_kinput_history(vshell_t *vshell, int32_t keystroke);
 
-void        vshell_hook(vterm_t *vterm, int event, void *anything);
+void        vshell_hook(vtty_t *vtty, int event, void *anything);
 void        vshell_clipboard_xclip(const char *buf, size_t len, char selection);
 void        vshell_clipboard_osc52(const char *buf, size_t len, char selection);
-short       vshell_pair_selector(vterm_t *vterm, short fg, short bg);
+short       vshell_pair_selector(vtty_t *vtty, short fg, short bg);
 
 cchar_t*    cchar_alloc(wchar_t *wcs, attr_t attrs, short color_pair);
 void        mvwadd_wchars(WINDOW *win, int row_y, int col_x, wchar_t *wchstr);
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
         vshell->main_loop = vshell_main_polled;
     }
 
-    // create the first pane and vterm instance
+    // create the first pane and vtty instance
     if(vshell->exec_path != NULL)
         vshell_create_pane(vshell, TERM_STATE_DIRTY | TERM_STATE_EXECV);
     else
@@ -344,7 +344,7 @@ vshell_main_polled(vshell_t *vshell)
         {
             do
             {
-                vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
+                vpane->bytes = vtty_read_pipe(vpane->vtty, 10);
                 vpane->bytes_buffered += vpane->bytes;
             }
             while(vpane->bytes > 512);
@@ -396,7 +396,7 @@ vshell_main_async(vshell_t *vshell)
     fcntl(STDIN_FILENO, F_SETFL, O_ASYNC);
 
     vpane = vshell_get_pane(vshell, vshell->active_pane);
-    vshell->sig_fd = vterm_set_async(vpane->vterm);
+    vshell->sig_fd = vtty_set_async(vpane->vtty);
     vshell->fds[0].fd = vshell->sig_fd;
     vshell->fds[0].events = POLLIN;
 
@@ -527,7 +527,7 @@ vshell_handle_key(vshell_t *vshell, int32_t keystroke)
         if(vshell->vshell_flags & VSHELL_FLAG_ASYNC)
         {
             vpane = vshell_get_pane(vshell, vshell->active_pane);
-            vterm_set_async(vpane->vterm);
+            vtty_set_async(vpane->vtty);
         }
         vshell_resize(vshell);
 
@@ -605,36 +605,36 @@ vshell_create_pane(vshell_t *vshell, unsigned int state)
     // set term window colors to black on white
     wattrset(vpane->term_wnd, COLOR_PAIR(7 * 8 + 7 - 0));
 
-    vpane->vterm = vterm_alloc();
+    vpane->vtty = vtty_alloc();
 
     // set the exec path if specified
     if(first_init == 1)
     {
         if((vshell->exec_path != NULL) && (vpane->state & TERM_STATE_EXECV))
         {
-            vterm_set_exec(vpane->vterm,
+            vtty_set_exec(vpane->vtty,
                 vshell->exec_path, vshell->exec_argv);
         }
 
         first_init = 0;
     }
 
-    vterm_init(vpane->vterm, vpane->width - 2, vpane->height - 2,
-        vshell->vterm_flags);
+    vtty_init(vpane->vtty, vpane->width - 2, vpane->height - 2,
+        vshell->vtty_flags);
 
     // apply the user-requested scrollback depth (0 = keep the default)
     if(vshell->scrollback_sz > 0)
-        vterm_set_history_size(vpane->vterm, vshell->scrollback_sz);
+        vtty_set_history_size(vpane->vtty, vshell->scrollback_sz);
 
-    vterm_set_userptr(vpane->vterm, (void *)vshell);
+    vtty_set_userptr(vpane->vtty, (void *)vshell);
 
-    vterm_set_colors(vpane->vterm, COLOR_WHITE, COLOR_BLACK);
-    vterm_wnd_set(vpane->vterm, vpane->term_wnd);
+    vtty_set_colors(vpane->vtty, COLOR_WHITE, COLOR_BLACK);
+    vtty_wnd_set(vpane->vtty, vpane->term_wnd);
 
     // this illustrates how to install an event hook
-    vterm_set_event_mask(vpane->vterm,
-        VTERM_MASK_BUFFER_ACTIVATED | VTERM_MASK_CLIPBOARD);
-    vterm_install_hook(vpane->vterm, vshell_hook);
+    vtty_set_event_mask(vpane->vtty,
+        VTTY_MASK_BUFFER_ACTIVATED | VTTY_MASK_CLIPBOARD);
+    vtty_install_hook(vpane->vtty, vshell_hook);
 
     if(vshell->vshell_flags & VSHELL_FLAG_ASYNC)
     {
@@ -676,7 +676,7 @@ vshell_destroy_pane(vshell_t *vshell, int pane_id)
 
     vpane = vshell_get_pane(vshell, pane_id);
 
-    vterm_destroy(vpane->vterm);
+    vtty_destroy(vpane->vtty);
     CDL_DELETE(vshell->vpane_list, vpane);
     vshell->pane_count--;
 
@@ -802,7 +802,7 @@ vshell_update_canvas(vshell_t *vshell, int flags)
         {
             if(vpane->state & TERM_STATE_HISTORY)
             {
-                history_sz = vterm_get_history_size(vpane->vterm);
+                history_sz = vtty_get_history_size(vpane->vtty);
 
                 if(vshell->clip_note[0] != '\0')
                 {
@@ -874,7 +874,7 @@ vshell_update_canvas(vshell_t *vshell, int flags)
             setcchar(&cc_syms[WCS_BLOCK], &wc_syms[WCS_BLOCK],
                 WA_REVERSE, scroll_colors, NULL);
 
-            history_sz = vterm_get_history_size(vpane->vterm);
+            history_sz = vtty_get_history_size(vpane->vtty);
             total_height = (float)history_sz - ((float)vpane->height - 2);
             pos = 1.0 - (float)vpane->cursor_pos / total_height;
             pos *= (vpane->height - 5);
@@ -940,7 +940,7 @@ vshell_resize(vshell_t *vshell)
         wresize(vpane->term_wnd, vpane->height - 2, vpane->width - 2);
         mvwin(vpane->term_wnd, vpane->y + 1, vpane->x + 1);
 
-        vterm_resize(vpane->vterm, vpane->width - 2, vpane->height - 2);
+        vtty_resize(vpane->vtty, vpane->width - 2, vpane->height - 2);
 
         pane_id++;
     }
@@ -956,25 +956,25 @@ vshell_resize(vshell_t *vshell)
     you want to trigger on.
 */
 void
-vshell_hook(vterm_t *vterm, int event, void *anything)
+vshell_hook(vtty_t *vtty, int event, void *anything)
 {
     vpane_t             *vpane;
     vshell_t            *vshell;
-    vterm_clipboard_t   *clip;
+    vtty_clipboard_t    *clip;
     int                 idx;
 
-    if(vterm == NULL) return;       // something went horribly wrong
+    if(vtty == NULL) return;        // something went horribly wrong
 
-    vshell = (vshell_t *)vterm_get_userptr(vterm);
+    vshell = (vshell_t *)vtty_get_userptr(vtty);
 
     CDL_FOREACH(vshell->vpane_list, vpane)
     {
-        if(vpane->vterm == vterm) break;
+        if(vpane->vtty == vtty) break;
     }
 
     switch(event)
     {
-        case VTERM_EVENT_BUFFER_ACTIVATED:
+        case VTTY_EVENT_BUFFER_ACTIVATED:
         {
             idx = *(int *)anything;
 
@@ -993,9 +993,9 @@ vshell_hook(vterm_t *vterm, int event, void *anything)
             (xfce4-terminal does not), so it always tries xclip and
             also emits OSC 52 out as a best-effort extra.
         */
-        case VTERM_EVENT_CLIPBOARD:
+        case VTTY_EVENT_CLIPBOARD:
         {
-            clip = (vterm_clipboard_t *)anything;
+            clip = (vtty_clipboard_t *)anything;
             if(clip == NULL) break;
 
             vshell_clipboard_xclip(clip->data, clip->len, clip->selection);
@@ -1160,13 +1160,13 @@ vshell_color_init(vshell_t *vshell)
 }
 
 short
-vshell_pair_selector(vterm_t *vterm, short fg, short bg)
+vshell_pair_selector(vtty_t *vtty, short fg, short bg)
 {
     extern short        color_table[];
     extern int          color_count;
     int                 i = 0;
 
-    (void)vterm;        // make compiler happy
+    (void)vtty;         // make compiler happy
 
     if(fg == COLOR_WHITE && bg == COLOR_BLACK) return 0;
 
@@ -1196,7 +1196,7 @@ vshell_kinput_normal(vshell_t *vshell, int32_t keystroke)
 
     if(keystroke != ERR)
     {
-        vterm_write_pipe(vpane->vterm, keystroke);
+        vtty_write_pipe(vpane->vtty, keystroke);
 
         return;
     }
@@ -1208,9 +1208,9 @@ vshell_render_normal(vpane_t *vpane, uint8_t flags)
 {
     vshell_t    *vshell;
 
-    vshell = (vshell_t *)vterm_get_userptr(vpane->vterm);
+    vshell = (vshell_t *)vtty_get_userptr(vpane->vtty);
 
-    vterm_wnd_update(vpane->vterm, -1, 0, flags);
+    vtty_wnd_update(vpane->vtty, -1, 0, flags);
     vpane->state |= TERM_STATE_DIRTY;
 
     vshell_update_canvas(vshell, 0);
@@ -1236,7 +1236,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         vpane->render = vshell_render_normal;
         vpane->kinput = vshell_kinput_normal;
 
-        vpane->render(vpane, VTERM_WND_RENDER_ALL);
+        vpane->render(vpane, VTTY_WND_RENDER_ALL);
 
         return;
     }
@@ -1244,13 +1244,13 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
 
     if(keystroke == '-')
     {
-        history_sz = vterm_get_history_size(vpane->vterm);
+        history_sz = vtty_get_history_size(vpane->vtty);
 
         // shrink, but never below the vshell floor
         if(history_sz > VSHELL_SCROLLBACK_MIN)
         {
             history_sz--;
-            vterm_set_history_size(vpane->vterm, history_sz);
+            vtty_set_history_size(vpane->vtty, history_sz);
         }
 
         vpane->render(vpane, 0);
@@ -1260,13 +1260,13 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
 
     if(keystroke == '+')
     {
-        history_sz = vterm_get_history_size(vpane->vterm);
+        history_sz = vtty_get_history_size(vpane->vtty);
 
         // grow, but never past the vshell ceiling
         if(history_sz < VSHELL_SCROLLBACK_MAX)
         {
             history_sz++;
-            vterm_set_history_size(vpane->vterm, history_sz);
+            vtty_set_history_size(vpane->vtty, history_sz);
         }
 
         vpane->render(vpane, 0);
@@ -1274,12 +1274,12 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
         return;
     }
 
-    vterm_wnd_size(vpane->vterm, &width, &height);
+    vtty_wnd_size(vpane->vtty, &width, &height);
 
     if(keystroke == KEY_PPAGE)
     {
         vpane->scroll_amount = height;
-        vpane->render(vpane, VTERM_WND_RENDER_ALL);
+        vpane->render(vpane, VTTY_WND_RENDER_ALL);
 
         return;
     }
@@ -1288,7 +1288,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     {
         height = 0 - height;
         vpane->scroll_amount = height;
-        vpane->render(vpane, VTERM_WND_RENDER_ALL);
+        vpane->render(vpane, VTTY_WND_RENDER_ALL);
 
         return;
     }
@@ -1296,7 +1296,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == KEY_UP)
     {
         vpane->scroll_amount = 1;
-        vpane->render(vpane, VTERM_WND_RENDER_ALL);
+        vpane->render(vpane, VTTY_WND_RENDER_ALL);
 
         return;
     }
@@ -1304,7 +1304,7 @@ vshell_kinput_history(vshell_t *vshell, int32_t keystroke)
     if(keystroke == KEY_DOWN)
     {
         vpane->scroll_amount = -1;
-        vpane->render(vpane, VTERM_WND_RENDER_ALL);
+        vpane->render(vpane, VTTY_WND_RENDER_ALL);
 
         return;
     }
@@ -1318,10 +1318,10 @@ vshell_render_history(vpane_t *vpane, uint8_t flags)
     int         height, width;
     int         offset;
 
-    vshell = (vshell_t *)vterm_get_userptr(vpane->vterm);
+    vshell = (vshell_t *)vtty_get_userptr(vpane->vtty);
 
-    history_sz = vterm_get_history_size(vpane->vterm);
-    vterm_wnd_size(vpane->vterm, &width, &height);
+    history_sz = vtty_get_history_size(vpane->vtty);
+    vtty_wnd_size(vpane->vtty, &width, &height);
 
     if((vpane->cursor_pos + vpane->scroll_amount) < 0)
     {
@@ -1338,7 +1338,7 @@ vshell_render_history(vpane_t *vpane, uint8_t flags)
     vpane->cursor_pos += vpane->scroll_amount;
     offset = history_sz - height - vpane->cursor_pos;
 
-    vterm_wnd_update(vpane->vterm, VTERM_BUF_HISTORY, offset, flags);
+    vtty_wnd_update(vpane->vtty, VTTY_BUF_HISTORY, offset, flags);
     vpane->state |= TERM_STATE_DIRTY;
 
     vshell_update_canvas(vshell, 0);
@@ -1377,45 +1377,45 @@ vshell_parse_cmdline(vshell_t *vshell)
 
             if (strncmp(vshell->argv[i], "--dump", strlen("--dump")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_DUMP;
+                vshell->vtty_flags |= VTTY_FLAG_DUMP;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--rxvt", strlen("--rxvt")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_RXVT;
+                vshell->vtty_flags |= VTTY_FLAG_RXVT;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--vt100", strlen("--vt100")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_VT100;
+                vshell->vtty_flags |= VTTY_FLAG_VT100;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--linux", strlen("--linux")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_LINUX;
+                vshell->vtty_flags |= VTTY_FLAG_LINUX;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--c16", strlen("--c16")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_C16;
+                vshell->vtty_flags |= VTTY_FLAG_C16;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--truecolor",
                 strlen("--truecolor")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_TRUECOLOR;
+                vshell->vtty_flags |= VTTY_FLAG_TRUECOLOR;
                 continue;
             }
 
             if (strncmp(vshell->argv[i], "--start-home",
                 strlen("--start-home")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_START_HOME;
+                vshell->vtty_flags |= VTTY_FLAG_START_HOME;
                 continue;
             }
 
@@ -1430,7 +1430,7 @@ vshell_parse_cmdline(vshell_t *vshell)
 #ifndef NOUTF8
             if (strncmp(vshell->argv[i], "--no-utf8", strlen("--no-utf8")) == 0)
             {
-                vshell->vterm_flags |= VTERM_FLAG_NOUTF8;
+                vshell->vtty_flags |= VTTY_FLAG_NOUTF8;
                 continue;
             }
 #endif
@@ -1563,7 +1563,7 @@ vshell_print_help(void)
                 "               If the underlying terminal supports it,\n\r"
                 "               vshell will attempt to use hi-color mode.\n\r"
                 "--c16          When running in 16 color mode use the\n\r"
-                "               libvterm palette instead.\n\r"
+                "               libvtty palette instead.\n\r"
                 "--truecolor    Set COLORTERM to truecolor for\n\r"
                 "               24-bit color support.\n\r"
                 "--scrollback <lines>\n\r"
@@ -1575,8 +1575,8 @@ vshell_print_help(void)
                 "               current working directory.\n\r"
                 "--exec <prg>   Launch program at start up.\n\r";
 
-    printf("\n\rLibvterm version: %s\n\r\n\r%s\n\r",
-        LIBVTERM_VERSION, help_msg);
+    printf("\n\rLibvtty version: %s\n\r\n\r%s\n\r",
+        LIBVTTY_VERSION, help_msg);
 
     return;
 }
@@ -1668,7 +1668,7 @@ vpane_stream_reader(void * const env)
     {
         if(vpane->state & TERM_STATE_EXITING) break;
 
-        vpane->bytes = vterm_read_pipe(vpane->vterm, 10);
+        vpane->bytes = vtty_read_pipe(vpane->vtty, 10);
 
         // tty exited
         if(vpane->bytes == -1)

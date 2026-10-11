@@ -1,0 +1,274 @@
+#include <ctype.h>
+#include <string.h>
+#include <wchar.h>
+
+#include "macros.h"
+#include "vtty.h"
+#include "vtty_error.h"
+#include "vtty_private.h"
+#include "vtty_csi.h"
+#include "vtty_osc_DA.h"
+
+int
+vtty_interpret_csi(vtty_t *vtty)
+{
+    static int      csiparam[MAX_CSI_ES_PARAMS];
+    int             param_count = 0;
+    const char      *p;
+    const char      *q;
+    char            verb;
+    char            marker = 0;
+    char            intermediate = 0;
+    bool            dec_sequence = FALSE;
+
+    static void     *csi_table[] =
+                    {
+                        [0] = &&csi_char_unknown,
+                        ['c'] = &&csi_DA,
+                        ['b'] = &&csi_char_b,
+                        ['m'] = &&csi_char_m,
+                        ['l'] = &&csi_char_l,
+                        ['h'] = &&csi_char_h,
+                        ['H'] = &&csi_char_H,
+                        ['J'] = &&csi_char_J,
+                        ['f'] = &&csi_HVP,
+                        ['A'] = &&csi_CUx,
+                        ['B'] = &&csi_CUx,
+                        ['C'] = &&csi_CUx,
+                        ['D'] = &&csi_CUx,
+                        ['E'] = &&csi_CUx,
+                        ['F'] = &&csi_CUx,
+                        ['G'] = &&csi_CUx,
+                        ['e'] = &&csi_CUx,
+                        ['a'] = &&csi_CUx,
+                        ['d'] = &&csi_CUx,
+                        ['`'] = &&csi_CUx,
+                        ['K'] = &&csi_EL,
+                        ['@'] = &&csi_char_sym_at,
+                        ['P'] = &&csi_char_P,
+                        ['L'] = &&csi_char_L,
+                        ['M'] = &&csi_char_M,
+                        ['X'] = &&csi_ECH,
+                        ['r'] = &&csi_char_r,
+                        ['s'] = &&csi_char_s,
+                        ['u'] = &&csi_char_u,
+                        ['^'] = &&csi_SD,
+                        ['T'] = &&csi_SD,
+                        ['t'] = &&csi_EWMH,
+                        ['Z'] = &&csi_char_Z,
+                        ['S'] = &&csi_SU,
+                        ['p'] = &&csi_char_p,
+                        ['n'] = &&csi_DSR,
+                    };
+
+    p = vtty->esbuf + 1;
+    verb = vtty->esbuf[vtty->esbuf_len - 1];
+
+    /*
+        Parse numeric parameters
+
+        The order of conditionals is intentional.  It's designed to
+        favor the most likely to occur characters.  For example, in
+        a standardized escape sequence the [ and ? will only occur
+        once so put them at the bottom.
+    */
+    csiparam[param_count] = 0;
+    if(*p != verb) param_count = 1;
+    for(;;)
+    {
+        if(isdigit(*p))
+        {
+            // increaase order of prev digit (10s column, 100s column, etc...)
+            csiparam[param_count - 1] *= 10;
+            csiparam[param_count - 1] += *p - '0';
+            p++;
+            continue;
+        }
+
+        if(*p == ';' || *p == ':')
+        {
+            if(param_count >= MAX_CSI_ES_PARAMS) return -1;    // too long!
+
+            csiparam[param_count] = 0;
+            param_count++;
+            p++;
+            continue;
+        }
+
+        if(*p == '[')
+        {
+            p++;
+            continue;
+        }
+
+
+        if(*p == '?')
+        {
+            dec_sequence = TRUE;
+            p++;
+            continue;
+        }
+
+        if(*p == '!')
+        {
+            dec_sequence = TRUE;
+            p++;
+            continue;
+        }
+
+        break;
+    }
+
+    /*
+        a CSI may carry a private marker (one of < = > ?) ahead of the
+        parameters and intermediate bytes (0x20 - 0x2F) ahead of the final
+        byte.  either one makes it a different function from the plain
+        sequence sharing the same final byte, so it must not be dispatched
+        as the plain one.  for example, the kitty keyboard protocol uses
+        CSI ? u, CSI > 1 u and CSI < u which are not RESTORECUR, xterm's
+        modifyOtherKeys CSI > 4 ; 2 m is not SGR, and DECRQM CSI ? 2026 $ p
+        is not DECSTR.
+    */
+    for(q = vtty->esbuf + 1; q < vtty->esbuf + vtty->esbuf_len - 1; q++)
+    {
+        if(*q >= '<' && *q <= '?') marker = *q;
+        else if(*q >= ' ' && *q <= '/') intermediate = *q;
+    }
+
+    // the only intermediate handled is DECSTR (CSI ! p)
+    if(intermediate != 0 && !(intermediate == '!' && verb == 'p'))
+        goto csi_char_unknown;
+
+    // DA is the only function handled with a < = > marker
+    if(marker != 0 && marker != '?' && verb != 'c')
+        goto csi_char_unknown;
+
+    // DEC private:  set / reset mode, selective erase, DSR and DA
+    if(marker == '?' && strchr("hlJKnc", verb) == NULL)
+        goto csi_char_unknown;
+
+    // jump table
+    SWITCH(csi_table, (unsigned int)verb, 0);
+
+    // delegate handling depending on command character (verb)
+    csi_DA:
+        interpret_osc_DA(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_b:
+        interpret_csi_REP(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_m:
+        interpret_csi_SGR(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_l:
+        if(dec_sequence == TRUE)
+            interpret_dec_RM(vtty, csiparam, param_count);
+        else
+            interpret_csi_IRM(vtty, TRUE);
+
+        return 0;
+
+    csi_char_h:
+        if(dec_sequence == TRUE)
+            interpret_dec_SM(vtty, csiparam, param_count);
+        else
+            interpret_csi_IRM(vtty, FALSE);
+
+       return 0;
+
+    csi_char_J:
+        interpret_csi_ED(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_H:
+        interpret_csi_CUx(vtty, verb, csiparam, param_count);
+        return 0;
+
+    csi_HVP:
+        // HVP is the same as CUP (CUx)
+        interpret_csi_CUx(vtty, verb, csiparam, param_count);
+        return 0;
+
+    csi_CUx:
+        interpret_csi_CUx(vtty, verb, csiparam, param_count);
+        return 0;
+
+    csi_EL:
+        interpret_csi_EL(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_sym_at:
+        interpret_csi_ICH(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_P:
+        interpret_csi_DCH(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_L:
+        interpret_csi_IL(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_M:
+        interpret_csi_DL(vtty, csiparam, param_count);
+        return 0;
+
+    csi_ECH:
+        interpret_csi_ECH(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_r:
+        interpret_csi_DECSTBM(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_s:
+        interpret_csi_SAVECUR(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_u:
+        interpret_csi_RESTORECUR(vtty, csiparam, param_count);
+        return 0;
+
+    csi_char_p:
+        // if we catch a DECSTR then push RS1 into the system
+        if(dec_sequence == TRUE)
+        {
+            vtty_render(vtty, RXVT_RS1, sizeof(RXVT_RS1) - 1);
+            return 0;
+        }
+
+    csi_char_Z:
+        interpret_csi_CBT(vtty, csiparam, param_count);
+        return 0;
+
+    csi_SD:
+        interpret_csi_SD(vtty, csiparam, param_count);
+        // interpret_csi_SU(vtty, csiparam, param_count);
+        return 0;
+
+    csi_SU:
+        // interpret_csi_SD(vtty, csiparam, param_count);
+        interpret_csi_SU(vtty, csiparam, param_count);
+        return 0;
+
+    csi_DSR:
+        // device status / cursor position report; standard (non-DEC) form
+        // only -- DEC's CSI ? 6 n (DECXCPR) is left for the unknown trap
+        if(dec_sequence == FALSE)
+            interpret_csi_DSR(vtty, csiparam, param_count);
+        return 0;
+
+    csi_EWMH:
+        // Extended Window Manager Hints
+        // currently unsupported
+        return 0;
+
+    csi_char_unknown:
+        vtty_error(vtty, VTTY_ECODE_UNHANDLED_CSI, (void *)vtty->esbuf); 
+
+    return 0;
+}
+

@@ -1,0 +1,57 @@
+
+#include "vtty.h"
+#include "vtty_private.h"
+#include "vtty_csi.h"
+#include "vtty_buffer.h"
+
+
+/*
+    Interpret a 'set scrolling region' (DECSTBM) sequence
+    ESC [ t ; b r
+
+    t = tob row
+    b = bottmo row
+*/
+void
+interpret_csi_DECSTBM(vtty_t *vtty,int param[],int pcount)
+{
+    vtty_desc_t     *v_desc = NULL;
+    int             newtop, newbottom;
+
+    // set the vtty description selector
+    v_desc = vtty->v_desc_active;
+
+    if(!pcount)
+    {
+        newtop = 0;
+        newbottom = v_desc->rows - 1;
+    }
+    else if(pcount < 2) return; /* malformed */
+    else
+    {
+        newtop = param[0] - 1;
+        newbottom = param[1] - 1;
+    }
+
+    /* clamp to bounds */
+    if(newtop < 0) newtop = 0;
+    if(newtop >= v_desc->rows) newtop = v_desc->rows - 1;
+    if(newbottom < 0) newbottom = 0;
+    if(newbottom >= v_desc->rows) newbottom = v_desc->rows - 1;
+
+    /* check for range validity */
+    if(newtop > newbottom) return;
+    v_desc->scroll_min = newtop;
+    v_desc->scroll_max = newbottom;
+
+    if(v_desc->scroll_min != 0)
+        v_desc->buffer_state |= STATE_SCROLL_SHORT;
+
+    if(v_desc->scroll_max != v_desc->rows - 1)
+        v_desc->buffer_state |= STATE_SCROLL_SHORT;
+
+    if((v_desc->scroll_min == 0) && (v_desc->scroll_max == v_desc->rows - 1))
+        v_desc->buffer_state &= ~STATE_SCROLL_SHORT;
+
+    return;
+}

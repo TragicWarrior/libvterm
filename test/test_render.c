@@ -1,5 +1,5 @@
 /*
-    Content-verifying harness for the vterm_render -> vterm_put_char
+    Content-verifying harness for the vtty_render -> vtty_put_char
     glyph path.
 
     Pins the cell-write contract before/after put_char refactors:
@@ -31,9 +31,9 @@
 #include <string.h>
 #include <time.h>
 
-#include "vterm.h"
-#include "vterm_private.h"
-#include "vterm_buffer.h"
+#include "vtty.h"
+#include "vtty_private.h"
+#include "vtty_buffer.h"
 #include "color_cache.h"
 
 static int failures = 0;
@@ -50,19 +50,19 @@ static int failures = 0;
             }                                               \
             while(0)
 
-static vterm_t *
-make_vterm(int width, int height)
+static vtty_t *
+make_vtty(int width, int height)
 {
-    vterm_t *vt;
+    vtty_t *vt;
 
-    vt = vterm_alloc();
-    vt->v_desc_active = &vt->vterm_desc[VTERM_BUF_STANDARD];
+    vt = vtty_alloc();
+    vt->v_desc_active = &vt->vtty_desc[VTTY_BUF_STANDARD];
 
-    vterm_buffer_alloc(vt, VTERM_BUF_STANDARD, width, height);
-    vterm_buffer_alloc(vt, VTERM_BUF_HISTORY, width, height * 4);
+    vtty_buffer_alloc(vt, VTTY_BUF_STANDARD, width, height);
+    vtty_buffer_alloc(vt, VTTY_BUF_HISTORY, width, height * 4);
 
-    vterm_erase(vt, VTERM_BUF_STANDARD, 0);
-    vterm_erase(vt, VTERM_BUF_HISTORY, '-');
+    vtty_erase(vt, VTTY_BUF_STANDARD, 0);
+    vtty_erase(vt, VTTY_BUF_HISTORY, '-');
 
     /*
         headless, tigetnum() fails so the cache initializes EMPTY --
@@ -75,27 +75,27 @@ make_vterm(int width, int height)
 }
 
 static void
-destroy_vterm(vterm_t *vt)
+destroy_vtty(vtty_t *vt)
 {
     color_cache_release();
-    vterm_buffer_dealloc(vt, VTERM_BUF_STANDARD);
-    vterm_buffer_dealloc(vt, VTERM_BUF_HISTORY);
+    vtty_buffer_dealloc(vt, VTTY_BUF_STANDARD);
+    vtty_buffer_dealloc(vt, VTTY_BUF_HISTORY);
     free(vt);
 }
 
 
 /* render a NUL-terminated escape string -- no hand-counted lengths */
 static void
-R(vterm_t *vt, const char *s)
+R(vtty_t *vt, const char *s)
 {
-    vterm_render(vt, (char *)s, (int)strlen(s));
+    vtty_render(vt, (char *)s, (int)strlen(s));
 }
 
 #define CELL(_vt, _r, _c) \
-            ((_vt)->vterm_desc[VTERM_BUF_STANDARD].cells[(_r)][(_c)])
+            ((_vt)->vtty_desc[VTTY_BUF_STANDARD].cells[(_r)][(_c)])
 
 static void
-clear_dirty(vterm_desc_t *d)
+clear_dirty(vtty_desc_t *d)
 {
     int r;
 
@@ -105,13 +105,13 @@ clear_dirty(vterm_desc_t *d)
 static void
 run_bench(void)
 {
-    vterm_t         *vt;
+    vtty_t          *vt;
     struct timespec t0, t1;
     char            line[81];
     long            ms;
     int             i;
 
-    vt = make_vterm(80, 24);
+    vt = make_vtty(80, 24);
 
     memset(line, 'x', 79);
     line[79] = '\n';
@@ -120,7 +120,7 @@ run_bench(void)
     clock_gettime(CLOCK_MONOTONIC, &t0);
 
     for(i = 0; i < 200000; i++)
-        vterm_render(vt, line, 80);
+        vtty_render(vt, line, 80);
 
     clock_gettime(CLOCK_MONOTONIC, &t1);
 
@@ -129,14 +129,14 @@ run_bench(void)
 
     printf("bench: 200000 lines (16MB) through 80x24: %ld ms\n", ms);
 
-    destroy_vterm(vt);
+    destroy_vtty(vt);
 }
 
 int
 main(int argc, char **argv)
 {
-    vterm_t         *vt;
-    vterm_desc_t    *std;
+    vtty_t          *vt;
+    vtty_desc_t     *std;
     int             c;
 
     if(argc > 1 && strcmp(argv[1], "bench") == 0)
@@ -152,7 +152,7 @@ main(int argc, char **argv)
         long            ms;
         int             i;
 
-        vt = make_vterm(80, 24);
+        vt = make_vtty(80, 24);
 
         clock_gettime(CLOCK_MONOTONIC, &t0);
 
@@ -166,15 +166,15 @@ main(int argc, char **argv)
 
         printf("bench-clear: 200000 full-screen ED2: %ld ms\n", ms);
 
-        destroy_vterm(vt);
+        destroy_vtty(vt);
         return 0;
     }
 
-    vt = make_vterm(20, 6);
-    std = &vt->vterm_desc[VTERM_BUF_STANDARD];
+    vt = make_vtty(20, 6);
+    std = &vt->vtty_desc[VTTY_BUF_STANDARD];
 
     /* ---- plain ASCII ---- */
-    vterm_render(vt, "Hello", 5);
+    vtty_render(vt, "Hello", 5);
 
     CHECK(CELL(vt, 0, 0).wch[0] == L'H', "plain: cell 0");
     CHECK(CELL(vt, 0, 4).wch[0] == L'o', "plain: cell 4");
@@ -185,7 +185,7 @@ main(int argc, char **argv)
         std->ccol, std->crow);
 
     /* ---- attribute SGRs carried by glyphs ---- */
-    vterm_render(vt, "\033[7mR\033[27m\033[1mB\033[22mN", 22);
+    vtty_render(vt, "\033[7mR\033[27m\033[1mB\033[22mN", 22);
 
     CHECK(CELL(vt, 0, 5).wch[0] == L'R', "sgr: reverse glyph");
     CHECK(CELL(vt, 0, 5).attr & A_REVERSE, "sgr: reverse attr");
@@ -196,13 +196,13 @@ main(int argc, char **argv)
     CHECK(CELL(vt, 0, 7).attr == A_NORMAL, "sgr: attrs dropped");
 
     /* ---- SO / SI alternate charset ---- */
-    vterm_render(vt, "\x0Eq\x0Fq", 4);
+    vtty_render(vt, "\x0Eq\x0Fq", 4);
 
     CHECK(CELL(vt, 0, 8).attr & A_ALTCHARSET, "acs: SO sets A_ALTCHARSET");
     CHECK(!(CELL(vt, 0, 9).attr & A_ALTCHARSET), "acs: SI clears it");
 
     /* ---- UTF-8 multibyte ---- */
-    vterm_render(vt, "\xC3\xA9", 2);            /* e-acute, U+00E9 */
+    vtty_render(vt, "\xC3\xA9", 2);             /* e-acute, U+00E9 */
 
     CHECK(CELL(vt, 0, 10).wch[0] == 0xE9, "utf8: codepoint 0x%X",
         (unsigned int)CELL(vt, 0, 10).wch[0]);
@@ -215,14 +215,14 @@ main(int argc, char **argv)
         CHECK(VCELL_DIRTY_TEST(std, 0, c), "dirty: col %d", c);
 
     /* ---- CR / LF ---- */
-    vterm_render(vt, "\r\nx", 3);
+    vtty_render(vt, "\r\nx", 3);
 
     CHECK(std->crow == 1, "crlf: row %d", std->crow);
     CHECK(CELL(vt, 1, 0).wch[0] == L'x', "crlf: glyph at row 1 col 0");
 
     /* ---- wrap at the right margin ---- */
-    vterm_render(vt, "\r\n", 2);                /* row 2, col 0 */
-    vterm_render(vt, "abcdefghijklmnopqrstUV", 22);
+    vtty_render(vt, "\r\n", 2);                 /* row 2, col 0 */
+    vtty_render(vt, "abcdefghijklmnopqrstUV", 22);
 
     CHECK(CELL(vt, 2, 19).wch[0] == L't', "wrap: last col of row 2");
     CHECK(CELL(vt, 3, 0).wch[0] == L'U', "wrap: first col of row 3");
@@ -363,7 +363,7 @@ main(int argc, char **argv)
         CELL(vt, 4, c).attr = A_REVERSE;
     }
 
-    vterm_erase_row(vt, 4, FALSE, 0);
+    vtty_erase_row(vt, 4, FALSE, 0);
 
     for(c = 0; c < std->cols; c++)
     {
@@ -375,16 +375,16 @@ main(int argc, char **argv)
     }
 
     /* ---- erase_row(TRUE): reset flavor ---- */
-    vterm_erase_row(vt, 4, TRUE, 0);
+    vtty_erase_row(vt, 4, TRUE, 0);
 
     for(c = 0; c < std->cols; c++)
         CHECK(CELL(vt, 4, c).colors == 3, "rowT: col %d default colors", c);
 
-    /* ---- vterm_erase_cols: reset flavor from a start column ---- */
+    /* ---- vtty_erase_cols: reset flavor from a start column ---- */
     R(vt, "\033[1;1H\033[2J");
     std->default_colors = 9;    /* distinct from current (7) */
     R(vt, "\033[1;1HXXXXXXXXXX");
-    vterm_erase_cols(vt, 5, 0);
+    vtty_erase_cols(vt, 5, 0);
 
     CHECK(CELL(vt, 0, 4).wch[0] == L'X', "cols: col 4 untouched");
     CHECK(CELL(vt, 0, 5).wch[0] == L' ', "cols: col 5 blank");
@@ -422,7 +422,7 @@ main(int argc, char **argv)
     CHECK(std->crow == 0 && std->ccol == 0, "marker: plain 'u' restore %d,%d",
         std->crow, std->ccol);
 
-    destroy_vterm(vt);
+    destroy_vtty(vt);
 
     if(failures > 0)
     {

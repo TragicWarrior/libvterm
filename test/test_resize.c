@@ -1,11 +1,11 @@
 /*
-    Deterministic resize / scroll / copy stress harness for libvterm.
+    Deterministic resize / scroll / copy stress harness for libvtty.
 
     Built to corner the failure mode that killed the May 2026 contiguous-
     buffer attempt: a hang on first resize that could not be reproduced
-    from the CLI.  This drives vterm_resize across extreme sizes, the
+    from the CLI.  This drives vtty_resize across extreme sizes, the
     max_cols width ratchet, scrolling, DECSTBM regions, and
-    vterm_copy_buffer -- all headless (NOPTY|NOCURSES), fully
+    vtty_copy_buffer -- all headless (NOPTY|NOCURSES), fully
     deterministic (fixed-seed LCG, no rand()/time), under an alarm()
     watchdog so a hang aborts loudly instead of spinning forever.
 
@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "vterm.h"
+#include "vtty.h"
 
 static unsigned long lcg = 0x9e3779b9UL;
 
@@ -52,13 +52,13 @@ on_alarm(int sig)
 }
 
 static void
-feed(vterm_t *vt, const char *s)
+feed(vtty_t *vt, const char *s)
 {
-    vterm_render(vt, (char *)s, (int)strlen(s));
+    vtty_render(vt, (char *)s, (int)strlen(s));
 }
 
 static void
-feed_content(vterm_t *vt, int lines)
+feed_content(vtty_t *vt, int lines)
 {
     int i;
     char buf[128];
@@ -76,7 +76,7 @@ feed_content(vterm_t *vt, int lines)
 }
 
 static void
-exercise_decstbm(vterm_t *vt, int height)
+exercise_decstbm(vtty_t *vt, int height)
 {
     char buf[32];
     int  top, bot;
@@ -98,13 +98,13 @@ exercise_decstbm(vterm_t *vt, int height)
 }
 
 static void
-exercise_copy(vterm_t *vt)
+exercise_copy(vtty_t *vt)
 {
     int rows = 0, cols = 0;
     int r;
-    vterm_cell_t **cells;
+    vtty_cell_t **cells;
 
-    cells = vterm_copy_buffer(vt, &rows, &cols);
+    cells = vtty_copy_buffer(vt, &rows, &cols);
     if(cells == NULL) return;
 
     /* touch every returned cell so ASan flags any under-allocation */
@@ -126,7 +126,7 @@ exercise_copy(vterm_t *vt)
 int
 main(int argc, char **argv)
 {
-    vterm_t *vt;
+    vtty_t *vt;
     int      i;
     const int ITERS = 8000;
 
@@ -136,10 +136,10 @@ main(int argc, char **argv)
     signal(SIGALRM, on_alarm);
     alarm(30);                  /* a correct run finishes in well under 1s */
 
-    vt = vterm_create(80, 24, VTERM_FLAG_NOPTY | VTERM_FLAG_NOCURSES);
+    vt = vtty_create(80, 24, VTTY_FLAG_NOPTY | VTTY_FLAG_NOCURSES);
     if(vt == NULL)
     {
-        fprintf(stderr, "vterm_create failed\n");
+        fprintf(stderr, "vtty_create failed\n");
         return 1;
     }
 
@@ -168,7 +168,7 @@ main(int argc, char **argv)
                 break;
         }
 
-        vterm_resize(vt, w, h);
+        vtty_resize(vt, w, h);
 
         /* feed content sized to the new geometry to force scrolling */
         feed_content(vt, h / 2 + 2);
@@ -178,7 +178,7 @@ main(int argc, char **argv)
     }
 
     exercise_copy(vt);
-    vterm_destroy(vt);
+    vtty_destroy(vt);
 
     alarm(0);
     printf("OK: %d iterations completed\n", ITERS);

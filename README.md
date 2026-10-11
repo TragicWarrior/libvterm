@@ -1,6 +1,6 @@
 # Introduction #
 
-libvterm is a terminal emulator library for embedding a working VT
+libvtty is a terminal emulator library for embedding a working VT
 implementation inside another program.  It descends from ROTE and
 emulates the VT100, rxvt, xterm, xterm-256color, and Linux console
 modes.  As of 10.0 it also supports 24-bit truecolor and a tunable
@@ -8,28 +8,33 @@ RGB-to-xterm color cache.  The natural display apparatus is curses,
 but the library can also drive a stream buffer for output (a
 contribution from Hitachi-ID).
 
+libvtty was named libvterm through version 10.  It was renamed in 11.0
+to end a long-standing collision with an unrelated library of the same
+name, which also installs `libvterm.so` and `vterm.h`.  See the
+CHANGELOG for the old-to-new name table.
+
 # Features #
 
 * VT100, rxvt, xterm, xterm-256color, and Linux console emulation
-* 24-bit truecolor (via `--truecolor` on vshell or VTERM_FLAG_TRUECOLOR
+* 24-bit truecolor (via `--truecolor` on vshell or VTTY_FLAG_TRUECOLOR
   on the API) with COLORTERM=truecolor exported into the child
 * 256-color mode with RGB-to-xterm cube/grayscale mapping and a
   pair_select callback so integrators can pin color pairs
-* Per-instance OSC 4 palette isolation -- palette tweaks in one vterm
+* Per-instance OSC 4 palette isolation -- palette tweaks in one vtty
   don't bleed into a sibling
 * UTF-8 throughout, with a fast direct-byte-math decoder
 * Multi-buffer support (standard + alternate) with scrollback /
   history on the standard buffer
 * Mouse: X10 and SGR protocols, GPM wheel forwarding, and
-  vterm_write_mouse_event for embedder-driven injection
+  vtty_write_mouse_event for embedder-driven injection
 * OSC 52 clipboard SET from the child (inner hop): decoded payload is
-  stored and delivered via VTERM_EVENT_CLIPBOARD.  The library does
+  stored and delivered via VTTY_EVENT_CLIPBOARD.  The library does
   not talk to the host clipboard; the embedder decides xclip / OSC 52
   out / ignore.  Query (`Pd = ?`) is refused.
 * Async I/O interface (SIGIO + self-pipe trick) for callers that
   don't want to spin a thread
 * Optional crash handler (`ENABLE_BACKTRACE`) that writes a glibc
-  backtrace to `./vterm-crash-<pid>.log` for post-mortem debugging
+  backtrace to `./vtty-crash-<pid>.log` for post-mortem debugging
 * Link-time optimization auto-enabled when the toolchain supports it
 
 # Requirements #
@@ -68,7 +73,7 @@ then runs `ldconfig` to refresh the linker cache (a staged install with
 `/etc/ld.so.conf`) isn't configured to look in `/usr/local/lib`, you
 will still need to add it and run `ldconfig` yourself.
 
-`vshell` is the canonical demo: it embeds libvterm into a tmux-like
+`vshell` is the canonical demo: it embeds libvtty into a tmux-like
 front end and exposes the major API surfaces (scrollback, mouse,
 title, resize, color modes, OSC 52 clipboard).  A child copy
 (`OSC 52`) is taken by the event hook and forwarded with xclip plus
@@ -88,7 +93,7 @@ result the build expects ncurses headers at
 
 Porting was done on Mojave; mileage on other versions may vary.  The
 ncurses that ships with XCode lacks wide-character support, which
-libvterm needs for UTF-8.  The build is therefore wired to look in:
+libvtty needs for UTF-8.  The build is therefore wired to look in:
 
 ```
 /usr/local/opt/ncurses/
@@ -109,7 +114,7 @@ sudo make package
 # Performance Tuning #
 
 A terminal emulator should be light and fast.  Where it matters the
-hot paths in libvterm are written (or re-written) for efficiency.  By
+hot paths in libvtty are written (or re-written) for efficiency.  By
 default the build enables `gcc -O2`; `-O3` has been reasonably tested
 and yields roughly a 2% CPU improvement -- it may become the default
 in the future.
@@ -117,6 +122,6 @@ in the future.
 Link-time optimization (LTO) is auto-enabled when the toolchain
 supports it (CMake's `CheckIPOSupported` probe).  LTO lets the
 compiler inline across translation-unit boundaries, which matters
-for the many small cross-TU helpers in libvterm.  It is automatically
+for the many small cross-TU helpers in libvtty.  It is automatically
 disabled when `ENABLE_BACKTRACE` is set, since that mode forces `-O0`
 for predictable stack frames.

@@ -1,24 +1,24 @@
 #include <string.h>
 
-#include "vterm_private.h"
+#include "vtty_private.h"
 #include "mouse_driver.h"
 #include "stringv.h"
 
 ssize_t
-mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
+mouse_driver_vt200(vtty_t *vtty, unsigned char *buf)
 {
     MEVENT      mouse_event;
     int         retval = 0;
     int         x, y;
 
-    if(vterm->pending_mouse != NULL)
-        memcpy(&mouse_event, vterm->pending_mouse, sizeof(MEVENT));
+    if(vtty->pending_mouse != NULL)
+        memcpy(&mouse_event, vtty->pending_mouse, sizeof(MEVENT));
     else
         getmouse(&mouse_event);
     x = mouse_event.x;
     y = mouse_event.y;
 
-    if(vterm->window != NULL)
+    if(vtty->window != NULL)
     {
         /*
             get mouse returns screen relative coords and we need to transform
@@ -26,7 +26,7 @@ mouse_driver_vt200(vterm_t *vterm, unsigned char *buf)
             that and returns false if the conversion is not possilbe--for
             exmpale if the coord are out of bounds.
         */
-        if(wmouse_trafo(vterm->window, &y, &x, FALSE) == FALSE)
+        if(wmouse_trafo(vtty->window, &y, &x, FALSE) == FALSE)
         {
             return 0;
         }
