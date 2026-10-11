@@ -25,8 +25,10 @@ for what to change in a program that uses it.
 * UTF-8 throughout, with a fast direct-byte-math decoder
 * Multi-buffer support (standard + alternate) with scrollback /
   history on the standard buffer
-* Mouse: X10 and SGR protocols, GPM wheel forwarding, and
-  vtty_write_mouse_event for embedder-driven injection
+* Mouse: X10 and SGR protocols; left, middle and right buttons with
+  Shift / Alt / Ctrl; the wheel; drag and hover reporting (DECSET 1002
+  and 1003); GPM wheel forwarding; and vtty_write_mouse_event for
+  embedder-driven injection
 * OSC 52 clipboard SET from the child (inner hop): decoded payload is
   stored and delivered via VTTY_EVENT_CLIPBOARD.  The library does
   not talk to the host clipboard; the embedder decides xclip / OSC 52

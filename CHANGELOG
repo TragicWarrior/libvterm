@@ -1,3 +1,33 @@
+11.1.0
+
+Mouse: buttons, modifiers and motion
+* [Bryan Christ] The middle and right buttons are reported to the
+  child.  Only the left button was.
+* [Bryan Christ] Shift, Alt and Ctrl are reported on button presses and
+  releases.  They were dropped, so Ctrl+click reached the child as a
+  plain click.
+* [Bryan Christ] Alt and Ctrl on the wheel are no longer swapped.  The
+  SGR encoder used 8 for Ctrl and 16 for Alt; xterm defines 8 as Alt
+  (meta) and 16 as Ctrl, so Alt+wheel arrived as Ctrl+wheel.
+* [Bryan Christ] Button-event tracking (DECSET 1002) and any-event
+  tracking (DECSET 1003):  the child is told about drags, or about all
+  pointer motion, once per cell as in xterm.  When libvtty owns the
+  mouse it asks the real terminal for motion while a child wants it and
+  stops when the last one is done.  A host that owns the mouse
+  (VTTY_FLAG_EXTMOUSE) passes motion in with vtty_write_mouse_event as
+  an event carrying REPORT_MOUSE_POSITION.
+* [Bryan Christ] Motion is never mistaken for a press.  A drag event
+  from ncurses reached the child as a repeated button press.
+* [Bryan Christ] The X10 encoding (mode 1000 without 1006) reports the
+  same buttons, modifiers and motion, and drops an event beyond column
+  or row 223, which one byte per coordinate cannot express.
+* [Bryan Christ] vtty_write_mouse_event expands a click of any of the
+  three buttons into a press and a release.  It did so for the left
+  button only.
+* [Bryan Christ] Resetting 1002 or 1003 turns mouse reporting off, as
+  resetting 1000 or 1006 does.
+* [Bryan Christ] test_mouse: headless checks of the encodings above.
+
 11.0.0
 
 Renamed to libvtty

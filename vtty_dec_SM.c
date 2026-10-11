@@ -119,6 +119,25 @@ interpret_dec_SM(vtty_t *vtty, int param[], int pcount)
         }
 
         /*
+            button-event (1002) and any-event (1003) tracking.  both
+            report presses and releases as mode 1000 does;  1002 adds
+            motion while a button is held (drags) and 1003 adds all
+            motion.
+        */
+        if(param[i] == 1002 || param[i] == 1003)
+        {
+            mouse_driver_init(vtty);
+            mouse_driver_start(vtty);
+
+            vtty->mouse_mode |= VTTY_MOUSE_VT200;
+            vtty->mouse_driver = mouse_driver_default;
+
+            mouse_driver_set_motion(vtty, (param[i] == 1002) ?
+                VTTY_MOUSE_BTN_EVENT : VTTY_MOUSE_ANY_EVENT);
+            continue;
+        }
+
+        /*
             set mouse mode SGR and installs the generic mouse driver
             the most ubiquitous mouse mode handling > 223 x 223 coord
         */
