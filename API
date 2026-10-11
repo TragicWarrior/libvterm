@@ -3,6 +3,20 @@
 This is really rough.  Feel free to make it pretty and email changes
 to bryan.christ@gmail.com
 
+--------
+Overview
+--------
+
+Include vtty.h and link with -lvtty.
+
+This document covers the core calls.  The library exports more than is
+described here; vtty.h declares all of it and is the reference when the
+two disagree.
+
+libvtty was named libvterm until version 11.0.  Every name here once
+began with vterm_ or VTERM_ in place of vtty_ and VTTY_, and the header
+was vterm.h.  Nothing else about these calls changed with the rename.
+
 ---------------
 Library Version
 ---------------
@@ -25,9 +39,11 @@ Constructors/Destructors
    vtty_t* vtty_create(int width, int height, int flags);
 
 Creates an instance a vtty_t of the designated width and height.
-By default, the library emulates rxvt which is basically VT100 with color.
-The only flag supported at this time is VTTY_FLAG_VT100 which forces the
-emulator to basic VT100 mode (black and white).
+flags is a bitwise OR of VTTY_FLAG_* values.  One of them selects the
+terminal to emulate: VTTY_FLAG_XTERM (the default), VTTY_FLAG_XTERM_256,
+VTTY_FLAG_RXVT, VTTY_FLAG_LINUX or VTTY_FLAG_VT100 (black and white).
+VTTY_FLAG_TRUECOLOR adds 24-bit color.  The remaining flags are
+described beside their definitions in vtty.h.
 
    void vtty_destroy(vtty_t *vtty);
 

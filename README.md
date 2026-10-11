@@ -8,10 +8,10 @@ RGB-to-xterm color cache.  The natural display apparatus is curses,
 but the library can also drive a stream buffer for output (a
 contribution from Hitachi-ID).
 
-libvtty was named libvterm through version 10.  It was renamed in 11.0
-to end a long-standing collision with an unrelated library of the same
-name, which also installs `libvterm.so` and `vterm.h`.  See the
-CHANGELOG for the old-to-new name table.
+libvtty was called libvterm until version 11.0.  If you are looking
+for libvterm by Bryan Christ, this is it; see [History](#history) for
+why the name changed and [Migrating from libvterm](#migrating-from-libvterm)
+for what to change in a program that uses it.
 
 # Features #
 
@@ -82,6 +82,25 @@ a best-effort OSC 52 to the outer terminal; the frame shows
 `--no-utf8`, `--vt100`, `--scrollback <lines>` (64 - 512), and
 `--exec <program>`.
 
+## Using the library ##
+
+A program includes one header and links one library:
+
+```
+#include <vtty.h>
+```
+
+```
+cc -o myterm myterm.c -lvtty -lncursesw
+```
+
+`pkg-config --libs libvtty` gives the same linker flag.  The shared
+library carries a versioned soname (`libvtty.so.11`), so a program
+built against one major version is not loaded against another.
+
+The `API` file describes the core calls and `vtty.h` is the complete
+reference.  `demo/vshell.c` is a full working host.
+
 ## FreeBSD ##
 
 CMake does not detect the ncurses or ncursesw library correctly on
@@ -125,3 +144,70 @@ compiler inline across translation-unit boundaries, which matters
 for the many small cross-TU helpers in libvtty.  It is automatically
 disabled when `ENABLE_BACKTRACE` is set, since that mode forces `-O0`
 for predictable stack frames.
+
+# History #
+
+The library has had three names.
+
+## ROTE (2004) ##
+
+The code began as ROTE, "Our Own Terminal Emulation library", written
+by Bruno Takahashi C. de Oliveira.  ROTE was a small C library that
+emulated a VT102 and drew it with curses.
+
+## libvterm (2009 - 2026) ##
+
+Bryan Christ forked ROTE in 2009 and released the result as libvterm
+0.99.0.  Under that name the library grew from a VT102 into what it is
+now: xterm, 256-color and truecolor emulation, UTF-8, an alternate
+screen, scrollback, mouse reporting and clipboard support.
+
+The project was hosted on Google Code until June 2015, when it moved
+to GitHub.  In 2017 Hitachi-ID contributed the ability to run the
+emulator with no pty and no curses, rendering into a stream buffer.
+
+## libvtty (2026 - ) ##
+
+There is another, unrelated terminal emulator library called libvterm:
+the one written by Paul Evans and hosted on Launchpad, which Neovim
+and Emacs use and which most Linux distributions package.  The two
+libraries share no code, but both installed `libvterm.so` and
+`vterm.h`, so they could not be installed side by side and this one
+could not be packaged under its own name.
+
+Version 11.0, in October 2026, renamed this project to libvtty to end
+that collision.  The rename changed names only: 11.0.0 behaves exactly
+as libvterm 10.10.2 did.
+
+The `CHANGELOG` keeps the full record.  Its entries before 11.0.0 use
+the names that were current when they were written.
+
+## Migrating from libvterm ##
+
+Nothing was removed or redesigned; every public name changed its
+prefix, and there are no aliases for the old names.
+
+| | libvterm 10 | libvtty 11 |
+|---|---|---|
+| Header | `vterm.h` | `vtty.h` |
+| Linker flag | `-lvterm` | `-lvtty` |
+| Shared library | `libvterm.so` | `libvtty.so.11` |
+| pkg-config | `libvterm.pc` | `libvtty.pc` |
+| Functions | `vterm_*` | `vtty_*` |
+| Types | `vterm_t`, `vterm_cell_t` | `vtty_t`, `vtty_cell_t` |
+| Callback types | `VtermEventHook` | `VttyEventHook` |
+| Macros | `VTERM_*` | `VTTY_*` |
+| Version string | `LIBVTERM_VERSION` | `LIBVTTY_VERSION` |
+
+For most programs the whole migration is a case-preserving
+search-and-replace of `vterm` with `vtty`:
+
+```
+sed -i -e 's/vterm/vtty/g' -e 's/VTERM/VTTY/g' -e 's/Vterm/Vtty/g' *.c *.h
+```
+
+Read the result before committing it.  The replacement also rewrites
+any name of your own that contains "vterm", which you may not want.
+
+Installing libvtty does not remove an installed libvterm.  Delete
+`libvterm.so`, `libvterm.a`, `vterm.h` and `libvterm.pc` by hand.

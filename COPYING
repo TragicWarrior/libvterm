@@ -1,7 +1,8 @@
 
-This library (libvtty, formerly libvterm) is a fork of libROTE.  This derivative is also
-licensed under LGPL 2.1 except where notied.  The of these licenses are
-located in LICENSE.LGPL file.
+This library is libvtty.  It was named libvterm until version 11.0 and
+began as a fork of libROTE.  This derivative is also licensed under
+LGPL 2.1 except where noted.  The text of that license is in the
+LICENSING.LGPL file.
 
 Copyright (C)
 
