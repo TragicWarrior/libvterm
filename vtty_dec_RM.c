@@ -97,7 +97,8 @@ interpret_dec_RM(vtty_t *vtty, int param[], int pcount)
         }
 
         // shutdown whatever mouse driver is installed
-        if(param[i] == 1000 || param[i] == 1005 || param[i] == 1006)
+        if(param[i] == 1000 || param[i] == 1002 || param[i] == 1003
+            || param[i] == 1005 || param[i] == 1006)
         {
             mouse_driver_stop(vtty);
             continue;

@@ -4,85 +4,46 @@
 #include "mouse_driver.h"
 #include "stringv.h"
 
+/*
+    CSI M Cb Cx Cy
+
+    each of the three values is sent as a single byte, 32 + value.  a
+    release does not say which button:  its button number is always 3.
+*/
 ssize_t
 mouse_driver_vt200(vtty_t *vtty, unsigned char *buf)
 {
-    MEVENT      mouse_event;
-    int         retval = 0;
-    int         x, y;
+    mouse_report_t  report;
+    int             code;
 
-    if(vtty->pending_mouse != NULL)
-        memcpy(&mouse_event, vtty->pending_mouse, sizeof(MEVENT));
-    else
-        getmouse(&mouse_event);
-    x = mouse_event.x;
-    y = mouse_event.y;
+    if(mouse_driver_decode(vtty, &report) == 0) return 0;
 
-    if(vtty->window != NULL)
-    {
-        /*
-            get mouse returns screen relative coords and we need to transform
-            those into window relative coords.  wmouse_trafo() does exactly
-            that and returns false if the conversion is not possilbe--for
-            exmpale if the coord are out of bounds.
-        */
-        if(wmouse_trafo(vtty->window, &y, &x, FALSE) == FALSE)
-        {
-            return 0;
-        }
-
-        // ncurses top left is is 0,0 whereas for X10 it is 1,1
-        x++;
-        y++;
-    }
-
-    if(mouse_event.bstate & BUTTON1_PRESSED)
-    {
-        sprintf((char *)buf, "\033[M%c%c%c",
-            32 + 0x0,
-            32 + x,
-            32 + y);
-
-        retval = strlen((char *)buf);
-
-        return retval;
-    }
-
-    if(mouse_event.bstate & BUTTON1_RELEASED)
-    {
-        sprintf((char *)buf, "\033[M%c%c%c",
-            32 + 0x3,
-            32 + x,
-            32 + y);
-
-        retval = strlen((char *)buf);
-
-        return retval;
-    }
-
-// only the newer ABI supports the wheel mous properly
-#if NCURSES_MOUSE_VERSION > 1
-
-    if(mouse_event.bstate & BUTTON4_PRESSED)
+    // the wheel is sent as cursor keys in this mode
+    if(report.kind == MOUSE_REPORT_WHEEL_UP)
     {
         sprintf((char *)buf, "\033OA");
-
-        retval = strlen((char *)buf);
-
-        return retval;
+        return strlen((char *)buf);
     }
 
-    if(mouse_event.bstate & BUTTON5_PRESSED)
+    if(report.kind == MOUSE_REPORT_WHEEL_DOWN)
     {
         sprintf((char *)buf, "\033OB");
-
-        retval = strlen((char *)buf);
-
-        return retval;
+        return strlen((char *)buf);
     }
 
-#endif
+    // one byte per coordinate cannot express a cell beyond 223
+    if(report.x > 223 || report.y > 223) return 0;
 
-    return 0;
+    code = report.button | report.mods;
+    if(report.kind == MOUSE_REPORT_RELEASE) code = 3 | report.mods;
+    if(report.kind == MOUSE_REPORT_MOTION) code |= MOUSE_CODE_MOTION;
+
+    buf[0] = '\033';
+    buf[1] = '[';
+    buf[2] = 'M';
+    buf[3] = (unsigned char)(32 + code);
+    buf[4] = (unsigned char)(32 + report.x);
+    buf[5] = (unsigned char)(32 + report.y);
+
+    return 6;
 }
-

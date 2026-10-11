@@ -541,30 +541,56 @@ vtty_write_data(vtty_t *vtty, const void *data, size_t len)
 int
 vtty_write_mouse_event(vtty_t *vtty, MEVENT *mouse_event)
 {
-    unsigned char   buf[64];
-    ssize_t         bytes;
+    static const mmask_t    clicked[3] =
+                                {
+                                    BUTTON1_CLICKED,
+                                    BUTTON2_CLICKED,
+                                    BUTTON3_CLICKED
+                                };
+    static const mmask_t    pressed[3] =
+                                {
+                                    BUTTON1_PRESSED,
+                                    BUTTON2_PRESSED,
+                                    BUTTON3_PRESSED
+                                };
+    static const mmask_t    released[3] =
+                                {
+                                    BUTTON1_RELEASED,
+                                    BUTTON2_RELEASED,
+                                    BUTTON3_RELEASED
+                                };
+    unsigned char           buf[64];
+    ssize_t                 bytes;
+    int                     n;
 
     if(vtty == NULL || mouse_event == NULL) return -1;
     if(vtty->mouse_driver == NULL) return 0;
 
     vtty->pending_mouse = mouse_event;
 
-    if(mouse_event->bstate & BUTTON1_CLICKED)
+    /*
+        a click is a press and a release the host already paired up.  the
+        child expects to see both, so send them one after the other.
+    */
+    for(n = 0; n < 3; n++)
     {
-        MEVENT synth = *mouse_event;
+        if(mouse_event->bstate & clicked[n])
+        {
+            MEVENT synth = *mouse_event;
 
-        synth.bstate = (synth.bstate & ~BUTTON1_CLICKED) | BUTTON1_PRESSED;
-        vtty->pending_mouse = &synth;
-        bytes = vtty->mouse_driver(vtty, buf);
-        if(bytes > 0) _vtty_write_pty(vtty, buf, bytes);
+            synth.bstate = (synth.bstate & ~clicked[n]) | pressed[n];
+            vtty->pending_mouse = &synth;
+            bytes = vtty->mouse_driver(vtty, buf);
+            if(bytes > 0) _vtty_write_pty(vtty, buf, bytes);
 
-        synth.bstate = (synth.bstate & ~BUTTON1_PRESSED) | BUTTON1_RELEASED;
-        vtty->pending_mouse = &synth;
-        bytes = vtty->mouse_driver(vtty, buf);
-        if(bytes > 0) _vtty_write_pty(vtty, buf, bytes);
+            synth.bstate = (synth.bstate & ~pressed[n]) | released[n];
+            vtty->pending_mouse = &synth;
+            bytes = vtty->mouse_driver(vtty, buf);
+            if(bytes > 0) _vtty_write_pty(vtty, buf, bytes);
 
-        vtty->pending_mouse = NULL;
-        return 1;
+            vtty->pending_mouse = NULL;
+            return 1;
+        }
     }
 
     bytes = vtty->mouse_driver(vtty, buf);

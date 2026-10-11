@@ -60,6 +60,8 @@
 #define VTTY_MOUSE_X10          (1 << 1)
 #define VTTY_MOUSE_VT200        (1 << 2)
 #define VTTY_MOUSE_SGR          (1 << 7)
+#define VTTY_MOUSE_BTN_EVENT    (1 << 8)        //  256: report drags (1002)
+#define VTTY_MOUSE_ANY_EVENT    (1 << 9)        //  512: report all motion (1003)
 #define VTTY_MOUSE_HIGHLIGHT    (1 << 12)
 #define VTTY_MOUSE_ALTSCROLL    (1 << 13)
 
