@@ -158,6 +158,20 @@ and a blank line is inserted at the bottom.
 This function moves all lines down by one so that the bottom row is discarded
 and a blank line is inserted at the top.
 
+   void vtty_get_title(vtty_t *vtty, char *buf, int buf_sz);
+
+Copies the window title the child last set with OSC 0 or OSC 2 into
+buf.  The title is at most 127 bytes; a longer one is cut at a
+character boundary.  OSC 1 (the icon name) does not change it.  An
+empty title means the child gave the title back, and the host should
+show its own name for the window.
+
+Subscribe with vtty_set_event_mask(..., VTTY_MASK_TITLE) and handle
+VTTY_EVENT_TITLE to be told when the title changes instead of polling.
+anything is the new title as a const char*, valid for the duration of
+the hook.  The event is sent only when the title actually changes, so
+a shell that re-sends its title on every prompt causes no events.
+
    int vtty_clipboard_get(vtty_t *vtty, const char **data, size_t *len);
 
 Last OSC 52 SET received from the child (inner hop).  Returns 1 if a

@@ -29,7 +29,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTTY_VERSION         "11.1.0"
+#define LIBVTTY_VERSION         "11.2.0"
 
 #define VTTY_FLAG_RXVT          (1UL << 0)      //  emulate rxvt
 #define VTTY_FLAG_VT100         (1UL << 1)      //  emulate vt100
@@ -168,6 +168,7 @@ typedef struct _vtty_clipboard_s    vtty_clipboard_t;
     VTTY_EVENT_TERM_PRECLEAR            unused
     VTTY_EVENT_TERM_SCROLLED            direction of scroll as int* (-1 or 1)
     VTTY_EVENT_CLIPBOARD                vtty_clipboard_t*
+    VTTY_EVENT_TITLE                    the new title as const char*
 */
 
 enum
@@ -182,6 +183,7 @@ enum
     VTTY_EVENT_TERM_PRECLEAR,
     VTTY_EVENT_TERM_SCROLLED,
     VTTY_EVENT_CLIPBOARD,
+    VTTY_EVENT_TITLE,
 };
 
 #define VTTY_MASK_BUFFER_ACTIVATED      (1UL << 0)
@@ -195,6 +197,7 @@ enum
 #define VTTY_MASK_TERM_PRECLEAR         (1UL << 8)
 #define VTTY_MASK_TERM_SCROLLED         (1UL << 9)
 #define VTTY_MASK_CLIPBOARD             (1UL << 10)
+#define VTTY_MASK_TITLE                 (1UL << 11)     //  2048
 
 enum
 {
@@ -395,6 +398,16 @@ const char*     vtty_get_ttyname(vtty_t *vtty);
 
 /*
     get the name of the window title (if set by OSC command)
+
+    the child sets it with OSC 0 or OSC 2.  OSC 1 (the icon name) does
+    not change it.  the title is at most 127 bytes; a longer one is cut
+    at a character boundary.  an empty title means the child gave the
+    title back, and the host should show its own name for the window.
+
+    a host that wants to know when the title changes, instead of
+    polling, subscribes to VTTY_MASK_TITLE.  VTTY_EVENT_TITLE then
+    arrives with the new title as a const char*, valid for the duration
+    of the hook.  it is sent only when the title actually changes.
 
     @params:
         vtty            a valid vtty object handle.

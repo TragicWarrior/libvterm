@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(libvtty C)
 set(MAJOR_VERSION 11)
-set(MINOR_VERSION 1)
+set(MINOR_VERSION 2)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
@@ -447,7 +447,8 @@ if(BUILD_TESTS)
     add_executable(test_render test/test_render.c)
     add_executable(test_osc52 test/test_osc52.c)
     add_executable(test_mouse test/test_mouse.c)
-    foreach(_t test_resize test_bufapi test_shift test_history test_render test_osc52 test_mouse)
+    add_executable(test_osc_title test/test_osc_title.c)
+    foreach(_t test_resize test_bufapi test_shift test_history test_render test_osc52 test_mouse test_osc_title)
         target_include_directories(${_t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
         target_link_libraries(${_t} vtty-static -lncursesw -lutil -lm -lrt)
     endforeach()
