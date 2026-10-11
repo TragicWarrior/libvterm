@@ -157,14 +157,20 @@ The code began as ROTE, "Our Own Terminal Emulation library", written
 by Bruno Takahashi C. de Oliveira.  ROTE was a small C library that
 emulated a VT102 and drew it with curses.
 
-## libvterm (2009 - 2026) ##
+## libvterm (circa 2006 - 2026) ##
 
-Bryan Christ forked ROTE in 2009 and released the result as libvterm
-0.99.0.  Under that name the library grew from a VT102 into what it is
-now: xterm, 256-color and truecolor emulation, UTF-8, an alternate
-screen, scrollback, mouse reporting and clipboard support.
+Bryan Christ began libvterm around 2006.  He later took over the
+maintenance of ROTE, with its author's permission, and the ROTE code
+became the base of a new libvterm: a fork of ROTE that carried on
+under the libvterm name.  That project was registered on SourceForge
+in October 2009, and ROTE's own page came to recommend libvterm for
+new work.
 
-The project was hosted on Google Code until June 2015, when it moved
+Under that name the library grew from a VT102 into what it is now:
+xterm, 256-color and truecolor emulation, UTF-8, an alternate screen,
+scrollback, mouse reporting and clipboard support.
+
+The project moved from SourceForge to Google Code, and in June 2015
 to GitHub.  In 2017 Hitachi-ID contributed the ability to run the
 emulator with no pty and no curses, rendering into a stream buffer.
 
