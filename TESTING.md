@@ -1,8 +1,8 @@
 # Compatibility Testing #
 
-The following programs have been tested with libvterm.  The score
+The following programs have been tested with libvtty.  The score
 indicates the level of rendering fidelity.  If you've tested
-other programs with libvterm, feel free to update this list.
+other programs with libvtty, feel free to update this list.
 
 ---
 Fidelity score: 5 = excellent, 1 = poor
@@ -169,7 +169,7 @@ emulator can mistake for legitimate escape sequences.  For this reason
 it makes for a brutal test on the parsing engine.  As of 2019-08-08,
 playback will cause libvte based emulators (xfce terminal, gnome terminal)
 to crash because of CSI SU sequences which are out of bounds.  A safety
-check makes libvterm less susceptible to it.  Both xterm and the KDE
+check makes libvtty less susceptible to it.  Both xterm and the KDE
 konsole emulator also seem to be resistant to the bug.
 
 
@@ -191,10 +191,10 @@ Notes:
 
 Claude Code (Anthropic's agentic CLI) animates its terminal window title
 via OSC using UTF-8 glyphs (a braille spinner and an asterisk).  Two bugs
-surfaced from that: libvterm decoded the in-OSC UTF-8 bytes and printed
+surfaced from that: libvtty decoded the in-OSC UTF-8 bytes and printed
 them at the cursor (a visible jitter), and it honored a bare C1 String
 Terminator (0x9C) -- itself a UTF-8 continuation byte -- as an OSC
 terminator, so a title glyph beginning U+2733 (E2 9C B3) closed the OSC
 mid-character and spilled "3 Claude Code" onto the screen.  Both are
-fixed at the vterm layer (the host stays oblivious); rendering is now
+fixed at the vtty layer (the host stays oblivious); rendering is now
 clean (5).

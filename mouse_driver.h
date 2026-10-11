@@ -16,14 +16,14 @@
 #include <ncursesw/ncurses.h>
 #endif
 
-#include "vterm.h"
-#include "vterm_private.h"
+#include "vtty.h"
+#include "vtty_private.h"
 
 typedef struct _mouse_state_s   mouse_state_t;
 
 struct _mouse_state_s
 {
-    vterm_t         *origin;
+    vtty_t          *origin;
     sig_atomic_t    ref_count;
 };
 
@@ -39,23 +39,23 @@ struct _mouse_config_s
 #define MOUSE_STATE_RUNNING     (1 << 0)
 
 
-void    mouse_driver_init(vterm_t *vterm);
+void    mouse_driver_init(vtty_t *vtty);
 
-void    mouse_driver_start(vterm_t *vterm);
+void    mouse_driver_start(vtty_t *vtty);
 
-void    mouse_driver_stop(vterm_t *vterm);
+void    mouse_driver_stop(vtty_t *vtty);
 
-void    mouse_driver_free(vterm_t *vterm);
+void    mouse_driver_free(vtty_t *vtty);
 
-ssize_t mouse_driver_default(vterm_t *vterm, unsigned char *buf);
+ssize_t mouse_driver_default(vtty_t *vtty, unsigned char *buf);
 
-void    mouse_driver_save_state(vterm_t *vterm);
+void    mouse_driver_save_state(vtty_t *vtty);
 
-void    mouse_driver_restore_state(vterm_t *vterm);
+void    mouse_driver_restore_state(vtty_t *vtty);
 
-ssize_t mouse_driver_vt200(vterm_t *vterm, unsigned char *buf);
+ssize_t mouse_driver_vt200(vtty_t *vtty, unsigned char *buf);
 
-ssize_t mouse_driver_SGR(vterm_t *vterm, unsigned char *buf);
+ssize_t mouse_driver_SGR(vtty_t *vtty, unsigned char *buf);
 
 
 #endif

@@ -6,9 +6,9 @@
 
 #include "macros.h"
 #include "nc_wrapper.h"
-#include "vterm.h"
-#include "vterm_private.h"
-#include "vterm_buffer.h"
+#include "vtty.h"
+#include "vtty_private.h"
+#include "vtty_buffer.h"
 #include "color_math.h"
 #include "color_cache.h"
 
@@ -65,7 +65,7 @@ color_cache_init(void)
     color_cache->ref_count = 1;
 
     /*
-        profile the ENTIRE pair space, never a "working set".  vterm
+        profile the ENTIRE pair space, never a "working set".  vtty
         instances run concurrently (e.g. in vwm) and share the process
         color space; preventing color distortion -- especially with
         hicolor apps -- requires every pair initialized and profiled so
@@ -287,7 +287,7 @@ color_cache_find_lru_pair()
 
 // use the pair at the end of the list as it's the lowest risk
 int
-color_cache_add_pair(vterm_t *origin, short fg, short bg)
+color_cache_add_pair(vtty_t *origin, short fg, short bg)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
@@ -371,7 +371,7 @@ color_cache_add_pair(vterm_t *origin, short fg, short bg)
 }
 
 void
-color_cache_free_pairs(vterm_t *origin)
+color_cache_free_pairs(vtty_t *origin)
 {
     extern color_cache_t    *color_cache;
     color_pair_t            *pair;
@@ -419,73 +419,73 @@ color_cache_release(void)
 
 
 void
-vterm_set_pair_selector(vterm_t *vterm, VtermPairSelect ps)
+vtty_set_pair_selector(vtty_t *vtty, VttyPairSelect ps)
 {
     int     default_color = 0;
 
-    if(vterm == NULL) return;
+    if(vtty == NULL) return;
 
     // todo:  in the future, make a NULL value revert to defaults
     if(ps == NULL) return;
 
-    vterm->pair_select = ps;
+    vtty->pair_select = ps;
 
     /*
         if the user has specified NOCURSES, we need to use the 
         new routine to locate the white on black color pair.
     */
-    if(vterm->flags & VTERM_FLAG_NOCURSES)
+    if(vtty->flags & VTTY_FLAG_NOCURSES)
     {
-        default_color = vterm->pair_select(vterm, COLOR_WHITE, COLOR_BLACK);
+        default_color = vtty->pair_select(vtty, COLOR_WHITE, COLOR_BLACK);
 
         if(default_color < 0 || default_color > 255)
             default_color = 0;
 
-        vterm->vterm_desc[0].curattr = (default_color & 0xff) << 8;
+        vtty->vtty_desc[0].curattr = (default_color & 0xff) << 8;
     }
 
     return;
 }
 
 
-VtermPairSelect
-vterm_get_pair_selector(vterm_t *vterm)
+VttyPairSelect
+vtty_get_pair_selector(vtty_t *vtty)
 {
-    if(vterm == NULL) return NULL;
+    if(vtty == NULL) return NULL;
 
-    return vterm->pair_select;
+    return vtty->pair_select;
 }
 
 void
-vterm_set_pair_splitter(vterm_t *vterm, VtermPairSplit ps)
+vtty_set_pair_splitter(vtty_t *vtty, VttyPairSplit ps)
 {
-    if(vterm == NULL) return;
+    if(vtty == NULL) return;
 
     if(ps == NULL) return;
 
-    vterm->pair_split = ps;
+    vtty->pair_split = ps;
 
     return;
 }
 
-VtermPairSplit
-vterm_get_pair_splitter(vterm_t *vterm)
+VttyPairSplit
+vtty_get_pair_splitter(vtty_t *vtty)
 {
-    if(vterm == NULL) return NULL;
+    if(vtty == NULL) return NULL;
 
-    return vterm->pair_split;
+    return vtty->pair_split;
 }
 
 int
-vterm_set_colors(vterm_t *vterm, short fg, short bg)
+vtty_set_colors(vtty_t *vtty, short fg, short bg)
 {
-    vterm_desc_t    *v_desc = NULL;
+    vtty_desc_t     *v_desc = NULL;
     long            colors;
 
-    if(vterm == NULL) return -1;
+    if(vtty == NULL) return -1;
 
-    // set vterm description buffer selector
-    v_desc = vterm->v_desc_active;
+    // set vtty description buffer selector
+    v_desc = vtty->v_desc_active;
 
 #ifdef NOCURSES
     if(has_colors() == FALSE) return -1;
@@ -500,14 +500,14 @@ vterm_set_colors(vterm_t *vterm, short fg, short bg)
 }
 
 long
-vterm_get_colors(vterm_t *vterm)
+vtty_get_colors(vtty_t *vtty)
 {
-    vterm_desc_t    *v_desc = NULL;
+    vtty_desc_t     *v_desc = NULL;
 
-    if(vterm == NULL) return -1;
+    if(vtty == NULL) return -1;
 
-    // set vterm description buffer selector
-    v_desc = vterm->v_desc_active;
+    // set vtty description buffer selector
+    v_desc = vtty->v_desc_active;
 
 #ifndef NOCURSES
         if(has_colors() == FALSE) return -1;

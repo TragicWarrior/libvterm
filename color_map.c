@@ -1,13 +1,13 @@
 #include <stdlib.h>
 
-#include "vterm.h"
-#include "vterm_private.h"
+#include "vtty.h"
+#include "vtty_private.h"
 #include "nc_wrapper.h"
 #include "color_map.h"
 #include "utlist.h"
 
 short
-vterm_add_mapped_color(vterm_t *vterm, short color,
+vtty_add_mapped_color(vtty_t *vtty, short color,
     float red, float green, float blue)
 {
     color_map_t     *mapped_color;
@@ -36,17 +36,17 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
     // excluding anonymous colors, check to see if the color is already mapped
     if(color != -1)
     {
-        global_color = vterm_get_mapped_color(vterm, color);
+        global_color = vtty_get_mapped_color(vtty, color);
         if(global_color != -1)
         {
             return global_color;
         }
     }
 
-    global_color = vterm_get_mapped_rgb(vterm, red, green, blue);
+    global_color = vtty_get_mapped_rgb(vtty, red, green, blue);
     if(global_color != -1) return global_color;
 
-    if(vterm->flags & VTERM_FLAG_TRUECOLOR)
+    if(vtty->flags & VTTY_FLAG_TRUECOLOR)
     {
         static short next_color = 16;
 
@@ -70,7 +70,7 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
 
         ncw_init_color(global_color, (int)red, (int)green, (int)blue);
 
-        CDL_APPEND(vterm->color_map_head, mapped_color);
+        CDL_APPEND(vtty->color_map_head, mapped_color);
 
         return global_color;
     }
@@ -95,19 +95,19 @@ vterm_add_mapped_color(vterm_t *vterm, short color,
         mapped_color->green = green;
         mapped_color->blue = blue;
 
-        CDL_APPEND(vterm->color_map_head, mapped_color);
+        CDL_APPEND(vtty->color_map_head, mapped_color);
 
         return global_color;
     }
 }
 
 short
-vterm_get_mapped_rgb(vterm_t *vterm, float red, float green, float blue)
+vtty_get_mapped_rgb(vtty_t *vtty, float red, float green, float blue)
 {
     color_map_t     *mapped_color;
 
 
-    CDL_FOREACH(vterm->color_map_head, mapped_color)
+    CDL_FOREACH(vtty->color_map_head, mapped_color)
     {
         if( (int)mapped_color->red == (int)red &&
             (int)mapped_color->green == (int)green &&
@@ -121,14 +121,14 @@ vterm_get_mapped_rgb(vterm_t *vterm, float red, float green, float blue)
 }
 
 short
-vterm_get_mapped_color(vterm_t *vterm, short color)
+vtty_get_mapped_color(vtty_t *vtty, short color)
 {
     color_map_t     *mapped_color;
 
     // don't search for anonymous colors
     if(color == -1) return -1;
 
-    CDL_SEARCH_SCALAR(vterm->color_map_head, mapped_color,
+    CDL_SEARCH_SCALAR(vtty->color_map_head, mapped_color,
         private_color, color);
 
     if(mapped_color == NULL)
@@ -145,22 +145,22 @@ vterm_get_mapped_color(vterm_t *vterm, short color)
 }
 
 void
-vterm_free_mapped_colors(vterm_t *vterm)
+vtty_free_mapped_colors(vtty_t *vtty)
 {
     color_map_t     *mapped_color;
     color_map_t     *tmp1;
     color_map_t     *tmp2;
 
-    if(vterm == NULL) return;
+    if(vtty == NULL) return;
 
-    if(vterm->color_map_head == NULL) return;
+    if(vtty->color_map_head == NULL) return;
 
-    CDL_FOREACH_SAFE(vterm->color_map_head, mapped_color, tmp1, tmp2)
+    CDL_FOREACH_SAFE(vtty->color_map_head, mapped_color, tmp1, tmp2)
     {
         free(mapped_color);
     }
 
-    vterm->color_map_head = NULL;
+    vtty->color_map_head = NULL;
 
     return;
 }

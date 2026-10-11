@@ -4,7 +4,7 @@
 
 #include <signal.h>
 
-#include "vterm.h"
+#include "vtty.h"
 
 #define C16(a, b, c, d) a,
 enum {
@@ -46,7 +46,7 @@ struct _color_pair_s
 
     rgb_values_t            rgb_values[2];
 
-    vterm_t                 *origin;        /*
+    vtty_t                  *origin;        /*
                                                 indicates which instance
                                                 added the pair to the
                                                 global table.
@@ -65,9 +65,9 @@ struct _color_cache_s
 {
     sig_atomic_t    ref_count;              /*
                                                 incremented when an new
-                                                vterm instance is allocated.
+                                                vtty instance is allocated.
                                                 it's decremented when a
-                                                vterm instance is destroyed.
+                                                vtty instance is destroyed.
                                                 when it reaches zero, all
                                                 resources are freed.
 
@@ -105,10 +105,10 @@ void
 color_cache_free_palette(int cache_id);
 
 int
-color_cache_add_pair(vterm_t *origin, short fg, short bg);
+color_cache_add_pair(vtty_t *origin, short fg, short bg);
 
 void
-color_cache_free_pairs(vterm_t *origin);
+color_cache_free_pairs(vtty_t *origin);
 
 short
 color_cache_find_lru_pair(void);

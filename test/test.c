@@ -1,5 +1,5 @@
 /***************************************************************************
-This is a test program intended to exercise the libvterm library by
+This is a test program intended to exercise the libvtty library by
 reading a bunch of control codes from a file or pipe, e.g., could be captured
 by 'script' on a unix/linux system, and playing them back into a charmap.
 The output should be the final screen shown in the script capture.
@@ -9,7 +9,7 @@ command-line argument is passed, in which case that's used.
 
 Note that ncurses is not used here, so a flag is passed in to skip
 initializing that.  The long term goal is to make it possible to compile
-libvterm with ncurses.h but without libncurses.a, for use in smaller
+libvtty with ncurses.h but without libncurses.a, for use in smaller
 systems or on systems where libncurses.so.5 is not installed.  Obviously,
 we'd lose some functionality there, but that's acceptable.
 
@@ -19,7 +19,7 @@ just rendering a byte stream into a buffer.
 This program is a bit naive in that it assumes that the current terminal
 dimensions are the same as the dimensions in the capture file.
 ***************************************************************************/
-#include "vterm.h"
+#include "vtty.h"
 #include <malloc.h>
 #include <string.h>
 #include <signal.h>
@@ -72,7 +72,7 @@ void ResizeEvent( int dummy )
   windowResized = 1;
   }
 
-void CheckForResize( vterm_t* vt )
+void CheckForResize( vtty_t* vt )
   {
   if( windowResized )
     {
@@ -80,7 +80,7 @@ void CheckForResize( vterm_t* vt )
     int rows, cols;
     if( GetTerminalDimensions( &rows, &cols )==0 )
       {
-      vterm_resize( vt, cols, rows );
+      vtty_resize( vt, cols, rows );
       }
     }
   }
@@ -198,7 +198,7 @@ void CursorTopLeft()
 
 int lastW = -1;
 int lastH = -1;
-vterm_cell_t** lastBuffer = NULL;
+vtty_cell_t** lastBuffer = NULL;
 FILE* changeLog = NULL;
 time_t tStart = 0;
 
@@ -213,16 +213,16 @@ void FatalError( char* msg )
 void InitPrivateBuffer( int w, int h )
   {
   int row, col;
-  lastBuffer = (vterm_cell_t**)calloc(h, sizeof(vterm_cell_t*));
+  lastBuffer = (vtty_cell_t**)calloc(h, sizeof(vtty_cell_t*));
   if( lastBuffer==NULL )
     {
     FatalError("Allocating private buffer");
     }
   for( row=0; row<h; row++ )
     {
-    vterm_cell_t *ptr
+    vtty_cell_t *ptr
       = lastBuffer[row]
-      = (vterm_cell_t*)calloc(w, sizeof(vterm_cell_t));
+      = (vtty_cell_t*)calloc(w, sizeof(vtty_cell_t));
     if( lastBuffer[row]==NULL )
       {
       FatalError("Allocating private buffer row");
@@ -291,10 +291,10 @@ void PrintAttr( int attr )
   fprintf( changeLog, "\\%04x", attr );
   }
 
-void PrintBufferDiffs( int w, int h, vterm_cell_t** cells )
+void PrintBufferDiffs( int w, int h, vtty_cell_t** cells )
   {
   int row=0, col=0, inDiff=0, diffC=0, diffA=0, diff=0;
-  vterm_cell_t *lastRow=NULL, *currentRow=NULL;
+  vtty_cell_t *lastRow=NULL, *currentRow=NULL;
   if( cells==NULL || lastBuffer == NULL || w!=lastW || h!=lastH || w<0 || h<0 )
     {
     FatalError("Cannot process diffs across mismatched buffers");
@@ -370,7 +370,7 @@ void PrintBufferDiffs( int w, int h, vterm_cell_t** cells )
     } // rows
   }
 
-void PrintTermBuffer( vterm_t* vt )
+void PrintTermBuffer( vtty_t* vt )
   {
   int h = -1;
   int w = -1;
@@ -383,11 +383,11 @@ void PrintTermBuffer( vterm_t* vt )
 #endif
 
   DEBUG_fputs("New TermBuffer\n" );
-  vterm_get_size( vt, &w, &h );
+  vtty_get_size( vt, &w, &h );
 
   CursorTopLeft();
 
-  vterm_cell_t** cells = vterm_get_buffer( vt );
+  vtty_cell_t** cells = vtty_get_buffer( vt );
   if( cells!=NULL )
     {
 
@@ -406,7 +406,7 @@ void PrintTermBuffer( vterm_t* vt )
     ResetAttribute();
     for( i=0; i<h; ++i )
       {
-      vterm_cell_t* crow = cells[i];
+      vtty_cell_t* crow = cells[i];
 
       for( j=0; j<w; ++j )
         {
@@ -434,7 +434,7 @@ void PrintTermBuffer( vterm_t* vt )
   ResetAttribute();
   }
 
-void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
+void ReadFileIntoTerminal( vtty_t* vt, char* fileName )
   {
   int n = 0;
   int charsSincePrint = 0;
@@ -496,7 +496,7 @@ void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
         CheckForResize( vt );
         fileSize += n;
         charsSincePrint += n;
-        vterm_render( vt, buf, n );
+        vtty_render( vt, buf, n );
 #ifdef DEBUG
         if( debug==NULL )
           {
@@ -531,7 +531,7 @@ void ReadFileIntoTerminal( vterm_t* vt, char* fileName )
 
 int main( int argc, char** argv )
   {
-  vterm_t* vt = NULL;
+  vtty_t* vt = NULL;
 
   signal( SIGWINCH, ResizeEvent );
 
@@ -548,17 +548,17 @@ int main( int argc, char** argv )
     exit(-1);
     }
 
-  vt = vterm_create(w, h, VTERM_FLAG_NOPTY | VTERM_FLAG_NOCURSES );
+  vt = vtty_create(w, h, VTTY_FLAG_NOPTY | VTTY_FLAG_NOCURSES );
   if( vt==NULL )
     {
-    fprintf( stderr, "ERROR: Cannot init vterm!\n" );
+    fprintf( stderr, "ERROR: Cannot init vtty!\n" );
     exit(-2);
     }
 
   ReadFileIntoTerminal( vt, fileName );
   PrintTermBuffer( vt );
 
-  vterm_destroy( vt );
+  vtty_destroy( vt );
 
   return 0;
   }

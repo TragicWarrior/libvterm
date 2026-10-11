@@ -1,8 +1,8 @@
 #!/bin/sh
 reset
 
-cp ../libvterm.so .
-cp ../vterm.h .
+cp ../libvtty.so .
+cp ../vtty.h .
 
 FIFO=/tmp/`whoami`
 
@@ -20,6 +20,6 @@ gcc -g\
     -I`pwd`\
     -o test\
     test.c\
-    -lvterm\
+    -lvtty\
     -lutil\
 && LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH ./test $FIFO

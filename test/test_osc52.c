@@ -2,8 +2,8 @@
     OSC 52 inner-hop tests (headless, NOPTY | NOCURSES).
 
     Pins:
-      - SET decodes base64 into vterm_clipboard_get
-      - hook fires with VTERM_MASK_CLIPBOARD
+      - SET decodes base64 into vtty_clipboard_get
+      - hook fires with VTTY_MASK_CLIPBOARD
       - query (Pd = '?') is refused (no reply, store unchanged)
       - empty Pd clears
       - payloads larger than ESEQ_BUF_SIZE (128) still arrive
@@ -22,11 +22,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vterm.h"
+#include "vtty.h"
 
 static int failures = 0;
 static int hook_calls = 0;
-static vterm_clipboard_t last_ev;
+static vtty_clipboard_t last_ev;
 
 #define CHECK(_cond, ...)                                   \
             do                                              \
@@ -41,20 +41,20 @@ static vterm_clipboard_t last_ev;
             while(0)
 
 static void
-R(vterm_t *vt, const char *s)
+R(vtty_t *vt, const char *s)
 {
-    vterm_render(vt, (char *)s, (int)strlen(s));
+    vtty_render(vt, (char *)s, (int)strlen(s));
 }
 
 static void
-on_clip(vterm_t *vterm, int event, void *anything)
+on_clip(vtty_t *vtty, int event, void *anything)
 {
-    (void)vterm;
+    (void)vtty;
 
-    if(event != VTERM_EVENT_CLIPBOARD) return;
+    if(event != VTTY_EVENT_CLIPBOARD) return;
 
     hook_calls++;
-    last_ev = *(vterm_clipboard_t *)anything;
+    last_ev = *(vtty_clipboard_t *)anything;
 }
 
 static void
@@ -102,27 +102,27 @@ b64_encode(const unsigned char *src, size_t len, char *dst, size_t dst_sz)
 int
 main(void)
 {
-    vterm_t     *vt;
+    vtty_t      *vt;
     const char  *data = NULL;
     size_t      len = 0;
     char        seq[1024];
     char        encoded[512];
     char        raw[200];
 
-    vt = vterm_create(80, 24, VTERM_FLAG_NOPTY | VTERM_FLAG_NOCURSES);
+    vt = vtty_create(80, 24, VTTY_FLAG_NOPTY | VTTY_FLAG_NOCURSES);
     if(vt == NULL)
     {
-        fprintf(stderr, "vterm_create failed\n");
+        fprintf(stderr, "vtty_create failed\n");
         return 1;
     }
 
-    vterm_install_hook(vt, on_clip);
-    vterm_set_event_mask(vt, VTERM_MASK_CLIPBOARD);
+    vtty_install_hook(vt, on_clip);
+    vtty_set_event_mask(vt, VTTY_MASK_CLIPBOARD);
 
     /* SET "Hello" via BEL.  SGVsbG8= is the canonical encoding. */
     reset_hook();
     R(vt, "\033]52;c;SGVsbG8=\007");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1,
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1,
         "SET should store a payload");
     CHECK(len == 5 && data != NULL && memcmp(data, "Hello", 5) == 0,
         "SET decoded Hello, got len=%zu", len);
@@ -133,7 +133,7 @@ main(void)
     /* query must not reply and must not change the store */
     reset_hook();
     R(vt, "\033]52;c;?\007");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1,
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1,
         "query must leave the payload");
     CHECK(len == 5 && memcmp(data, "Hello", 5) == 0,
         "query must not mutate Hello");
@@ -142,7 +142,7 @@ main(void)
     /* empty Pd clears and notifies */
     reset_hook();
     R(vt, "\033]52;c;\007");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 0,
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 0,
         "empty Pd should clear");
     CHECK(hook_calls == 1, "clear should fire the hook");
     CHECK(last_ev.data == NULL && last_ev.len == 0,
@@ -151,21 +151,21 @@ main(void)
     /* default Pc (empty) is CLIPBOARD; ESC \\ terminator */
     reset_hook();
     R(vt, "\033]52;;SGk=\033\\");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1, "default Pc SET");
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1, "default Pc SET");
     CHECK(len == 2 && memcmp(data, "Hi", 2) == 0, "ESC\\ decoded Hi");
     CHECK(last_ev.selection == 'c', "empty Pc should default to 'c'");
 
     /* PRIMARY selection char is passed through */
     reset_hook();
     R(vt, "\033]52;p;T0s=\007");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1, "PRIMARY SET");
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1, "PRIMARY SET");
     CHECK(len == 2 && memcmp(data, "OK", 2) == 0, "PRIMARY decoded OK");
     CHECK(last_ev.selection == 'p', "selection should be 'p'");
 
     /* bad base64 leaves the previous payload alone */
     reset_hook();
     R(vt, "\033]52;c;????\007");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1,
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1,
         "bad base64 must not clear");
     CHECK(len == 2 && memcmp(data, "OK", 2) == 0,
         "bad base64 must keep OK");
@@ -179,7 +179,7 @@ main(void)
 
     reset_hook();
     R(vt, seq);
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1, "large SET stored");
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1, "large SET stored");
     CHECK(len == sizeof(raw), "large SET len=%zu want %zu", len, sizeof(raw));
     CHECK(data != NULL && memcmp(data, raw, sizeof(raw)) == 0,
         "large SET payload mismatch");
@@ -191,20 +191,20 @@ main(void)
     {
         int col = -1, row = -1;
 
-        vterm_get_cursor_position(vt, &col, &row);
+        vtty_get_cursor_position(vt, &col, &row);
         CHECK(row == 0 && col == 0,
             "large OSC 52 must not advance the cursor (row=%d col=%d)",
             row, col);
     }
 
     /* poll API still works with the hook uninstalled */
-    vterm_install_hook(vt, NULL);
+    vtty_install_hook(vt, NULL);
     R(vt, "\033]52;c;Qg==\007");
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 1, "no-hook SET");
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 1, "no-hook SET");
     CHECK(len == 1 && data[0] == 'B', "no-hook decoded B");
 
-    vterm_clipboard_clear(vt);
-    CHECK(vterm_clipboard_get(vt, &data, &len) == 0, "explicit clear");
+    vtty_clipboard_clear(vt);
+    CHECK(vtty_clipboard_get(vt, &data, &len) == 0, "explicit clear");
 
     /* binary payload with an embedded NUL */
     {
@@ -213,14 +213,14 @@ main(void)
         b64_encode(bin, sizeof(bin), encoded, sizeof(encoded));
         snprintf(seq, sizeof(seq), "\033]52;c;%s\007", encoded);
         R(vt, seq);
-        CHECK(vterm_clipboard_get(vt, &data, &len) == 1, "NUL SET");
+        CHECK(vtty_clipboard_get(vt, &data, &len) == 1, "NUL SET");
         CHECK(len == 3 && (unsigned char)data[0] == 'x' &&
             (unsigned char)data[1] == 0x00 &&
             (unsigned char)data[2] == 'y',
             "embedded NUL must survive decode");
     }
 
-    vterm_destroy(vt);
+    vtty_destroy(vt);
 
     if(failures)
     {

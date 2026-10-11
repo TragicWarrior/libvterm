@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "vterm_private.h"
+#include "vtty_private.h"
 #include "mouse_driver.h"
 #include "stringv.h"
 
@@ -10,24 +10,24 @@
     CSI < Ps ; Ps ; Ps m   <- mouse button release event
 */
 ssize_t
-mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
+mouse_driver_SGR(vtty_t *vtty, unsigned char *buf)
 {
     MEVENT          mouse_event;
     unsigned int    button = 0;
     int             retval = 0;
     int             x, y;
 
-    if(vterm->pending_mouse != NULL)
-        memcpy(&mouse_event, vterm->pending_mouse, sizeof(MEVENT));
+    if(vtty->pending_mouse != NULL)
+        memcpy(&mouse_event, vtty->pending_mouse, sizeof(MEVENT));
     else
         getmouse(&mouse_event);
     x = mouse_event.x;
     y = mouse_event.y;
 
-    if(vterm->window != NULL)
+    if(vtty->window != NULL)
     {
         // see notes above on coordinate transformations
-        if(wmouse_trafo(vterm->window, &y, &x, FALSE) == FALSE)
+        if(wmouse_trafo(vtty->window, &y, &x, FALSE) == FALSE)
         {
             return 0;
         }
@@ -64,7 +64,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON4_PRESSED)
     {
-        if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
+        if(vtty->mouse_mode & VTTY_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\033OA");
         else
             // SGR wheel-up is button 64 (+ modifier bits)
@@ -77,7 +77,7 @@ mouse_driver_SGR(vterm_t *vterm, unsigned char *buf)
 
     if(mouse_event.bstate & BUTTON5_PRESSED)
     {
-        if(vterm->mouse_mode & VTERM_MOUSE_ALTSCROLL)
+        if(vtty->mouse_mode & VTTY_MOUSE_ALTSCROLL)
             sprintf((char *)buf, "\033OB");
         else
             // SGR wheel-down is button 65 (+ modifier bits)
