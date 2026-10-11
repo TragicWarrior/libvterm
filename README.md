@@ -29,6 +29,8 @@ for what to change in a program that uses it.
   Shift / Alt / Ctrl; the wheel; drag and hover reporting (DECSET 1002
   and 1003); GPM wheel forwarding; and vtty_write_mouse_event for
   embedder-driven injection
+* Window titles: a program's title (OSC 0 / OSC 2) is kept for
+  vtty_get_title and announced with VTTY_EVENT_TITLE when it changes
 * OSC 52 clipboard SET from the child (inner hop): decoded payload is
   stored and delivered via VTTY_EVENT_CLIPBOARD.  The library does
   not talk to the host clipboard; the embedder decides xclip / OSC 52

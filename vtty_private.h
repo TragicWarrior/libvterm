@@ -178,7 +178,7 @@ struct _vtty_s
                                                     terminal.  the data is
                                                     supplied by the Xterm OSC
                                                     code sequences.  NULL
-                                                    until an OSC 0/1/2 fires;
+                                                    until an OSC 0 or 2 fires;
                                                     lazy-allocated at
                                                     VTTY_TITLE_BUF_SZ.
                                                 */

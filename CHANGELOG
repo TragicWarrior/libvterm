@@ -1,3 +1,30 @@
+11.2.0
+
+Window titles
+* [Bryan Christ] OSC 0 sets the window title.  It was silently dropped:
+  the parser returned early when the function number was 0, which it
+  could not tell apart from "no number".  OSC 0 is what most programs
+  send, so their titles never arrived.
+* [Bryan Christ] VTTY_EVENT_TITLE (mask VTTY_MASK_TITLE) tells the host
+  when the title changes.  The payload is the new title as a const
+  char*, valid for the duration of the hook.  It is sent only when the
+  title actually changes, not each time a shell prompt re-sends it.
+* [Bryan Christ] A title holding the byte 0x9C is no longer cut short
+  in UTF-8 mode.  U+2733 is E2 9C B3, and the string reader stopped at
+  the 9C, leaving a single stray byte as the title.  0x9C still ends
+  the string in 8-bit mode.
+* [Bryan Christ] An OSC with a number but no string (ESC ] 2 BEL) is
+  ignored.  The reader went looking for the semicolon past the end of
+  the sequence and returned whatever it found there.  This applied to
+  OSC 4 as well.
+* [Bryan Christ] A title longer than 127 bytes is cut at a character
+  boundary instead of in the middle of a multi-byte character.
+* [Bryan Christ] OSC 1 (icon name) no longer changes the title.  A
+  program that sent both showed whichever came last.
+* [Bryan Christ] An empty title is stored and announced as "", for the
+  host to treat as "use your own name for the window".
+* [Bryan Christ] test_osc_title: headless checks of all of the above.
+
 11.1.0
 
 Mouse: buttons, modifiers and motion

@@ -14,6 +14,9 @@ static int
 vtty_osc_read_string(vtty_t *vtty, char *esbuf, char *buf, int buf_sz);
 
 static void
+vtty_osc_set_title(vtty_t *vtty, char *pos);
+
+static void
 vtty_osc_parse_xcolor(vtty_t *vtty, char *buf, int buf_sz);
 
 static void
@@ -56,6 +59,7 @@ vtty_interpret_xterm_osc(vtty_t *vtty)
 {
     char        buf[128];           // general purpose capture buffer
     int         verb = 0;
+    int         digits = 0;
     char        *pos;
     int         count = 0;
     int         max_sz;
@@ -68,34 +72,36 @@ vtty_interpret_xterm_osc(vtty_t *vtty)
         verb *= 10;
         verb += (*pos) - '0';
         pos++;
+        digits++;
     }
 
-    if(verb == 0) return 0;
+    /*
+        an OSC with no number is not one of ours -- the linux console's
+        palette sequences (ESC ] P and ESC ] R) arrive this way.  this
+        must count digits and not test the value:  0 is a real function,
+        and the one most programs use to set the title.
+    */
+    if(digits == 0) return 0;
 
     switch(verb)
     {
         // Change Icon Name and Window Title
         case 0:
 
-        // Change Icon Name
-        case 1:
-
         // Change Window Title
         case 2:
         {
-            /*
-                todo:  for now we will simply copy the string and
-                treat all OSC sequences the same (icon, name, both).
-            */
-            if(vtty->title == NULL)
-            {
-                vtty->title = (char *)calloc(1, VTTY_TITLE_BUF_SZ);
-                if(vtty->title == NULL) break;
-            }
+            vtty_osc_set_title(vtty, pos);
+            break;
+        }
 
-            count = vtty_osc_read_string(vtty, pos, vtty->title,
-                VTTY_TITLE_BUF_SZ);
-
+        /*
+            Change Icon Name.  a terminal in a window has no icon, and
+            the icon name is not the title:  a program that sends both
+            would otherwise show whichever came last.
+        */
+        case 1:
+        {
             break;
         }
 
@@ -104,6 +110,9 @@ vtty_interpret_xterm_osc(vtty_t *vtty)
         {
             max_sz = ARRAY_SZ(buf);
             count = vtty_osc_read_string(vtty, pos, buf, max_sz);
+
+            // no string followed the number
+            if(count < 0) break;
 
             vtty_osc_parse_xcolor(vtty, buf, count);
 
@@ -148,7 +157,13 @@ vtty_osc_read_string(vtty_t *vtty, char *esbuf, char *buf, int buf_sz)
 
     pos = buf;
 
-    // strings begin with a semicolon, advance past it
+    memset(buf, 0, buf_sz);
+
+    /*
+        strings begin with a semicolon, advance past it.  a sequence
+        that ends before one is found has no string, and the search must
+        stop there instead of running on through memory.
+    */
     for(;; esbuf++)
     {
         if(*esbuf == ';')
@@ -156,17 +171,28 @@ vtty_osc_read_string(vtty_t *vtty, char *esbuf, char *buf, int buf_sz)
             esbuf++;
             break;
         }
-    }
 
-    memset(buf, 0, buf_sz);
+        if(*esbuf == '\0' || vtty_osc_is_term(esbuf)) return -1;
+    }
 
     // make room for null terminator
     buf_sz--;
 
     for(;;)
     {
-        // both bell and 0x9c can terminate a OSC string
-        if(*esbuf == '\x07' || *esbuf == '\x9c')
+        // the end of the sequence, however it was terminated
+        if(*esbuf == '\0') break;
+
+        // bell terminates an OSC string
+        if(*esbuf == '\x07') break;
+
+        /*
+            so does the C1 string terminator 0x9c, but only in 8-bit
+            mode.  in UTF-8 mode 0x9c is an ordinary continuation byte
+            (U+2733 is E2 9C B3) and stopping on it cuts the string in
+            the middle of a character.
+        */
+        if(*esbuf == '\x9c' && (vtty->flags & VTTY_FLAG_NOUTF8))
         {
             break;
         }
@@ -194,6 +220,76 @@ vtty_osc_read_string(vtty_t *vtty, char *esbuf, char *buf, int buf_sz)
     }
 
     return count;
+}
+
+/*
+    OSC 0 and OSC 2:  the child names its window.
+
+    the string is stored for vtty_get_title() and, when it differs from
+    the title already held, announced with VTTY_EVENT_TITLE.  a shell
+    prompt re-sends the same title on every command, so an unchanged
+    title is not announced.
+
+    an empty string is a valid title:  it is how a program gives the
+    title back, and the host is expected to fall back on its own name
+    for the window.
+*/
+static void
+vtty_osc_set_title(vtty_t *vtty, char *pos)
+{
+    char    buf[VTTY_TITLE_BUF_SZ];
+    int     count;
+    int     start;
+    int     need;
+
+    count = vtty_osc_read_string(vtty, pos, buf, VTTY_TITLE_BUF_SZ);
+
+    // no string followed the number
+    if(count < 0) return;
+
+    /*
+        a title that filled the buffer may have been cut in the middle
+        of a multi-byte character.  find the last lead byte and, if the
+        bytes it calls for are not all there, drop the fragment.
+    */
+    if(count == VTTY_TITLE_BUF_SZ - 1 && !(vtty->flags & VTTY_FLAG_NOUTF8))
+    {
+        start = count - 1;
+
+        // step back over continuation bytes (10xxxxxx)
+        while(start > 0 && ((unsigned char)buf[start] & 0xC0) == 0x80)
+            start--;
+
+        need = 1;
+        if(((unsigned char)buf[start] & 0xE0) == 0xC0) need = 2;
+        if(((unsigned char)buf[start] & 0xF0) == 0xE0) need = 3;
+        if(((unsigned char)buf[start] & 0xF8) == 0xF0) need = 4;
+
+        if(count - start < need)
+        {
+            memset(buf + start, 0, count - start);
+            count = start;
+        }
+    }
+
+    // nothing to do when the title is the one already held
+    if(vtty->title == NULL && count == 0) return;
+    if(vtty->title != NULL && strcmp(vtty->title, buf) == 0) return;
+
+    if(vtty->title == NULL)
+    {
+        vtty->title = (char *)calloc(1, VTTY_TITLE_BUF_SZ);
+        if(vtty->title == NULL) return;
+    }
+
+    memcpy(vtty->title, buf, VTTY_TITLE_BUF_SZ);
+
+    if(vtty->event_hook == NULL) return;
+    if(!(vtty->event_mask & VTTY_MASK_TITLE)) return;
+
+    vtty->event_hook(vtty, VTTY_EVENT_TITLE, vtty->title);
+
+    return;
 }
 
 void
