@@ -29,7 +29,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTTY_VERSION         "11.2.0"
+#define LIBVTTY_VERSION         "11.2.1"
 
 #define VTTY_FLAG_RXVT          (1UL << 0)      //  emulate rxvt
 #define VTTY_FLAG_VT100         (1UL << 1)      //  emulate vt100
