@@ -131,6 +131,19 @@ struct _vtty_desc_s
 
     int             fg;                         // current fg color
     int             bg;                         // current bg color
+
+    int             fg_asked;                   /*
+                                                    the color number the child
+                                                    asked for, and what fg was
+                                                    set to for it.  they differ
+                                                    when the terminal has fewer
+                                                    colors than the child uses.
+                                                    fg_asked only counts while
+                                                    fg still equals fg_given.
+                                                */
+    int             fg_given;
+    int             bg_asked;                   //  the same, for bg
+    int             bg_given;
 };
 
 typedef struct _vtty_desc_s     vtty_desc_t;

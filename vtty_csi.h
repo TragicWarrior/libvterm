@@ -28,6 +28,12 @@ void    interpret_dec_SM(vtty_t *vtty, int param[], int pcount);
 void    interpret_dec_RM(vtty_t *vtty, int param[], int pcount);
 
 void    interpret_csi_SGR(vtty_t *vtty, int param[], int pcount);
+
+/*
+    fit an xterm-256 color number to a terminal with fewer colors:  the
+    nearest of the 8 ANSI colors, or of all 16 when host_colors >= 16.
+*/
+int     vtty_fit_color(int color, int host_colors);
 void    interpret_csi_ED(vtty_t *vtty, int param[], int pcount);
 void    interpret_csi_CUP(vtty_t *vtty, int param[], int pcount);
 void    interpret_csi_ED(vtty_t *vtty, int param[], int pcount);

@@ -72,7 +72,184 @@ _rgb_to_xterm256(int r, int g, int b)
 long
 interpret_custom_color(vtty_t *vtty, int param[], int pcount, int *processed);
 
+// the 16 ANSI colors as the linux console and VGA show them
+static const unsigned char  ansi[16][3] =
+                                {
+                                    {   0,   0,   0 },
+                                    { 170,   0,   0 },
+                                    {   0, 170,   0 },
+                                    { 170,  85,   0 },
+                                    {   0,   0, 170 },
+                                    { 170,   0, 170 },
+                                    {   0, 170, 170 },
+                                    { 170, 170, 170 },
+                                    {  85,  85,  85 },
+                                    { 255,  85,  85 },
+                                    {  85, 255,  85 },
+                                    { 255, 255,  85 },
+                                    {  85,  85, 255 },
+                                    { 255,  85, 255 },
+                                    {  85, 255, 255 },
+                                    { 255, 255, 255 }
+                                };
+
+/*
+    how many colors the real terminal has, as terminfo reports it.
+    0 means it is not known (no color cache yet, or no terminal).
+*/
+static int
+_vtty_host_colors(void)
+{
+    extern color_cache_t    *color_cache;
+
+    if(color_cache == NULL) return 0;
+    if(color_cache->term_colors < 0) return 0;
+
+    return color_cache->term_colors;
+}
+
+/*
+    fit an xterm-256 color number to a terminal that has fewer colors.
+
+    a child may ask for any of 256 colors, or for a 24-bit color that is
+    first matched to one of the 256, whatever TERM says.  a terminal
+    with 8 or 16 colors has no such color number, and a pair built from
+    one does not exist, so what reaches the screen is arbitrary: some
+    text shows and some is drawn black on black.
+
+    the color is replaced by the nearest of the colors the terminal does
+    have:  the 8 ANSI colors, or all 16 when it has at least that many.
+    a color the terminal already has is returned as it is, and so is
+    every color when the terminal has 256 or its count is not known.
+*/
+int
+vtty_fit_color(int color, int host_colors)
+{
+    static const int            cube[6] = { 0, 95, 135, 175, 215, 255 };
+    int                         limit;
+    int                         r, g, b;
+    int                         lo, hi;
+    int                         gray;
+    int                         dist;
+    int                         best = 0;
+    int                         best_dist = -1;
+    int                         n;
+
+    if(host_colors <= 0 || host_colors >= 256) return color;
+    if(color < 0 || color > 255) return color;
+
+    limit = (host_colors >= 16) ? 16 : 8;
+
+    if(color < limit) return color;
+
+    // with 8 colors a bright color is its plain counterpart
+    if(color < 16) return color - 8;
+
+    // what the color number looks like
+    if(color < 232)
+    {
+        // the 6 x 6 x 6 color cube
+        n = color - 16;
+        r = cube[n / 36];
+        g = cube[(n / 6) % 6];
+        b = cube[n % 6];
+    }
+    else
+    {
+        // the 24 step gray ramp
+        r = g = b = 8 + (10 * (color - 232));
+    }
+
+    /*
+        a gray is matched only against the grays (black, white and their
+        bright forms).  by plain distance a dark gray is nearer to the
+        console's brown than to black or white, and gray text must not
+        come out colored.
+    */
+    lo = (r < g) ? r : g;
+    if(b < lo) lo = b;
+    hi = (r > g) ? r : g;
+    if(b > hi) hi = b;
+    gray = (hi - lo <= 24);
+
+    /*
+        the nearest color the terminal has.  on a tie the later one
+        wins, which is the lighter of the two:  bright black is as far
+        from black as from white, and it is better seen than not.
+    */
+    for(n = 0; n < limit; n++)
+    {
+        // colors 0, 7, 8 and 15 are the grays
+        if(gray && (n % 8) != 0 && (n % 8) != 7) continue;
+
+        dist = (r - ansi[n][0]) * (r - ansi[n][0])
+             + (g - ansi[n][1]) * (g - ansi[n][1])
+             + (b - ansi[n][2]) * (b - ansi[n][2]);
+
+        if(best_dist < 0 || dist <= best_dist)
+        {
+            best = n;
+            best_dist = dist;
+        }
+    }
+
+    return best;
+}
+
 /* interprets a 'set attribute' (SGR) CSI escape sequence */
+/*
+    fit the foreground and background the child asked for to the colors
+    the real terminal has, and keep the text readable while doing it.
+
+    fitting each color on its own is not enough.  with 8 colors bright
+    black has nowhere to go but black, so the dim text a program draws
+    in bright black on a black background would vanish.  when two colors
+    that the child asked for as different come out the same, the
+    foreground is changed to black or white, whichever shows against the
+    background.  colors the child asked for as the same are left the
+    same:  that is how a program hides text on purpose.
+
+    the caller has stored the newly asked-for color in fg / fg_asked /
+    fg_given (or the bg equivalents).  the other color of the pair may
+    have been set by a plain SGR 30 - 37 since it was last fitted, in
+    which case it no longer equals what was given and is taken as it is.
+*/
+static void
+_vtty_fit_colors(vtty_desc_t *v_desc, int host_colors)
+{
+    int     fg_asked, bg_asked;
+    int     fg, bg;
+    int     lum;
+
+    // nothing to fit, and no reason to disturb what the child set
+    if(host_colors <= 0 || host_colors >= 256) return;
+
+    fg_asked = (v_desc->fg == v_desc->fg_given) ? v_desc->fg_asked : v_desc->fg;
+    bg_asked = (v_desc->bg == v_desc->bg_given) ? v_desc->bg_asked : v_desc->bg;
+
+    fg = vtty_fit_color(fg_asked, host_colors);
+    bg = vtty_fit_color(bg_asked, host_colors);
+
+    // two different colors became one:  make the text show
+    if(fg == bg && fg_asked != bg_asked && bg >= 0 && bg < 16)
+    {
+        lum = ((ansi[bg][0] * 299) + (ansi[bg][1] * 587)
+            + (ansi[bg][2] * 114)) / 1000;
+
+        fg = (lum > 127) ? COLOR_BLACK : COLOR_WHITE;
+    }
+
+    v_desc->fg = fg;
+    v_desc->fg_asked = fg_asked;
+    v_desc->fg_given = fg;
+
+    v_desc->bg = bg;
+    v_desc->bg_asked = bg_asked;
+    v_desc->bg_given = bg;
+
+    return;
+}
+
 void
 interpret_csi_SGR(vtty_t *vtty, int param[], int pcount)
 {
@@ -217,6 +394,12 @@ interpret_csi_SGR(vtty_t *vtty, int param[], int pcount)
             if(fg != -1)
             {
                 v_desc->fg = fg;
+                v_desc->fg_asked = fg;
+                v_desc->fg_given = fg;
+
+                // a terminal with 8 or 16 colors has no such color number
+                _vtty_fit_colors(v_desc, _vtty_host_colors());
+
                 _vtty_set_color_pair_safe(v_desc, vtty, -1, v_desc->fg,
                     v_desc->bg);
             }
@@ -308,6 +491,12 @@ interpret_csi_SGR(vtty_t *vtty, int param[], int pcount)
             if(bg != -1)
             {
                 v_desc->bg = bg;
+                v_desc->bg_asked = bg;
+                v_desc->bg_given = bg;
+
+                // a terminal with 8 or 16 colors has no such color number
+                _vtty_fit_colors(v_desc, _vtty_host_colors());
+
                 _vtty_set_color_pair_safe(v_desc, vtty, -1, v_desc->fg,
                     v_desc->bg);
             }
@@ -331,6 +520,16 @@ interpret_csi_SGR(vtty_t *vtty, int param[], int pcount)
                 {
                     v_desc->fg = (param[i] - 90) + 8;
                 }
+
+                /*
+                    the child asked for a bright color whether or not
+                    the terminal has one.  bright black on black is the
+                    usual way to draw dim text, and it must not vanish.
+                */
+                v_desc->fg_asked = (param[i] - 90) + 8;
+                v_desc->fg_given = v_desc->fg;
+
+                _vtty_fit_colors(v_desc, _vtty_host_colors());
             }
 
             _vtty_set_color_pair_safe(v_desc, vtty, -1, v_desc->fg,
@@ -351,6 +550,12 @@ interpret_csi_SGR(vtty_t *vtty, int param[], int pcount)
             {
                 v_desc->bg = param[i] - 100;
                 if((vtty->flags & VTTY_FLAG_C8) == 0) v_desc->bg += 8;
+
+                // as for the foreground:  a bright color was asked for
+                v_desc->bg_asked = (param[i] - 100) + 8;
+                v_desc->bg_given = v_desc->bg;
+
+                _vtty_fit_colors(v_desc, _vtty_host_colors());
             }
 
             _vtty_set_color_pair_safe(v_desc, vtty, -1, v_desc->fg,

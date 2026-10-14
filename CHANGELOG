@@ -1,3 +1,25 @@
+11.2.1
+
+Colors on a terminal with 8 or 16 colors
+* [Bryan Christ] A color number the real terminal does not have is
+  fitted to one it does.  A child may ask for any of 256 colors, or a
+  24-bit color, whatever TERM says, and on the Linux console (8 colors)
+  that produced a color pair that does not exist:  some text showed and
+  some was drawn black on black.  The color now becomes the nearest of
+  the 8 ANSI colors, or of all 16 when the terminal has them.  With 8
+  colors a bright color becomes its plain counterpart, and a gray
+  becomes black or white, never a color.
+* [Bryan Christ] Two colors asked for as different are never drawn the
+  same.  With 8 colors bright black can only become black, so the dim
+  text a program draws in bright black on a black background vanished.
+  The text is drawn white or black instead, whichever shows against the
+  background.  Colors asked for as the same are left the same, so text
+  hidden on purpose stays hidden.
+* [Bryan Christ] This covers SGR 38 / 48 in both the 256-color and the
+  24-bit form, and the aixterm bright colors (SGR 90 - 97, 100 - 107).
+  Nothing changes on a terminal with 256 colors.
+* [Bryan Christ] test_color_fit: headless checks of the above.
+
 11.2.0
 
 Window titles
