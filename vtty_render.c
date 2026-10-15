@@ -40,7 +40,6 @@ void
 vtty_render(vtty_t *vtty, char *data, int len)
 {
 #ifndef NOUTF8
-    chtype          utf8_char;
     wchar_t         wch[CCHARW_MAX];
     int             bytes = -1;
 #endif
@@ -131,7 +130,7 @@ vtty_render(vtty_t *vtty, char *data, int len)
                 // we're in UTF-8 mode... do this
                 // memset(wch, 0, sizeof(wch));
                 wch[0] = '\0';
-                bytes = vtty_utf8_decode(vtty, &utf8_char, wch);
+                bytes = vtty_utf8_decode(vtty, wch);
 
                 // we're done
                 if(bytes > 0)
