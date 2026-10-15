@@ -20,7 +20,7 @@
 void    vtty_utf8_start(vtty_t *vtty);
 void    vtty_utf8_cancel(vtty_t *vtty);
 
-int     vtty_utf8_decode(vtty_t *vtty, chtype *utf8_char, wchar_t *wch);
+int     vtty_utf8_decode(vtty_t *vtty, wchar_t *wch);
 
 #endif
 #endif

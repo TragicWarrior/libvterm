@@ -15,6 +15,7 @@
 #include "vtty_private.h"
 #include "vtty_buffer.h"
 #include "color_cache.h"
+#include "glyph_fit.h"
 
 #ifndef NOCURSES
 
@@ -36,6 +37,22 @@ _wnd_flush_span(WINDOW *win, int row, int col,
     mvwadd_wchnstr(win, row, col, buf, n);
 
     return;
+}
+
+/*
+    the character to draw for a cell: what the child sent, or on the
+    Linux console a stand-in for one its font cannot show.  The cell
+    keeps the original; only the screen sees the stand-in.
+*/
+static const wchar_t*
+_wnd_cell_glyph(const vtty_cell_t *vcell, bool fit, wchar_t *scratch)
+{
+    if(!fit || vcell->wch[0] < 0x2000) return vcell->wch;
+
+    scratch[0] = vtty_fit_glyph(vcell->wch[0]);
+    scratch[1] = L'\0';
+
+    return scratch;
 }
 
 void
@@ -76,9 +93,14 @@ vtty_wnd_update(vtty_t *vtty, int idx, int offset, uint8_t flags)
     int             r, c;
     attr_t          attrs;
     short           colors;
+    wchar_t         glyph[2];
+    bool            fit;
 
     if(vtty == NULL) return -1;
     if(vtty->window == NULL) return -1;
+
+    // on the Linux console, swap characters its font cannot draw
+    fit = vtty_glyph_fit_wanted();
 
     // set vtty desc buffer selector
     if(idx == -1)
@@ -187,7 +209,8 @@ vtty_wnd_update(vtty_t *vtty, int idx, int offset, uint8_t flags)
                 in the cchar_t will trump what's set by
                 wattr_set() so we have to explicitly sync them
             */
-            if(setcchar(&row_buf[span_n], vcell->wch, attrs, colors, NULL)
+            if(setcchar(&row_buf[span_n],
+                _wnd_cell_glyph(vcell, fit, glyph), attrs, colors, NULL)
                 == ERR)
             {
                 wchar_t blank[2] = { L' ', L'\0' };
@@ -263,9 +286,14 @@ vtty_wnd_scrollback(vtty_t *vtty, int nlines, uint8_t flags)
     int             max_cols;
     attr_t          attrs;
     short           colors;
+    wchar_t         glyph[2];
+    bool            fit;
 
     if(vtty == NULL) return -1;
     if(vtty->window == NULL) return -1;
+
+    // on the Linux console, swap characters its font cannot draw
+    fit = vtty_glyph_fit_wanted();
 
     hist = &vtty->vtty_desc[VTTY_BUF_HISTORY];
     live = &vtty->vtty_desc[VTTY_BUF_STANDARD];
@@ -351,7 +379,8 @@ vtty_wnd_scrollback(vtty_t *vtty, int nlines, uint8_t flags)
                 span_colors = colors;
             }
 
-            if(setcchar(&row_buf[span_n], vcell->wch, attrs, colors, NULL)
+            if(setcchar(&row_buf[span_n],
+                _wnd_cell_glyph(vcell, fit, glyph), attrs, colors, NULL)
                 == ERR)
             {
                 wchar_t blank[2] = { L' ', L'\0' };

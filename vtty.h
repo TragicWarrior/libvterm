@@ -29,7 +29,7 @@
 #undef FALSE
 #define FALSE           0
 
-#define LIBVTTY_VERSION         "11.2.1"
+#define LIBVTTY_VERSION         "11.3.0"
 
 #define VTTY_FLAG_RXVT          (1UL << 0)      //  emulate rxvt
 #define VTTY_FLAG_VT100         (1UL << 1)      //  emulate vt100
@@ -562,6 +562,30 @@ uint32_t        vtty_get_event_mask(vtty_t *vtty);
         mask            a bitmask of events to subscribe to.
 */
 void            vtty_set_event_mask(vtty_t *vtty, uint32_t mask);
+
+/*
+    tell libvtty which characters the real terminal's font can draw.
+
+    On the Linux console a character the font lacks is drawn as the
+    font's fallback glyph.  libvtty swaps the common ones (prompt arrows,
+    status dots, spinners, braille, partial blocks...) for the nearest
+    character the console can show; the screen contents themselves are
+    not changed.  With this list a character the font has is left alone
+    and only stand-ins the font has are used.  Without it a built-in
+    choice that suits the stock console fonts is made.
+
+    The list applies to the whole process and is copied.  Pass NULL or a
+    count of 0 to go back to the built-in choice.  Has no effect on a
+    host that is not the Linux console.
+
+    @params:
+        glyphs          the Unicode code points the font maps.
+        count           the number of entries in glyphs.
+
+    @return:
+        0 on success, -1 when the list could not be stored.
+*/
+int             vtty_set_host_glyphs(const wchar_t *glyphs, int count);
 
 
 #ifndef NOCURSES

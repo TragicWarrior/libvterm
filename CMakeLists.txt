@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(libvtty C)
 set(MAJOR_VERSION 11)
-set(MINOR_VERSION 2)
+set(MINOR_VERSION 3)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
@@ -79,6 +79,7 @@ find_package(Curses)
 add_library(vtty-static STATIC
     color_cache.c
     color_math.c
+    glyph_fit.c
     color_map.c
     mouse_driver.c
     mouse_driver_X10.c
@@ -142,6 +143,7 @@ add_library(vtty-static STATIC
 add_library(vtty.o OBJECT
     color_cache.c
     color_math.c
+    glyph_fit.c
     color_map.c
     mouse_driver.c
     mouse_driver_X10.c
@@ -449,7 +451,8 @@ if(BUILD_TESTS)
     add_executable(test_mouse test/test_mouse.c)
     add_executable(test_osc_title test/test_osc_title.c)
     add_executable(test_color_fit test/test_color_fit.c)
-    foreach(_t test_resize test_bufapi test_shift test_history test_render test_osc52 test_mouse test_osc_title test_color_fit)
+    add_executable(test_glyph_fit test/test_glyph_fit.c)
+    foreach(_t test_resize test_bufapi test_shift test_history test_render test_osc52 test_mouse test_osc_title test_color_fit test_glyph_fit)
         target_include_directories(${_t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
         target_link_libraries(${_t} vtty-static -lncursesw -lutil -lm -lrt)
     endforeach()

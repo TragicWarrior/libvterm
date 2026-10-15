@@ -1,3 +1,26 @@
+11.3.0
+
+Characters the Linux console cannot draw
+* [Bryan Christ] On the Linux console, a character the console font
+  lacks is drawn as the nearest one it has.  The console draws text
+  from a single kernel font of at most 512 glyphs, so a program's prompt
+  arrow, status dots, spinners and braille art showed as boxes.  These
+  now become stand-ins:  ❯ becomes ›, ⏺ becomes ●, ⎿ becomes └, ✔
+  becomes √ or v, a partial block becomes a shade, and so on.  Braille
+  keeps its shape:  a sparse cell becomes a mark at the height of its
+  dots ( ' . : ), a fuller one a shade as dense ( ░ ▒ █ ).  Only the
+  screen sees the stand-in; the cell keeps what the program sent.
+  Characters the console has, box drawing among them, are left alone,
+  as are double-width characters.  Nothing changes on other terminals.
+* [Bryan Christ] vtty_set_host_glyphs() lets the host say which
+  characters its font holds.  With it, a character the font has is left
+  alone and only stand-ins the font has are used.  Without it, the
+  choice suits the stock console fonts:  a stand-in that some of them
+  lack (‖ … ↔ ↕ ↵ ⇑ ∙ √) is passed over for a plainer one.
+* [Bryan Christ] The old fallback table in the UTF-8 decoder is gone.
+  Its result has been ignored since Unicode support arrived in 2018.
+* [Bryan Christ] test_glyph_fit: headless checks of the above.
+
 11.2.1
 
 Colors on a terminal with 8 or 16 colors
